@@ -89,3 +89,10 @@ describe('ProfilePage — Device yang lagi login', () => {
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/profil/device/2')
   })
 })
+
+describe('ProfilePage — lonceng', () => {
+  it('has the notification bell in the header', async () => {
+    const { wrapper } = await mountProfile()
+    expect(wrapper.find('[data-test="bell"]').exists()).toBe(true)
+  })
+})

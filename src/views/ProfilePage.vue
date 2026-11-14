@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="page narrow">
-        <PageHeader eyebrow="Profil">{{ firstName }}.<br /><span>@{{ auth.user?.username }}</span></PageHeader>
+        <PageHeader eyebrow="Profil" bell>{{ firstName }}.<br /><span>@{{ auth.user?.username }}</span></PageHeader>
 
         <div class="shell rise" style="--i: 2">
           <div class="core me">

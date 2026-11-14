@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="page">
-        <PageHeader eyebrow="Semua menu">Semua modul.<br /><span>Satu tempat.</span></PageHeader>
+        <PageHeader eyebrow="Semua menu" bell>Semua modul.<br /><span>Satu tempat.</span></PageHeader>
 
         <label class="search rise" style="--i: 2">
           <PhMagnifyingGlass :size="19" />

@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="page">
-        <PageHeader :eyebrow="title" :back-to="backTo">{{ title }}.<br /><span>Segera hadir.</span></PageHeader>
+        <PageHeader :eyebrow="title" :back-to="backTo" :bell="bell">{{ title }}.<br /><span>Segera hadir.</span></PageHeader>
         <div class="shell rise" style="--i: 2">
           <div class="core soon">
             <span class="emoji">{{ emoji }}</span>
@@ -20,7 +20,7 @@
 <script setup>
 import { IonContent, IonPage } from '@ionic/vue'
 import PageHeader from '@/components/PageHeader.vue'
-defineProps({ title: { type: String, required: true }, emoji: { type: String, required: true }, backTo: { type: String, default: '' } })
+defineProps({ title: { type: String, required: true }, emoji: { type: String, required: true }, backTo: { type: String, default: '' }, bell: { type: Boolean, default: false } })
 </script>
 
 <style scoped>

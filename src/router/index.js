@@ -6,6 +6,8 @@ import ComingSoon from '@/views/ComingSoon.vue'
 import DevicePage from '@/views/DevicePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import MenuPage from '@/views/MenuPage.vue'
+import NotificationSettingsPage from '@/views/NotificationSettingsPage.vue'
+import NotificationsPage from '@/views/NotificationsPage.vue'
 import ProfilePage from '@/views/ProfilePage.vue'
 import { decideNavigation } from './guard.js'
 import { buildTabRoutes } from './tabRoutes.js'
@@ -16,7 +18,7 @@ const routes = [
   {
     path: '/tabs/',
     component: TabsLayout,
-    children: buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage }),
+    children: buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },
 ]

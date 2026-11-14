@@ -3,7 +3,12 @@ import { buildTabRoutes } from './tabRoutes.js'
 const stub = { render: () => null }
 const passwordStub = { render: () => null }
 const deviceStub = { render: () => null }
-const routes = buildTabRoutes({ ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub })
+const notifStub = { render: () => null }
+const notifSettingsStub = { render: () => null }
+const routes = buildTabRoutes({
+  ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
+  NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub,
+})
 const find = (path) => routes.find((r) => r.path === path)
 
 describe('buildTabRoutes', () => {
@@ -28,6 +33,16 @@ describe('buildTabRoutes', () => {
 
   it('opens a device page under the Profil tab', () => {
     expect(find('profil/device/:id').component).toBe(deviceStub)
+  })
+
+  it('has the notifications pages', () => {
+    expect(find('notifikasi').component).toBe(notifStub)
+    expect(find('notifikasi/atur').component).toBe(notifSettingsStub)
+  })
+
+  it('gives tab root pages the bell, detail module pages not', () => {
+    expect(find('home').props.bell).toBe(true)
+    expect(find('menu/tagihan').props.bell).toBeFalsy()
   })
 
   it('redirects the empty tab path to Beranda', () => {
