@@ -8,6 +8,7 @@ import { PhChartPieSlice, PhCheckCircle, PhHouse, PhSquaresFour, PhUserCircle } 
 export const categories = [
   { key: 'keuangan', label: 'Keuangan' },
   { key: 'produktivitas', label: 'Produktivitas' },
+  { key: 'pribadi', label: 'Pribadi' },
 ]
 
 export const modules = [
@@ -24,6 +25,8 @@ export const modules = [
   { key: 'todo', label: 'To-do', emoji: '✅', tint: '#E4F7C4', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCheckCircle },
   { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'soon' },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
+  // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
+  { key: 'kalender-dia', label: 'Kalender Dia', emoji: '🌙', tint: '#E9E4FF', category: 'pribadi', status: 'soon' },
 ]
 
 /** Modul di tab bar → /tabs/<key>. Lainnya di bawah /tabs/menu, biar tab "Semua menu" tetap nyala & back ke sana. */
