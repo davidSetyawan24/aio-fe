@@ -35,25 +35,37 @@ import { PhPlus } from '@phosphor-icons/vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { rpShort } from '@/lib/wallet.js'
+import { localToday } from '@/lib/duit.js'
 import { useCategoriesStore } from '@/stores/categories.js'
-
-const props = defineProps({
-  /** Pemakaian bulan ini per kategori: { [id]: { count, total } } (diisi halaman Duit kalau udah ada datanya). */
-  usage: { type: Object, default: () => ({}) },
-})
+import { useExpensesStore } from '@/stores/expenses.js'
 
 const ionRouter = useIonRouter()
 const categories = useCategoriesStore()
+const expenses = useExpensesStore()
 const error = ref('')
+const month = localToday().slice(0, 7)
+
+/** Pemakaian bulan ini per kategori: { [id]: { count, total } }. */
+const usage = computed(() => {
+  const out = {}
+  for (const e of expenses.months[month] ?? []) {
+    const u = (out[e.category.id] ??= { count: 0, total: 0 })
+    u.count += 1
+    u.total += e.amount
+  }
+  return out
+})
 
 const subtitle = computed(() => (categories.loaded ? `${categories.items.length} kategori` : 'Bentar ya…'))
-const stat = (c) => props.usage[c.id] ?? { count: 0, total: 0 }
+const stat = (c) => usage.value[c.id] ?? { count: 0, total: 0 }
 const statLine = (c) => (stat(c).count ? `${stat(c).count} catatan bulan ini` : 'Kategori pengeluaran')
 
 onIonViewWillEnter(async () => {
   try {
     await categories.load()
     error.value = ''
+    // Angka "N catatan bulan ini" — kalau gagal dimuat, daftar kategori tetep tampil.
+    expenses.loadMonth(month).catch(() => {})
   } catch (err) {
     error.value = apiErrorMessage(err)
   }

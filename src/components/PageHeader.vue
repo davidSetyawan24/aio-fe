@@ -2,10 +2,10 @@
   <header class="page-head">
     <button v-if="backTo" class="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />{{ backLabel }}</button>
     <div class="head-top">
-      <span class="eyebrow rise"><span class="dot" />{{ eyebrow }}</span>
+      <span v-if="eyebrow" class="eyebrow rise"><span class="dot" />{{ eyebrow }}</span>
       <NotifBell v-if="bell" class="rise" />
     </div>
-    <h1 class="h1 rise" style="--i: 1"><slot /></h1>
+    <h1 v-if="$slots.default" class="h1 rise" style="--i: 1"><slot /></h1>
   </header>
 </template>
 
@@ -15,7 +15,7 @@ import { PhCaretLeft } from '@phosphor-icons/vue'
 import NotifBell from './NotifBell.vue'
 
 const props = defineProps({
-  eyebrow: { type: String, required: true },
+  eyebrow: { type: String, default: '' },
   backTo: { type: String, default: '' },
   backLabel: { type: String, default: 'Semua menu' },
   /** Lonceng notif di pojok kanan atas — cuma halaman utama (akar tiap tab). */

@@ -7,12 +7,14 @@ const walletStub = { render: () => null }
 const walletFormStub = { render: () => null }
 const notifStub = { render: () => null }
 const categoryStub = { render: () => null }
+const duitStub = { render: () => null }
+const expenseFormStub = { render: () => null }
 const categoryFormStub = { render: () => null }
 const notifSettingsStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
-  CategoryPage: categoryStub, CategoryFormPage: categoryFormStub,
+  CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -29,7 +31,12 @@ describe('buildTabRoutes', () => {
 
   it('sends the old Duit tab link to the Uang tab', () => {
     expect(find('duit').redirect).toBe('/tabs/uang')
-    expect(find('menu/duit').props).toMatchObject({ title: 'Duit', backTo: '/tabs/menu' })
+  })
+
+  it('opens Duit, the Catat screen and an expense under Semua menu', () => {
+    expect(find('menu/duit').component).toBe(duitStub)
+    expect(find('menu/duit/catat').component).toBe(expenseFormStub)
+    expect(find('menu/duit/:id').component).toBe(expenseFormStub)
   })
 
   it('redirects old links to the new module pages', () => {

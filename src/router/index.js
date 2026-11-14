@@ -6,6 +6,8 @@ import CategoryPage from '@/views/CategoryPage.vue'
 import ChangePasswordPage from '@/views/ChangePasswordPage.vue'
 import ComingSoon from '@/views/ComingSoon.vue'
 import DevicePage from '@/views/DevicePage.vue'
+import DuitPage from '@/views/DuitPage.vue'
+import ExpenseFormPage from '@/views/ExpenseFormPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import MenuPage from '@/views/MenuPage.vue'
 import NotificationSettingsPage from '@/views/NotificationSettingsPage.vue'
@@ -24,7 +26,7 @@ const routes = [
     component: TabsLayout,
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
-      CategoryPage, CategoryFormPage,
+      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },

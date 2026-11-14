@@ -5,9 +5,9 @@ const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', agenda: '/tabs/menu/agenda', 
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
-  const ready = { kartu: WalletPage, kategori: CategoryPage }
+  const ready = { duit: DuitPage, kartu: WalletPage, kategori: CategoryPage }
   const moduleRoutes = modules.map((m) => {
     const path = modulePath(m).replace('/tabs/', '')
     if (ready[m.key]) return { path, component: ready[m.key] }
@@ -23,6 +23,8 @@ export function buildTabRoutes(pages) {
     { path: 'profil/device/:id', component: DevicePage },
     { path: 'menu/kartu/tambah', component: WalletFormPage },
     { path: 'menu/kartu/:id', component: WalletFormPage },
+    { path: 'menu/duit/catat', component: ExpenseFormPage },
+    { path: 'menu/duit/:id', component: ExpenseFormPage },
     { path: 'menu/kategori/tambah', component: CategoryFormPage },
     { path: 'menu/kategori/:id', component: CategoryFormPage },
     { path: 'notifikasi', component: NotificationsPage },
