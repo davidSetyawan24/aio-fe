@@ -23,6 +23,8 @@ const cash = { id: 1, kind: 'cash', bank: null, name: 'Cash', favorite: true }
 const jago = { id: 3, kind: 'debit', bank: 'Jago', name: 'Jago Utama', favorite: true }
 const bni = { id: 5, kind: 'cc', bank: 'BNI', name: 'BNI Gold', favorite: false }
 const summary = { today: '2026-11-14', todayTotal: 68000, todayCount: 3, monthTotal: 900000, last7Days: [], lastSourceId: 3 }
+/** Angka jatah di ringkasan (null = belum pasang budget). */
+let budget = null
 
 let apis
 const mounted = []
@@ -39,7 +41,7 @@ async function mountForm(props = {}) {
     wallet: { get: vi.fn(async () => ({ sources: [cash, jago, bni] })) },
     expenses: {
       get: vi.fn(async (url) => {
-        if (url === '/expenses/summary') return summary
+        if (url === '/expenses/summary') return { ...summary, budget }
         if (url === '/expenses/suggestions') return { suggestions: [{ note: 'Kopi Kenangan', categoryId: 2 }, { note: 'Superindo', categoryId: null }] }
         return { month: '2026-11', expenses: [] }
       }),
@@ -82,6 +84,7 @@ beforeEach(() => {
   sheetCreate.mockReset().mockResolvedValue(sheet)
 })
 afterEach(() => {
+  budget = null
   mounted.splice(0).forEach((w) => w.unmount())
   document.body.innerHTML = ''
 })
@@ -288,5 +291,52 @@ describe('ExpenseForm — ubah', () => {
   it('says a past-date expense does not count for today', async () => {
     const w = await mountForm({ expense: old })
     expect(w.find('[data-test="today-hint"]').text()).toBe('catatan tanggal lain · nggak masuk hitungan hari ini')
+  })
+})
+
+describe('ExpenseForm — sisa jatah (udah pasang budget)', () => {
+  const hint = (w) => w.find('[data-test="today-hint"]')
+  const old = {
+    id: 7, spentOn: '2026-11-10', amount: 18000, note: 'Fore',
+    category: { id: 2, name: 'Ngopi', emoji: '☕', tint: '#FFF3B8', archived: false },
+    source: { id: 3, name: 'Jago Utama', kind: 'debit', bank: 'Jago', archived: false }, createdAt: '',
+  }
+  beforeEach(() => {
+    budget = { total: 2250000, jatahToday: 79400, todayLeft: 61400, monthLeft: 1332000, daysLeft: 17 }
+  })
+
+  it('shows what is left of today\'s allowance', async () => {
+    const w = await mountForm()
+    expect(hint(w).text()).toBe('sisa jatah hari ini Rp61.400')
+    expect(hint(w).find('[data-test="after"]').exists()).toBe(false)
+  })
+
+  it('shows what will be left after this expense, live', async () => {
+    const w = await mountForm()
+    await typeAmount(w, '10000')
+    expect(hint(w).find('[data-test="after"]').text()).toBe('→ Rp51.400')
+    expect(hint(w).find('[data-test="after"]').classes()).not.toContain('over')
+    await typeAmount(w, '70000')
+    expect(hint(w).find('[data-test="after"]').text()).toBe('→ minus Rp8.600')
+    expect(hint(w).find('[data-test="after"]').classes()).toContain('over')
+  })
+
+  it('says the allowance is already gone, and how far this goes past it', async () => {
+    budget = { ...budget, todayLeft: -5000 }
+    const w = await mountForm()
+    expect(hint(w).text()).toBe('jatah hari ini udah kelewat Rp5.000')
+    await typeAmount(w, '1000')
+    expect(hint(w).find('[data-test="after"]').text()).toBe('→ minus Rp6.000')
+  })
+
+  it('does not count the old amount twice when changing today\'s expense', async () => {
+    const w = await mountForm({ expense: { ...old, spentOn: '2026-11-14', amount: 20000 } })
+    expect(hint(w).text()).toContain('sisa jatah hari ini Rp81.400')
+    expect(hint(w).find('[data-test="after"]').text()).toBe('→ Rp61.400')
+  })
+
+  it('says an expense on another date does not touch today\'s allowance', async () => {
+    const w = await mountForm({ expense: old })
+    expect(hint(w).text()).toBe('catatan tanggal lain · nggak ngurangin jatah hari ini')
   })
 })

@@ -34,8 +34,13 @@
       </label>
       <div class="today-hint" data-test="today-hint">
         <template v-if="tooBig"><b class="bad">Nominal maksimal Rp1 miliar.</b></template>
-        <template v-else-if="date === today">hari ini udah keluar <b>{{ rp(todaySoFar) }}</b></template>
-        <template v-else>catatan tanggal lain · nggak masuk hitungan hari ini</template>
+        <template v-else-if="date !== today">catatan tanggal lain · {{ budgetLeft === null ? 'nggak masuk hitungan hari ini' : 'nggak ngurangin jatah hari ini' }}</template>
+        <template v-else-if="budgetLeft === null">hari ini udah keluar <b>{{ rp(todaySoFar) }}</b></template>
+        <template v-else>
+          <template v-if="budgetLeft >= 0">sisa jatah hari ini <b>{{ rp(budgetLeft) }}</b></template>
+          <template v-else>jatah hari ini udah kelewat <b>{{ rp(-budgetLeft) }}</b></template>
+          <span v-if="amount" class="after" :class="{ over: budgetAfter < 0 }" data-test="after">→ {{ budgetAfter < 0 ? `minus ${rp(-budgetAfter)}` : rp(budgetAfter) }}</span>
+        </template>
       </div>
     </div>
 
@@ -196,6 +201,13 @@ const todaySoFar = computed(() => {
   // Lagi ngubah catatan hari ini: nominal lamanya jangan diitung dua kali.
   return props.expense?.spentOn === today.value ? total - props.expense.amount : total
 })
+/** Sisa jatah hari ini sebelum catatan ini (null = belum pasang budget). Lagi ngubah catatan hari ini → nominal lamanya dibalikin dulu. */
+const budgetLeft = computed(() => {
+  const b = expenses.summary?.budget
+  if (!b) return null
+  return props.expense?.spentOn === today.value ? b.todayLeft + props.expense.amount : b.todayLeft
+})
+const budgetAfter = computed(() => (budgetLeft.value ?? 0) - amount.value)
 
 /* ---- tanggal ---- */
 function onDate(e) {
@@ -398,6 +410,9 @@ defineExpose({ pickJustCreated, focusAmount, reset, load })
 .today-hint { position: relative; font-size: 12.5px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .today-hint b { color: var(--text); }
 .today-hint .bad { color: var(--red); }
+.today-hint .after { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 9px; border-radius: 99px; font-weight: 700;
+  background: rgba(43, 168, 100, .12); color: var(--green); }
+.today-hint .after.over { background: rgba(240, 83, 61, .12); color: var(--red); }
 
 .group-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 22px 8px 10px; }
 .what { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 16px; border-radius: 18px; background: var(--soft); color: var(--muted); }

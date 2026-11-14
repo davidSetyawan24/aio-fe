@@ -8,7 +8,20 @@
 
         <div class="shell rise" style="--i: 2">
           <div class="hero" :class="{ roomy: wide }">
-            <div class="hero-text">
+            <div v-if="budget" class="hero-text">
+              <div class="k">Hari ini · {{ longDay(today) }}</div>
+              <div class="s" data-test="left-label">{{ over ? 'Jatah hari ini kelewat' : 'Sisa jatah hari ini' }}</div>
+              <div class="v left" :class="{ over }" data-test="left">{{ over ? `−${rp(-budget.todayLeft)}` : rp(budget.todayLeft) }}</div>
+              <div class="meter" :class="{ over }" data-test="meter"><i :style="{ width: `${meter}%` }" /></div>
+              <div class="facts budget-facts" data-test="budget-facts">
+                <span class="fact">jatah <b>{{ rp(budget.jatahToday) }}</b></span>
+                <span class="fact">udah keluar <b>{{ rp(summary?.todayTotal ?? 0) }}</b></span>
+                <span v-if="budget.monthLeft >= 0" class="fact">sisa budget bulan ini <b>{{ rpShort(budget.monthLeft) }}</b></span>
+                <span v-else class="fact bad">budget bulan ini kelewat <b>{{ rpShort(-budget.monthLeft) }}</b></span>
+                <span class="fact"><b>{{ budget.daysLeft }}</b> hari lagi</span>
+              </div>
+            </div>
+            <div v-else class="hero-text">
               <div class="k">Hari ini · {{ longDay(today) }}</div>
               <div class="s">Keluar hari ini</div>
               <div class="v" data-test="today-total">{{ rp(summary?.todayTotal ?? 0) }}</div>
@@ -79,7 +92,7 @@ import ExpenseForm from '@/components/ExpenseForm.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { barLabel, groupByDay, localToday, longDay, monthName, prevMonth, weekdayShort } from '@/lib/duit.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
-import { rp } from '@/lib/wallet.js'
+import { rp, rpShort } from '@/lib/wallet.js'
 import { useExpensesStore } from '@/stores/expenses.js'
 
 const ionRouter = useIonRouter()
@@ -102,6 +115,15 @@ onBeforeUnmount(() => query?.removeEventListener?.('change', onMedia))
 const summary = computed(() => expenses.summary)
 const today = computed(() => summary.value?.today ?? localToday())
 const currentMonth = computed(() => today.value.slice(0, 7))
+/** Angka jatah harian (null = belum pasang budget → kartu tetep "Keluar hari ini"). */
+const budget = computed(() => summary.value?.budget ?? null)
+const over = computed(() => (budget.value?.todayLeft ?? 0) < 0)
+const meter = computed(() => {
+  const jatah = budget.value?.jatahToday ?? 0
+  const spent = summary.value?.todayTotal ?? 0
+  if (!jatah) return spent ? 100 : 0
+  return Math.min(100, (spent / jatah) * 100)
+})
 /** Bulan yang lagi ditampilin (bulan ini + yang dibuka lewat "Lihat bulan …"). */
 const extraMonths = ref([])
 const shownMonths = computed(() => [currentMonth.value, ...extraMonths.value])
@@ -186,6 +208,14 @@ function onSideSaved(_expense, again) {
 .k { font-size: 12px; font-weight: 600; color: rgba(243, 242, 238, .6); }
 .s { display: block; font-size: 12.5px; color: rgba(243, 242, 238, .6); margin-top: 6px; }
 .v { margin-top: 2px; font-size: 40px; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.v.left { color: var(--lime); }
+.v.left.over { color: #FF8A73; }
+.meter { position: relative; height: 8px; border-radius: 99px; background: rgba(243, 242, 238, .14); margin-top: 14px; overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 99px; background: var(--lime); transform-origin: left; animation: grow-x 1s var(--spring) both; }
+.meter.over i { background: #FF8A73; }
+@keyframes grow-x { from { transform: scaleX(0); } }
+.budget-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.fact.bad, .fact.bad b { color: #FF8A73; }
 .bars { position: relative; display: flex; align-items: flex-end; gap: 8px; height: 74px; margin-top: 16px; }
 .bar { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; }
 .bar i { display: block; width: 100%; max-width: 28px; border-radius: 8px; background: rgba(243, 242, 238, .16); transform-origin: bottom;

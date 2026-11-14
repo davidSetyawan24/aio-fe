@@ -25,10 +25,12 @@ const summary = {
 }
 
 let expensesApi
+/** Angka jatah di ringkasan (null = belum pasang budget). */
+let budget = null
 async function mountPage() {
   expensesApi = {
     get: vi.fn(async (url) => {
-      if (url === '/expenses/summary') return summary
+      if (url === '/expenses/summary') return { ...summary, budget }
       if (url === '/expenses/suggestions') return { suggestions: [] }
       if (url === '/expenses?month=2026-10') return { month: '2026-10', expenses: october }
       return { month: '2026-11', expenses: november }
@@ -47,7 +49,10 @@ async function mountPage() {
   return w
 }
 
-beforeEach(() => ionRouter.push.mockClear())
+beforeEach(() => {
+  ionRouter.push.mockClear()
+  budget = null
+})
 
 describe('DuitPage', () => {
   it('shows this month\'s total and today in the black card', async () => {
@@ -85,6 +90,35 @@ describe('DuitPage', () => {
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/duit/3')
     await w.find('[data-test="add"]').trigger('click')
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/duit/catat')
+  })
+
+  describe('with a budget', () => {
+    beforeEach(() => {
+      budget = { total: 2250000, jatahToday: 79400, todayLeft: 34400, monthLeft: 1332000, daysLeft: 17 }
+    })
+
+    it('shows what is left of today\'s allowance instead of what went out', async () => {
+      const w = await mountPage()
+      expect(w.find('[data-test="left-label"]').text()).toBe('Sisa jatah hari ini')
+      expect(w.find('[data-test="left"]').text()).toBe('Rp34.400')
+      expect(w.find('[data-test="left"]').classes()).not.toContain('over')
+      const facts = w.find('[data-test="budget-facts"]').text()
+      expect(facts).toContain('jatah Rp79.400')
+      expect(facts).toContain('udah keluar Rp45.000')
+      expect(facts).toContain('sisa budget bulan ini Rp1,3jt')
+      expect(facts).toContain('17 hari lagi')
+      expect(w.find('[data-test="today-total"]').exists()).toBe(false)
+      expect(w.findAll('[data-test="bar"]')).toHaveLength(7)
+    })
+
+    it('shows the overrun in coral once today went past the allowance', async () => {
+      budget = { ...budget, todayLeft: -5000 }
+      const w = await mountPage()
+      expect(w.find('[data-test="left-label"]').text()).toBe('Jatah hari ini kelewat')
+      expect(w.find('[data-test="left"]').text()).toBe('−Rp5.000')
+      expect(w.find('[data-test="left"]').classes()).toContain('over')
+      expect(w.find('[data-test="meter"]').classes()).toContain('over')
+    })
   })
 
   describe('on a wide screen (iPad landscape / Mac)', () => {
