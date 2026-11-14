@@ -72,7 +72,10 @@ const ionRouter = useIonRouter()
 const devices = useDevicesStore()
 
 const ready = ref(devices.loaded)
-const device = computed(() => devices.byId(route.params.id))
+// Id dibaca SEKALI pas halaman dibikin: Ionic nyimpen halaman ketumpuk tetep hidup, sementara route global bisa
+// pindah ke halaman lain yang juga punya :id (mis. menu/kartu/1).
+const pageId = route.params.id
+const device = computed(() => devices.byId(pageId))
 const title = computed(() => displayName(device.value))
 const seen = computed(() => activeLabel(device.value.lastUsedAt, new Date(), device.value.current))
 const info = computed(() => [
