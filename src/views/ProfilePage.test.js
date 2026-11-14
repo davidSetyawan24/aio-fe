@@ -96,3 +96,43 @@ describe('ProfilePage — lonceng', () => {
     expect(wrapper.find('[data-test="bell"]').exists()).toBe(true)
   })
 })
+
+describe('ProfilePage — PC (layar lebar)', () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+  })
+  afterEach(() => {
+    delete window.matchMedia
+  })
+
+  it('shows the dashboard instead of the phone list: account card with counts and a Keluar button', async () => {
+    const { wrapper } = await mountProfile()
+    expect(wrapper.find('[data-test="pc"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="phone"]').exists()).toBe(false)
+    const card = wrapper.find('[data-test="pc-account"]')
+    expect(card.text()).toContain('David Setyawan')
+    expect(card.text()).toContain('2 device lagi login')
+    expect(card.text()).toContain('tema Ikut sistem')
+    expect(card.find('[data-test="pc-logout"]').exists()).toBe(true)
+  })
+
+  it('picks the theme from three preview tiles', async () => {
+    const { wrapper, theme } = await mountProfile()
+    const tiles = wrapper.findAll('[data-test="theme-tile"]')
+    expect(tiles.map((t) => t.find('.t-label').text())).toEqual(['Ikut sistem', 'Terang', 'Gelap'])
+    expect(tiles.map((t) => t.attributes('aria-checked'))).toEqual(['true', 'false', 'false'])
+    await tiles[1].trigger('click')
+    expect(theme.pref).toBe('light')
+    expect(wrapper.findAll('[data-test="theme-tile"]')[1].attributes('aria-checked')).toBe('true')
+  })
+
+  it('shows the devices as cards and opens one', async () => {
+    const { wrapper } = await mountProfile()
+    const cards = wrapper.findAll('[data-test="device-card"]')
+    expect(cards).toHaveLength(2)
+    expect(cards[0].classes()).toContain('current')
+    expect(cards[0].text()).toContain('device ini')
+    await cards[1].trigger('click')
+    expect(ionRouter.push).toHaveBeenCalledWith('/tabs/profil/device/2')
+  })
+})

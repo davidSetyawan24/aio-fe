@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true">
-      <div class="page narrow">
+      <div v-if="!wide" class="page narrow" data-test="phone">
         <PageHeader eyebrow="Profil" bell>{{ firstName }}.<br /><span>@{{ auth.user?.username }}</span></PageHeader>
 
         <div class="shell rise" style="--i: 2">
@@ -64,12 +64,89 @@
         </button>
         <p class="hint rise" style="--i: 7">Keluar cuma ngehapus sesi di device ini.</p>
       </div>
+
+      <!-- PC / iPad landscape: dasbor full selebar layar (HP di atas nggak berubah). -->
+      <div v-else class="page pc" data-test="pc">
+        <PageHeader eyebrow="Profil" bell>{{ firstName }}. <span>@{{ auth.user?.username }}</span></PageHeader>
+
+        <div class="pc-grid">
+          <div class="c12 shell rise" style="--i: 2">
+            <div class="pc-me" data-test="pc-account">
+              <span class="big">{{ auth.initials }}</span>
+              <div class="grow">
+                <div class="nm">{{ auth.user?.name }}</div>
+                <div class="un">@{{ auth.user?.username }}</div>
+                <div class="facts">
+                  <span v-if="devices.loaded" class="fact"><b>{{ devices.items.length }}</b> device lagi login</span>
+                  <span class="fact">tema <b>{{ currentThemeLabel }}</b></span>
+                </div>
+              </div>
+              <button class="out" data-test="pc-logout" @click="confirmLogout">Keluar <span class="ic"><PhSignOut :size="17" weight="bold" /></span></button>
+            </div>
+          </div>
+
+          <section class="c8 sec rise" style="--i: 3">
+            <div class="pc-label">Tampilan <small>berlaku di device ini aja</small></div>
+            <div class="shell">
+              <div class="core themes" role="radiogroup" aria-label="Tema">
+                <button v-for="opt in themeOptions" :key="opt.value" class="tile" :class="{ on: theme.pref === opt.value }" role="radio" data-test="theme-tile"
+                  :aria-checked="String(theme.pref === opt.value)" @click="theme.setPref(opt.value)">
+                  <span class="pv" :class="opt.value" aria-hidden="true">
+                    <span v-for="half in previewHalves(opt.value)" :key="half" class="half" :class="half">
+                      <span class="sb"><i /><i /><i /></span>
+                      <span class="ct"><span class="hero" /><i /><i class="short" /></span>
+                    </span>
+                  </span>
+                  <span class="t"><span class="t-label">{{ opt.label }}</span><span class="radio"><PhCheck :size="13" weight="bold" /></span></span>
+                  <span class="s">{{ opt.sub }}</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="c4 sec rise" style="--i: 3">
+            <div class="pc-label">Keamanan</div>
+            <div class="shell">
+              <div class="core sec-list">
+                <button class="item" data-test="ganti-password" @click="ionRouter.push('/tabs/profil/password')">
+                  <span class="em" style="background: #E4F7C4">🔒</span>
+                  <span class="grow"><span class="title">Ganti password</span><span class="sub">Device lain ikut ke-logout</span></span>
+                  <PhCaretRight :size="18" class="go" />
+                </button>
+                <p class="hint">Keluar (tombol di kartu akun) cuma ngehapus sesi di device ini.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="c12 rise" style="--i: 4">
+            <div class="pc-label">Device yang lagi login <small v-if="devices.loaded">{{ devices.items.length }}</small></div>
+            <div class="shell">
+              <div class="core devs">
+                <p v-if="!devices.loaded" class="empty">{{ devicesError || 'Lagi ngambil daftar device…' }}</p>
+                <button v-for="d in devices.items" :key="d.id" class="dev" :class="{ current: d.current }" data-test="device-card"
+                  @click="ionRouter.push(`/tabs/profil/device/${d.id}`)">
+                  <span class="top">
+                    <span class="em" :style="{ background: kindLook(d.kind).tint }"><component :is="kindLook(d.kind).icon" :size="21" /></span>
+                    <span v-if="d.current" class="chip-me">device ini</span>
+                    <PhCaretRight v-else :size="16" class="go" />
+                  </span>
+                  <span>
+                    <span class="title">{{ displayName(d) }}</span>
+                    <span class="sub"><span v-if="d.current" class="dot-on" />{{ d.kind }} · {{ activeLabel(d.lastUsedAt, new Date(), d.current) }}</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+            <p class="hint">Klik device buat ganti nama atau keluarin.</p>
+          </section>
+        </div>
+      </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { actionSheetController, IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import { PhCaretRight, PhCheck, PhDeviceMobile, PhMoon, PhSignOut, PhSun } from '@phosphor-icons/vue'
@@ -92,6 +169,17 @@ const themeOptions = computed(() => [
   { value: 'light', label: 'Terang', sub: 'Selalu terang', icon: PhSun, tint: '#FFE9D6' },
   { value: 'dark', label: 'Gelap', sub: 'Selalu gelap', icon: PhMoon, tint: '#DCEBFF' },
 ])
+
+const currentThemeLabel = computed(() => themeOptions.value.find((o) => o.value === theme.pref)?.label ?? '')
+/** Gambar mini app di kartu tema: "Ikut sistem" = separuh terang, separuh gelap. */
+const previewHalves = (value) => (value === 'system' ? ['light', 'dark'] : [value])
+
+/* PC / iPad landscape (≥1100px) pakai dasbor; HP tetep list satu kolom. */
+const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null
+const wide = ref(Boolean(query?.matches))
+const onMedia = (e) => (wide.value = e.matches)
+query?.addEventListener?.('change', onMedia)
+onBeforeUnmount(() => query?.removeEventListener?.('change', onMedia))
 
 // Device yang lagi login: dimuat ulang tiap Profil kebuka (abis rename/keluarin di halaman device, atau balik dari tab lain).
 const devices = useDevicesStore()
@@ -148,4 +236,69 @@ async function confirmLogout() {
 .logout { margin-top: 26px; width: 100%; justify-content: space-between; height: 58px; padding: 8px 8px 8px 22px; font-size: 16px; }
 .logout .ic { width: 42px; height: 42px; background: rgba(240, 83, 61, 0.14); color: var(--red); }
 .hint { color: var(--muted); font-size: 12.5px; margin: 14px 4px 0; }
+
+/* ===== PC (dasbor full) — semua di bawah .pc, HP nggak kena ===== */
+.pc { max-width: none; padding-left: 48px; padding-right: 48px; padding-bottom: 60px; }
+.pc :deep(.h1 span) { margin-left: .2em; }
+.pc-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; }
+.c12 { grid-column: span 12; } .c8 { grid-column: span 8; } .c4 { grid-column: span 4; }
+.sec { display: flex; flex-direction: column; }
+.sec > .shell { flex: 1; }
+.sec > .shell > .core { height: 100%; }
+.pc-label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em;
+  color: var(--muted); margin: 0 10px 10px; }
+.pc-label small { font-size: 12px; letter-spacing: .02em; text-transform: none; color: var(--text); font-weight: 700; }
+.pc .hint { margin: 10px 10px 0; }
+
+.pc-me { position: relative; overflow: hidden; display: flex; align-items: center; gap: 22px; padding: 26px 28px; border-radius: 25px; background: #141410; color: #F3F2EE; }
+.pc-me::before { content: ''; position: absolute; right: -60px; top: -140px; width: 420px; height: 420px; border-radius: 99px;
+  background: radial-gradient(circle, rgba(200, 240, 74, .2), transparent 65%); pointer-events: none; }
+.pc-me .big { position: relative; width: 84px; height: 84px; border-radius: 28px; background: var(--lime); color: var(--lime-ink); display: grid; place-items: center;
+  font-weight: 800; font-size: 36px; box-shadow: 0 18px 40px -16px rgba(200, 240, 74, .5); flex-shrink: 0; }
+.pc-me .grow { position: relative; }
+.pc-me .nm { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.pc-me .un { color: rgba(243, 242, 238, .6); font-size: 14px; margin-top: 2px; }
+.pc-me .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pc-me .fact { padding: 6px 11px; border-radius: 99px; background: rgba(243, 242, 238, .08); font-size: 12px; font-weight: 600; color: rgba(243, 242, 238, .75); }
+.pc-me .fact b { color: #F3F2EE; }
+.out { position: relative; display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 6px 6px 6px 20px; border: 0; border-radius: 99px;
+  background: rgba(243, 242, 238, .1); color: #F3F2EE; font: 600 15px var(--ion-font-family); cursor: pointer; transition: transform .3s var(--spring); }
+.out:active { transform: scale(.97); }
+.out .ic { width: 38px; height: 38px; border-radius: 99px; display: grid; place-items: center; background: rgba(240, 83, 61, .18); color: #FF8A73; }
+
+.themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px; }
+.tile { display: block; border: 0; border-radius: 20px; padding: 10px; background: var(--soft); color: var(--text); text-align: left; font: inherit; cursor: pointer;
+  transition: transform .3s var(--spring), background-color .3s; }
+.tile:hover { transform: translateY(-2px); }
+.tile.on { background: var(--card); box-shadow: inset 0 0 0 2px var(--ink); }
+.pv { display: flex; height: 108px; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px var(--hair); }
+.half { flex: 1; display: grid; grid-template-columns: 30% 1fr; }
+.half.light { background: #F3F2EE; } .half.dark { background: #0B0B0A; }
+.pv.system .half { grid-template-columns: 34% 1fr; }
+.sb { display: flex; flex-direction: column; gap: 6px; padding: 10px 8px; }
+.ct { display: flex; flex-direction: column; gap: 7px; padding: 10px; }
+.sb i, .ct i { display: block; height: 7px; border-radius: 9px; }
+.ct i.short { width: 70%; }
+.light .sb i, .light .ct i { background: #E1E0DA; } .dark .sb i, .dark .ct i { background: #2A2A27; }
+.ct .hero { position: relative; height: 34px; border-radius: 9px; background: #141410; }
+.dark .ct .hero { background: #1E1E1B; }
+.ct .hero::after { content: ''; position: absolute; right: 8px; bottom: 7px; width: 8px; height: 16px; border-radius: 3px; background: var(--lime); }
+.tile .t { display: flex; align-items: center; justify-content: space-between; margin: 12px 4px 2px; font-weight: 700; font-size: 15px; }
+.tile .s { display: block; margin: 0 4px 4px; font-size: 12.5px; color: var(--muted); }
+.tile .radio { width: 24px; height: 24px; }
+.tile.on .radio { background: var(--lime); color: var(--lime-ink); box-shadow: 0 6px 16px -6px rgba(200, 240, 74, 0.9); }
+
+.sec-list { padding: 8px; }
+.pc .item:hover { background: var(--soft); }
+
+.devs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 12px; }
+.dev { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 0; border-radius: 20px; background: var(--soft); color: var(--text); text-align: left;
+  font: inherit; cursor: pointer; transition: transform .3s var(--spring); }
+.dev:hover { transform: translateY(-2px); }
+.dev.current { background: var(--card); box-shadow: inset 0 0 0 2px var(--lime); }
+.dev .top { display: flex; align-items: center; justify-content: space-between; }
+.dev .em { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: #141410; }
+.dev .title, .dev .sub { display: block; }
+.dev .go { color: var(--muted); }
+.dev .chip-me { margin-left: 0; }
 </style>
