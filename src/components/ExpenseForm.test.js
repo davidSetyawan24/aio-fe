@@ -335,8 +335,41 @@ describe('ExpenseForm — sisa jatah (udah pasang budget)', () => {
     expect(hint(w).find('[data-test="after"]').text()).toBe('→ Rp61.400')
   })
 
-  it('says an expense on another date does not touch today\'s allowance', async () => {
+  // Angka yang nyambung: budget 2.250.000, s.d. kemarin keluar 900.000, hari ini 68.000, sisa 17 hari → jatah 79.400.
+  const real = { total: 2250000, jatahToday: 79400, todayLeft: 11400, monthLeft: 1282000, daysLeft: 17 }
+  const pickDate = async (w, value) => {
+    const el = w.find('[data-test="date"]')
+    el.element.value = value
+    await el.trigger('change')
+  }
+
+  it('says an earlier day this month still lowers today\'s allowance, and to how much', async () => {
+    budget = real
+    const w = await mountForm()
+    await pickDate(w, '2026-11-12')
+    expect(hint(w).text()).toBe('catatan tanggal lain · tetep ngurangin jatah hari ini')
+    await typeAmount(w, '34000')
+    // (2.250.000 − 900.000 − 34.000) ÷ 17 = 77.411 → 77.400
+    expect(hint(w).text()).toBe('catatan tanggal lain · jatah hari ini jadi Rp77.400')
+  })
+
+  it('does not count an earlier expense twice when changing it', async () => {
+    budget = real
     const w = await mountForm({ expense: old })
-    expect(hint(w).text()).toBe('catatan tanggal lain · nggak ngurangin jatah hari ini')
+    expect(hint(w).text()).toBe('catatan tanggal lain · jatah hari ini tetep Rp79.400')
+  })
+
+  it('moving today\'s expense to an earlier day lowers today\'s allowance', async () => {
+    budget = real
+    const w = await mountForm({ expense: { ...old, spentOn: '2026-11-14', amount: 34000 } })
+    await pickDate(w, '2026-11-12')
+    expect(hint(w).text()).toBe('catatan tanggal lain · jatah hari ini jadi Rp77.400')
+  })
+
+  it('says an expense in an earlier month does not touch today\'s allowance', async () => {
+    const w = await mountForm()
+    await pickDate(w, '2026-10-30')
+    await typeAmount(w, '34000')
+    expect(hint(w).text()).toBe('catatan bulan lain · nggak ngaruh ke jatah hari ini')
   })
 })

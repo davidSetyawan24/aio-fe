@@ -34,7 +34,8 @@
       </label>
       <div class="today-hint" data-test="today-hint">
         <template v-if="tooBig"><b class="bad">Nominal maksimal Rp1 miliar.</b></template>
-        <template v-else-if="date !== today">catatan tanggal lain · {{ budgetLeft === null ? 'nggak masuk hitungan hari ini' : 'nggak ngurangin jatah hari ini' }}</template>
+        <template v-else-if="date !== today && budgetLeft === null">catatan tanggal lain · nggak masuk hitungan hari ini</template>
+        <template v-else-if="date !== today">{{ pastHint }}</template>
         <template v-else-if="budgetLeft === null">hari ini udah keluar <b>{{ rp(todaySoFar) }}</b></template>
         <template v-else>
           <template v-if="budgetLeft >= 0">sisa jatah hari ini <b>{{ rp(budgetLeft) }}</b></template>
@@ -208,6 +209,20 @@ const budgetLeft = computed(() => {
   return props.expense?.spentOn === today.value ? b.todayLeft + props.expense.amount : b.todayLeft
 })
 const budgetAfter = computed(() => (budgetLeft.value ?? 0) - amount.value)
+/**
+ * Catatan tanggal lain. Bulan ini (sebelum hari ini) tetep ngurangin jatah hari ini: jatah = (budget − keluar s.d. kemarin) ÷ sisa hari.
+ * `monthLeft + todayTotal` = budget − keluar s.d. kemarin; nominal lama dibalikin kalau catatan ini udah ada di sebelum hari ini.
+ */
+const pastHint = computed(() => {
+  const b = expenses.summary?.budget
+  if (date.value.slice(0, 7) !== today.value.slice(0, 7)) return 'catatan bulan lain · nggak ngaruh ke jatah hari ini'
+  if (!amount.value) return 'catatan tanggal lain · tetep ngurangin jatah hari ini'
+  const old = props.expense
+  const back = old && old.spentOn < today.value && old.spentOn.slice(0, 7) === today.value.slice(0, 7) ? old.amount : 0
+  const left = b.monthLeft + (expenses.summary?.todayTotal ?? 0) - amount.value + back
+  const jatah = left > 0 ? Math.floor(left / b.daysLeft / 100) * 100 : 0
+  return `catatan tanggal lain · jatah hari ini ${jatah === b.jatahToday ? 'tetep' : 'jadi'} ${rp(jatah)}`
+})
 
 /* ---- tanggal ---- */
 function onDate(e) {
