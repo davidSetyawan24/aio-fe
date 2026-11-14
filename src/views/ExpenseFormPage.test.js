@@ -7,12 +7,15 @@ import { setWalletApi } from '@/stores/wallet.js'
 import ExpenseFormPage from './ExpenseFormPage.vue'
 
 const hooks = vi.hoisted(() => ({ didEnter: [] }))
+const sheet = vi.hoisted(() => ({ present: vi.fn(), onDidDismiss: vi.fn(async () => ({ data: 'delete' })) }))
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: () => {},
   onIonViewDidEnter: (fn) => hooks.didEnter.push(fn),
+  actionSheetController: { create: vi.fn(async () => sheet) },
+  toastController: { create: vi.fn(async () => ({ present: vi.fn() })) },
 }))
 
 const expense = {
@@ -25,11 +28,16 @@ async function mountPage(path) {
   hooks.didEnter = []
   setCategoriesApi({ get: vi.fn(async () => ({ categories: [expense.category] })) })
   setWalletApi({ get: vi.fn(async () => ({ sources: [] })) })
+  let list = [expense]
   setExpensesApi({
     get: vi.fn(async (url) => {
       if (url === '/expenses/summary') return { today: '2026-11-14', todayTotal: 0, todayCount: 0, monthTotal: 0, last7Days: [], lastSourceId: 1 }
       if (url === '/expenses/suggestions') return { suggestions: [] }
-      return { month: '2026-11', expenses: [expense] }
+      return { month: '2026-11', expenses: list }
+    }),
+    del: vi.fn(async () => {
+      list = []
+      return null
     }),
   })
   const pinia = createPinia()
@@ -48,6 +56,7 @@ async function mountPage(path) {
   return w
 }
 afterEach(() => (document.body.innerHTML = ''))
+beforeEach(() => ionRouter.back.mockClear())
 
 describe('ExpenseFormPage', () => {
   it('puts the cursor in the amount once the Catat screen is shown', async () => {
@@ -61,5 +70,12 @@ describe('ExpenseFormPage', () => {
     hooks.didEnter.forEach((fn) => fn())
     expect(w.find('[data-test="amount"]').element.value).toBe('18.000')
     expect(document.activeElement).not.toBe(w.find('[data-test="amount"]').element)
+  })
+
+  it('goes back after deleting the expense it shows', async () => {
+    const w = await mountPage('/tabs/menu/duit/7')
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(ionRouter.back).toHaveBeenCalled()
   })
 })

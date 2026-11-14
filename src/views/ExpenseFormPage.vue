@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { IonContent, IonPage, onIonViewDidEnter, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
 import ExpenseForm from '@/components/ExpenseForm.vue'
@@ -26,7 +26,8 @@ const expenses = useExpensesStore()
 
 // Dibaca SEKALI (Ionic nyimpen halaman ketumpuk tetep hidup; route global bisa pindah ke :id lain).
 const pageId = route.params.id
-const expense = computed(() => (pageId ? (expenses.byId(pageId) ?? null) : null))
+// Catatannya juga dipegang sekali: habis dihapus, store-nya kosong — form jangan sampai ilang sebelum sempat balik.
+const expense = ref(pageId ? (expenses.byId(pageId) ?? null) : null)
 const ready = ref(!pageId || Boolean(expense.value))
 const form = ref(null)
 
@@ -35,6 +36,7 @@ onMounted(async () => {
   // Dibuka langsung dari link: muat bulan ini dulu buat nyari catatannya.
   try {
     await expenses.loadMonth(localToday().slice(0, 7))
+    expense.value = expenses.byId(pageId) ?? null
   } finally {
     ready.value = true
   }

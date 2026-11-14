@@ -46,6 +46,8 @@ describe('categories store', () => {
     const store = useCategoriesStore()
     expect(store.takeJustCreated()).toBeNull()
     await store.create({ name: 'Hiburan', emoji: '🎬', tint: '#FFE0E6' })
+    expect(store.takeJustCreated()).toBeNull()
+    await store.create({ name: 'Hiburan', emoji: '🎬', tint: '#FFE0E6' }, { forCatat: true })
     expect(store.takeJustCreated()).toBe(9)
     expect(store.takeJustCreated()).toBeNull()
   })

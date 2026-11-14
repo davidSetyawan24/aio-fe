@@ -122,6 +122,13 @@ onIonViewWillEnter(() => {
   sideForm.value?.pickJustCreated()
 })
 
+// Balik dari background (mis. besok paginya) → angka hari ini & daftar diperbarui.
+function onVisible() {
+  if (document.visibilityState === 'visible' && loaded.value) refresh()
+}
+document.addEventListener('visibilitychange', onVisible)
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
+
 async function loadOlder() {
   if (loadingOlder.value) return
   const month = olderMonth.value

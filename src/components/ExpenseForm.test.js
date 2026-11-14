@@ -25,6 +25,7 @@ const bni = { id: 5, kind: 'cc', bank: 'BNI', name: 'BNI Gold', favorite: false 
 const summary = { today: '2026-11-14', todayTotal: 68000, todayCount: 3, monthTotal: 900000, last7Days: [], lastSourceId: 3 }
 
 let apis
+const mounted = []
 let pinia
 async function mountForm(props = {}) {
   let catList = [makan, ngopi]
@@ -54,6 +55,7 @@ async function mountForm(props = {}) {
   pinia = createPinia()
   setActivePinia(pinia)
   const w = mount(ExpenseForm, { props, global: { plugins: [pinia], stubs: { teleport: true } }, attachTo: document.body })
+  mounted.push(w)
   await flushPromises()
   return w
 }
@@ -80,6 +82,7 @@ beforeEach(() => {
   sheetCreate.mockReset().mockResolvedValue(sheet)
 })
 afterEach(() => {
+  mounted.splice(0).forEach((w) => w.unmount())
   document.body.innerHTML = ''
 })
 
@@ -127,13 +130,13 @@ describe('ExpenseForm — catat', () => {
     expect(w.find('[data-cat="2"]').classes()).toContain('on')
   })
 
-  it('records the expense with today, the note, category and source', async () => {
+  it('records the expense for today (server decides the date), with note, category and source', async () => {
     const w = await mountForm()
     await typeAmount(w, '18000')
     await typeNote(w, '  Kopi Kenangan ')
     await w.find('[data-cat="2"]').trigger('click')
     await submit(w)
-    expect(apis.expenses.post).toHaveBeenCalledWith('/expenses', { spentOn: '2026-11-14', amount: 18000, note: 'Kopi Kenangan', categoryId: 2, sourceId: 3 })
+    expect(apis.expenses.post).toHaveBeenCalledWith('/expenses', { amount: 18000, note: 'Kopi Kenangan', categoryId: 2, sourceId: 3 })
     expect(w.emitted('saved')[0][1]).toBe(false)
     expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Kecatet · Rp18.000 ☕ Ngopi' }))
   })
@@ -158,6 +161,39 @@ describe('ExpenseForm — catat', () => {
     expect(sheetEl).not.toBeNull()
     expect(real.element.contains(sheetEl)).toBe(false)
     real.unmount()
+  })
+
+  it('reloads today\'s numbers when the app comes back to the foreground', async () => {
+    await mountForm()
+    const before = apis.expenses.get.mock.calls.filter((c) => c[0] === '/expenses/summary').length
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(apis.expenses.get.mock.calls.filter((c) => c[0] === '/expenses/summary').length).toBe(before + 1)
+  })
+
+  it('keeps Simpan off after a successful save, so a late tap during the back animation adds nothing', async () => {
+    const w = await mountForm()
+    await typeAmount(w, '18000')
+    await w.find('[data-cat="2"]').trigger('click')
+    await submit(w)
+    expect(saveBtn(w).attributes('disabled')).toBeDefined()
+    await submit(w)
+    expect(apis.expenses.post).toHaveBeenCalledTimes(1)
+  })
+
+  it('counts the save as done even if refreshing the lists afterwards fails', async () => {
+    const w = await mountForm()
+    const get = apis.expenses.get.getMockImplementation()
+    apis.expenses.get.mockImplementation(async (url) => {
+      if (url === '/expenses/suggestions') throw new Error('putus')
+      return get(url)
+    })
+    await typeAmount(w, '18000')
+    await w.find('[data-cat="2"]').trigger('click')
+    await submit(w)
+    expect(w.emitted('saved')).toBeTruthy()
+    expect(w.find('[role="alert"]').exists()).toBe(false)
   })
 
   it('records only once when Simpan is tapped twice', async () => {
@@ -208,6 +244,17 @@ describe('ExpenseForm — catat', () => {
     expect(w.find('[data-cat="11"]').classes()).toContain('on')
     expect(w.find('[data-test="amount"]').element.value).toBe('75.000')
     expect(w.find('[data-test="note"]').element.value).toBe('Bioskop')
+  })
+})
+
+describe('ExpenseForm — kategori baru', () => {
+  it('ignores a category made elsewhere (not via Baru on this screen)', async () => {
+    const w = await mountForm()
+    await w.find('[data-cat="1"]').trigger('click')
+    useCategoriesStore().justCreatedId = 2
+    await w.vm.pickJustCreated()
+    await flushPromises()
+    expect(w.find('[data-cat="1"]').classes()).toContain('on')
   })
 })
 

@@ -116,7 +116,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { actionSheetController, toastController, useIonRouter } from '@ionic/vue'
 import { PhArrowCounterClockwise, PhCalendarBlank, PhCaretDown, PhCheck, PhPencilSimpleLine, PhPlus, PhTrash } from '@phosphor-icons/vue'
 import { dayLabel, filterSuggestions, formatAmount, localToday, parseAmount } from '@/lib/duit.js'
@@ -155,13 +155,17 @@ const error = ref('')
 const shake = ref(false)
 const busy = ref(null)
 const sheetOpen = ref(false)
+/** Udah kesimpen (bukan "catat lagi") → tombol mati sampai layar ditutup / form dikosongin. */
+const done = ref(false)
+/** Lagi nunggu kategori baru dari tombol "Baru" di layar ini. */
+let waitingForNew = false
 const amountEl = ref(null)
 const noteEl = ref(null)
 
 const date = computed(() => dateValue.value || today.value)
 const amount = computed(() => parseAmount(amountText.value))
 const tooBig = computed(() => amount.value > MAX_AMOUNT)
-const canSave = computed(() => amount.value > 0 && !tooBig.value && Boolean(categoryId.value) && Boolean(sourceId.value))
+const canSave = computed(() => !done.value && amount.value > 0 && !tooBig.value && Boolean(categoryId.value) && Boolean(sourceId.value))
 
 function fill(e) {
   dateValue.value = e?.spentOn ?? ''
@@ -170,6 +174,7 @@ function fill(e) {
   categoryId.value = e?.category.id ?? null
   sourceId.value = e?.source.id ?? expenses.summary?.lastSourceId ?? null
   error.value = ''
+  done.value = false
 }
 watch(() => props.expense, fill, { immediate: true })
 // Sumber dana default (yang terakhir dipakai) baru ketauan setelah ringkasan dateng.
@@ -210,10 +215,16 @@ const categoryChips = computed(() => {
 })
 const selectedCategory = computed(() => categoryChips.value.find((c) => c.id === categoryId.value))
 const blob = computed(() => (selectedCategory.value ? `radial-gradient(closest-side, ${selectedCategory.value.tint}, transparent)` : 'transparent'))
-const newCategory = () => ionRouter.push('/tabs/menu/kategori/tambah?from=catat')
+function newCategory() {
+  waitingForNew = true
+  ionRouter.push('/tabs/menu/kategori/tambah?from=catat')
+}
 
 /** Dipanggil pas balik dari form kategori baru: pilih kategori yang barusan dibikin, isian lain tetep. */
 async function pickJustCreated() {
+  // Kategori yang dibikin dari tempat lain (menu Kategori) jangan nyelonong ke catatan ini.
+  if (!waitingForNew) return
+  waitingForNew = false
   const id = categories.takeJustCreated()
   if (!id) return
   if (!categories.byId(id)) await categories.load().catch(() => {})
@@ -264,10 +275,12 @@ function doShake() {
 const showToast = async (message) => (await toastController.create({ message, duration: 2200, position: 'top', cssClass: 'aio-toast' })).present()
 
 function payload() {
-  const data = { spentOn: date.value, amount: amount.value, note: note.value.trim() || null, categoryId: categoryId.value, sourceId: sourceId.value }
+  // Tanggal nggak diubah → nggak dikirim, biar "hari ini"-nya diputusin server (WIB), bukan angka lama di layar.
+  const data = { ...(dateValue.value ? { spentOn: dateValue.value } : {}), amount: amount.value, note: note.value.trim() || null, categoryId: categoryId.value, sourceId: sourceId.value }
   if (!isEdit.value) return data
   const e = props.expense
   const before = { spentOn: e.spentOn, amount: e.amount, note: e.note ?? null, categoryId: e.category.id, sourceId: e.source.id }
+  data.spentOn = date.value
   return Object.fromEntries(Object.entries(data).filter(([k, v]) => v !== before[k]))
 }
 
@@ -276,12 +289,14 @@ function reset() {
   note.value = ''
   categoryId.value = null
   error.value = ''
+  done.value = false
 }
 
 async function save(again) {
   if (busy.value || !canSave.value) return
   const data = payload()
   const cat = selectedCategory.value
+  const savedAmount = amount.value
   busy.value = again ? 'again' : 'save'
   error.value = ''
   let saved = props.expense
@@ -295,7 +310,8 @@ async function save(again) {
   } finally {
     busy.value = null
   }
-  showToast(isEdit.value ? 'Disimpen.' : `Kecatet · ${rp(amount.value)} ${cat.emoji} ${cat.name}`)
+  if (!again) done.value = true
+  showToast(isEdit.value ? 'Disimpen.' : `Kecatet · ${rp(savedAmount)}${cat ? ` ${cat.emoji} ${cat.name}` : ''}`)
   emit('saved', saved, again)
   if (again) {
     reset()
@@ -346,10 +362,17 @@ async function load() {
 
 const focusAmount = () => amountEl.value?.focus()
 
+// Balik dari background (mis. iPad dibiarin semaleman) → "hari ini" & angkanya diperbarui.
+function onVisible() {
+  if (document.visibilityState === 'visible') expenses.loadSummary().catch(() => {})
+}
+
 onMounted(() => {
   if (props.autofocus) focusAmount()
   load()
+  document.addEventListener('visibilitychange', onVisible)
 })
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
 
 defineExpose({ pickJustCreated, focusAmount, reset, load })
 </script>

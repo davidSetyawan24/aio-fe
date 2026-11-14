@@ -135,7 +135,7 @@ async function save() {
   busy.value = true
   let saved
   try {
-    saved = isEdit.value ? await categories.update(original.value.id, data) : await categories.create(data)
+    saved = isEdit.value ? await categories.update(original.value.id, data) : await categories.create(data, { forCatat: fromCatat })
   } catch (err) {
     error.value = apiErrorMessage(err)
     doShake()

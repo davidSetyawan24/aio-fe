@@ -85,6 +85,13 @@ describe('CategoryFormPage — tambah', () => {
     expect(api.post).toHaveBeenCalledWith('/expense-categories', { name: 'Hiburan', emoji: '🎮', tint: '#D8F3EE' })
     expect(ionRouter.back).toHaveBeenCalled()
     expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Kategori baru · 🎮 Hiburan' }))
+    expect(useCategoriesStore().takeJustCreated()).toBeNull()
+  })
+
+  it('hands the new category to the Catat screen only when opened from there', async () => {
+    const w = await mountForm('/tabs/menu/kategori/tambah?from=catat')
+    typeName(w, 'Hiburan')
+    await save(w)
     expect(useCategoriesStore().takeJustCreated()).toBe(9)
   })
 

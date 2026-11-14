@@ -39,29 +39,32 @@ export const useExpensesStore = defineStore('expenses', {
       this.suggestions = suggestions
     },
 
-    /** Muat ulang ringkasan, saran, dan bulan-bulan yang kena (yang udah dibuka atau yang disebut). */
-    async refresh(dates) {
+    /**
+     * Muat ulang ringkasan, saran, dan bulan-bulan yang kena — di belakang layar. Simpan yang udah sukses
+     * nggak boleh keliatan gagal (dan bikin David nyimpen dobel) cuma gara-gara muat ulang daftarnya putus.
+     */
+    refresh(dates) {
       const months = new Set(dates.filter(Boolean).map(monthOf))
-      await Promise.all([this.loadSummary(), this.loadSuggestions(), ...[...months].map((m) => this.loadMonth(m))])
+      return Promise.all([this.loadSummary(), this.loadSuggestions(), ...[...months].map((m) => this.loadMonth(m))]).catch(() => {})
     },
 
     async create(data) {
       const { expense } = await expensesApi.post('/expenses', data)
-      await this.refresh([expense.spentOn])
+      this.refresh([expense.spentOn])
       return expense
     },
 
     async update(id, data) {
       const before = this.byId(id)
       const { expense } = await expensesApi.patch(`/expenses/${id}`, data)
-      await this.refresh([before?.spentOn, expense.spentOn])
+      this.refresh([before?.spentOn, expense.spentOn])
       return expense
     },
 
     async remove(id) {
       const before = this.byId(id)
       await expensesApi.del(`/expenses/${id}`)
-      await this.refresh([before?.spentOn])
+      this.refresh([before?.spentOn])
     },
   },
 })

@@ -13,7 +13,7 @@ function fakeApi() {
       if (url === '/expenses?month=2026-10') return { month: '2026-10', expenses: [lama] }
       return { month: '2026-11', expenses: [kopi] }
     }),
-    post: vi.fn(async (url, body) => ({ expense: { id: 9, ...body, spentOn: body.spentOn } })),
+    post: vi.fn(async (url, body) => ({ expense: { id: 9, ...body, spentOn: body.spentOn ?? '2026-11-14' } })),
     patch: vi.fn(async (url, body) => ({ expense: { ...lama, ...body } })),
     del: vi.fn(async () => null),
   }
@@ -46,6 +46,16 @@ describe('expenses store', () => {
     expect(api.post).toHaveBeenCalledWith('/expenses', body)
     const urls = api.get.mock.calls.map((c) => c[0])
     expect(urls).toEqual(expect.arrayContaining(['/expenses/summary', '/expenses/suggestions', '/expenses?month=2026-10']))
+  })
+
+  it('returns the saved expense even when refreshing the lists fails', async () => {
+    const api = fakeApi()
+    api.get.mockRejectedValue(new Error('putus'))
+    setExpensesApi(api)
+    const store = useExpensesStore()
+    const saved = await store.create({ amount: 1000, categoryId: 1, sourceId: 1 })
+    expect(saved.id).toBe(9)
+    await expect(store.remove(9)).resolves.toBeUndefined()
   })
 
   it('after editing a date into another month, refreshes both months', async () => {

@@ -23,10 +23,10 @@ export const useCategoriesStore = defineStore('categories', {
       this.loaded = true
     },
 
-    async create(data) {
+    /** `forCatat`: dibikin dari layar Catat → layar itu ngambil id-nya pas balik, biar langsung kepilih. */
+    async create(data, { forCatat = false } = {}) {
       const { category } = await categoriesApi.post('/expense-categories', data)
-      // Layar Catat ngambil ini pas balik, biar kategori barunya langsung kepilih.
-      this.justCreatedId = category.id
+      if (forCatat) this.justCreatedId = category.id
       await this.load()
       return category
     },
