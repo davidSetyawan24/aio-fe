@@ -15,15 +15,15 @@ describe('module registry', () => {
     expect(modulePath(byKey.todo)).toBe('/tabs/todo')
   })
 
-  it('starts with the agreed modules, all "soon"', () => {
-    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Tagihan', 'Invoice', 'To-do', 'Agenda', 'Catatan'])
-    expect(modules.every((m) => m.status === 'soon')).toBe(true)
+  it('has the agreed modules, only Kartu & Rekening ready', () => {
+    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Kartu & Rekening', 'Tagihan', 'Invoice', 'To-do', 'Agenda', 'Catatan'])
+    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['kartu'])
   })
 
   it('groups modules by category in category order', () => {
     const groups = groupByCategory(modules)
     expect(groups.map((g) => g.label)).toEqual(['Keuangan', 'Produktivitas'])
-    expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Tagihan', 'Invoice'])
+    expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Kartu & Rekening', 'Tagihan', 'Invoice'])
     expect(groups[1].modules.map((m) => m.label)).toEqual(['To-do', 'Agenda', 'Catatan'])
     expect(categories.map((c) => c.key)).toEqual(['keuangan', 'produktivitas'])
   })

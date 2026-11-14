@@ -3,11 +3,13 @@ import { buildTabRoutes } from './tabRoutes.js'
 const stub = { render: () => null }
 const passwordStub = { render: () => null }
 const deviceStub = { render: () => null }
+const walletStub = { render: () => null }
+const walletFormStub = { render: () => null }
 const notifStub = { render: () => null }
 const notifSettingsStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
-  NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub,
+  NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -38,6 +40,12 @@ describe('buildTabRoutes', () => {
 
   it('opens a device page under the Profil tab', () => {
     expect(find('profil/device/:id').component).toBe(deviceStub)
+  })
+
+  it('opens Kartu & Rekening and its form under Semua menu', () => {
+    expect(find('menu/kartu').component).toBe(walletStub)
+    expect(find('menu/kartu/tambah').component).toBe(walletFormStub)
+    expect(find('menu/kartu/:id').component).toBe(walletFormStub)
   })
 
   it('has the notifications pages', () => {

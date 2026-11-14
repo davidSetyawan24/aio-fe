@@ -4,12 +4,15 @@ import { modulePath, modules } from '@/modules/registry.js'
 const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', agenda: '/tabs/menu/agenda', duit: '/tabs/uang' }
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
-export function buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage }) {
-  const moduleRoutes = modules.map((m) => ({
-    path: modulePath(m).replace('/tabs/', ''),
-    component: ComingSoon,
-    props: { title: m.label, emoji: m.emoji, ...(m.tab ? { bell: true } : { backTo: '/tabs/menu' }) },
-  }))
+export function buildTabRoutes(pages) {
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage } = pages
+  // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
+  const ready = { kartu: WalletPage }
+  const moduleRoutes = modules.map((m) => {
+    const path = modulePath(m).replace('/tabs/', '')
+    if (ready[m.key]) return { path, component: ready[m.key] }
+    return { path, component: ComingSoon, props: { title: m.label, emoji: m.emoji, ...(m.tab ? { bell: true } : { backTo: '/tabs/menu' }) } }
+  })
   return [
     { path: '', redirect: '/tabs/home' },
     { path: 'home', component: ComingSoon, props: { title: 'Beranda', emoji: '🏠', bell: true } },
@@ -18,6 +21,8 @@ export function buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswo
     { path: 'profil', component: ProfilePage },
     { path: 'profil/password', component: ChangePasswordPage },
     { path: 'profil/device/:id', component: DevicePage },
+    { path: 'menu/kartu/tambah', component: WalletFormPage },
+    { path: 'menu/kartu/:id', component: WalletFormPage },
     { path: 'notifikasi', component: NotificationsPage },
     { path: 'notifikasi/atur', component: NotificationSettingsPage },
     ...Object.entries(OLD_LINKS).map(([path, redirect]) => ({ path, redirect })),

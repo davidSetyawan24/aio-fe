@@ -9,6 +9,8 @@ import MenuPage from '@/views/MenuPage.vue'
 import NotificationSettingsPage from '@/views/NotificationSettingsPage.vue'
 import NotificationsPage from '@/views/NotificationsPage.vue'
 import ProfilePage from '@/views/ProfilePage.vue'
+import WalletFormPage from '@/views/WalletFormPage.vue'
+import WalletPage from '@/views/WalletPage.vue'
 import { decideNavigation } from './guard.js'
 import { buildTabRoutes } from './tabRoutes.js'
 
@@ -18,7 +20,9 @@ const routes = [
   {
     path: '/tabs/',
     component: TabsLayout,
-    children: buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage }),
+    children: buildTabRoutes({
+      ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
+    }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },
 ]
