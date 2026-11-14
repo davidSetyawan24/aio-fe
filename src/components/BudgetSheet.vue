@@ -134,6 +134,11 @@ const busy = ref(null)
 const shake = ref(false)
 const amountEl = ref(null)
 const nameEl = ref(null)
+/**
+ * HP/iPad: jangan fokus otomatis — sheet masih meluncur naik, Safari bisa ikut geser ke posisi yang salah (pelajaran keyboard 14/11).
+ * Biar kolomnya di-tap sendiri; Safari yang geser (native). Mac (mouse): langsung fokus.
+ */
+const touchScreen = () => Boolean(window.matchMedia?.('(pointer: coarse)').matches)
 /** Kategori baru yang udah kebikin tapi budget-nya gagal disimpen → jangan dibikin lagi pas Simpan diulang. */
 let createdId = null
 
@@ -161,7 +166,7 @@ watch(
     error.value = ''
     busy.value = null
     createdId = null
-    if (!isNew.value) {
+    if (!isNew.value && !touchScreen()) {
       await nextTick()
       amountEl.value?.focus()
     }
@@ -183,6 +188,7 @@ function pick(id) {
 async function startCreating() {
   creating.value = true
   picked.value = null
+  if (touchScreen()) return
   await nextTick()
   nameEl.value?.focus()
 }

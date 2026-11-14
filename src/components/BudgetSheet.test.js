@@ -65,6 +65,19 @@ describe('BudgetSheet — ubah budget', () => {
     expect(w.text()).toContain('Berlaku mulai hari ini (14 Nov)')
   })
 
+  it('puts the cursor in the amount on a Mac, but not on a touch screen (iOS scrolls to it when tapped)', async () => {
+    const media = (coarse) => vi.fn((q) => ({ matches: q === '(pointer: coarse)' ? coarse : false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    window.matchMedia = media(false)
+    const mac = await mountSheet({ category: ngopi })
+    expect(document.activeElement).toBe(mac.find('[data-test="amount"]').element)
+    mac.unmount()
+    mounted.splice(mounted.indexOf(mac), 1)
+    window.matchMedia = media(true)
+    const phone = await mountSheet({ category: ngopi })
+    expect(document.activeElement).not.toBe(phone.find('[data-test="amount"]').element)
+    delete window.matchMedia
+  })
+
   it('saves the new amount once even when tapped twice, then closes', async () => {
     const w = await mountSheet({ category: ngopi })
     await typeIn(w, '[data-test="amount"]', '600000')
