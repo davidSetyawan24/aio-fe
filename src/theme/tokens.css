@@ -1,0 +1,22 @@
+:root {
+  --app-bg: #F3F2EE; --card: #FFFFFF; --shell: rgba(20,20,15,.035); --hair: rgba(20,20,15,.06);
+  --text: #141410; --muted: #8A8A82; --soft: #ECEBE6; --ink: #141410; --on-ink: #FFFFFF;
+  --lime: #C8F04A; --lime-ink: #1C2400; --red: #F0533D; --amber: #F5A524; --green: #2BA864;
+  --glass: rgba(255,255,255,.72); --inner-hi: inset 0 1px 0 rgba(255,255,255,.9);
+  --lift: 0 1px 2px rgba(20,20,15,.04), 0 24px 48px -28px rgba(20,20,15,.18);
+  --spring: cubic-bezier(.32,.72,0,1);
+  --ion-font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --ion-background-color: var(--app-bg); --ion-text-color: var(--text);
+  --ion-color-primary: #141410; --ion-color-primary-rgb: 20,20,16; --ion-color-primary-contrast: #fff;
+  --ion-color-primary-shade: #000; --ion-color-primary-tint: #2a2a26;
+}
+/* Gelap: dikendaliin pilihan tema (Profil → Tampilan), bukan langsung media query. Lihat src/lib/theme.js. */
+:root.theme-dark {
+  --app-bg: #0B0B0A; --card: #171715; --shell: rgba(255,255,255,.035); --hair: rgba(255,255,255,.07);
+  --text: #F2F2EE; --muted: #85857D; --soft: #222220; --ink: #F2F2EE; --on-ink: #0B0B0A;
+  --glass: rgba(28,28,26,.72); --inner-hi: inset 0 1px 0 rgba(255,255,255,.05);
+  --lift: 0 24px 48px -28px rgba(0,0,0,.6);
+  --ion-background-color: var(--app-bg); --ion-text-color: var(--text);
+  --ion-color-primary: #F2F2EE; --ion-color-primary-rgb: 242,242,238; --ion-color-primary-contrast: #0B0B0A;
+  --ion-color-primary-shade: #fff; --ion-color-primary-tint: #ddd;
+}

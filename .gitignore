@@ -1,0 +1,16 @@
+# Dependencies & build
+node_modules/
+dist/
+dev-dist/
+
+# Env lokal (yang rahasia/lokal). .env.example & .env.production (cuma URL BE publik) ikut git.
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.log
+coverage/

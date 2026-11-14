@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./src/*"] }, "module": "ESNext", "target": "ES2022", "moduleResolution": "Bundler" },
+  "include": ["src/**/*", "scripts/**/*"]
+}
