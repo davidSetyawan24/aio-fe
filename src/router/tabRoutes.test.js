@@ -6,10 +6,13 @@ const deviceStub = { render: () => null }
 const walletStub = { render: () => null }
 const walletFormStub = { render: () => null }
 const notifStub = { render: () => null }
+const categoryStub = { render: () => null }
+const categoryFormStub = { render: () => null }
 const notifSettingsStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
+  CategoryPage: categoryStub, CategoryFormPage: categoryFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -46,6 +49,12 @@ describe('buildTabRoutes', () => {
     expect(find('menu/kartu').component).toBe(walletStub)
     expect(find('menu/kartu/tambah').component).toBe(walletFormStub)
     expect(find('menu/kartu/:id').component).toBe(walletFormStub)
+  })
+
+  it('opens Kategori and its form under Semua menu', () => {
+    expect(find('menu/kategori').component).toBe(categoryStub)
+    expect(find('menu/kategori/tambah').component).toBe(categoryFormStub)
+    expect(find('menu/kategori/:id').component).toBe(categoryFormStub)
   })
 
   it('has the notifications pages', () => {

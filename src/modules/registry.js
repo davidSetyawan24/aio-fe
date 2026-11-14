@@ -15,6 +15,7 @@ export const modules = [
   { key: 'uang', label: 'Uang', emoji: '📊', tint: '#DCEBFF', category: 'keuangan', status: 'soon', tab: 1, icon: PhChartPieSlice },
   { key: 'duit', label: 'Duit', emoji: '💸', tint: '#FFE9D6', category: 'keuangan', status: 'soon' },
   { key: 'kartu', label: 'Kartu & Rekening', emoji: '💳', tint: '#F3E1FF', category: 'keuangan', status: 'ready' },
+  { key: 'kategori', label: 'Kategori', emoji: '🏷️', tint: '#FFF3B8', category: 'keuangan', status: 'ready' },
   { key: 'tagihan', label: 'Tagihan', emoji: '🧾', tint: '#E4F7C4', category: 'keuangan', status: 'soon' },
   { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
   { key: 'todo', label: 'To-do', emoji: '✅', tint: '#E4F7C4', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCheckCircle },

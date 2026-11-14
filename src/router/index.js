@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import TabsLayout from '@/layouts/TabsLayout.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import CategoryFormPage from '@/views/CategoryFormPage.vue'
+import CategoryPage from '@/views/CategoryPage.vue'
 import ChangePasswordPage from '@/views/ChangePasswordPage.vue'
 import ComingSoon from '@/views/ComingSoon.vue'
 import DevicePage from '@/views/DevicePage.vue'
@@ -22,6 +24,7 @@ const routes = [
     component: TabsLayout,
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
+      CategoryPage, CategoryFormPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },
