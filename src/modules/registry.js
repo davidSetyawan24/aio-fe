@@ -19,6 +19,8 @@ export const modules = [
   { key: 'kategori', label: 'Kategori', emoji: '🏷️', tint: '#FFF3B8', category: 'keuangan', status: 'ready' },
   { key: 'tagihan', label: 'Tagihan', emoji: '🧾', tint: '#E4F7C4', category: 'keuangan', status: 'soon' },
   { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
+  // 14/11 malem: split bill — foto struk, dibaca Mistral OCR, dibagi ke temen-temen. Masih ide.
+  { key: 'split-bill', label: 'Split bill', emoji: '🍕', tint: '#FFE0E6', category: 'keuangan', status: 'soon' },
   { key: 'todo', label: 'To-do', emoji: '✅', tint: '#E4F7C4', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCheckCircle },
   { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'soon' },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
