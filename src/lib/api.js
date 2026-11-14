@@ -60,6 +60,7 @@ export function createApi({ baseURL, adapter, onUnauthorized, extraHeaders } = {
     get: (url) => send('get', url),
     post: (url, body) => send('post', url, body),
     patch: (url, body) => send('patch', url, body),
+    put: (url, body) => send('put', url, body),
     del: (url) => send('delete', url),
   }
 }

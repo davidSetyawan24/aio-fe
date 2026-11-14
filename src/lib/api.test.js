@@ -116,4 +116,12 @@ describe('createApi extras', () => {
     await api.del('/auth/devices/2')
     expect(seen.map((c) => c.method)).toEqual(['patch', 'delete'])
   })
+
+  it('has put with a body', async () => {
+    const seen = []
+    const api = createApi({ baseURL: 'http://x', adapter: fakeAdapter(200, { success: true, message: '', data: { ok: 1 } }, seen) })
+    await expect(api.put('/budgets/3', { amount: 1 })).resolves.toEqual({ ok: 1 })
+    expect(seen[0].method).toBe('put')
+    expect(JSON.parse(seen[0].data)).toEqual({ amount: 1 })
+  })
 })

@@ -14,6 +14,7 @@ export const modules = [
   // 14/11: tab "Uang" = laporan (rekap, grafik) + tombol input cepat. "Duit" = catat duit keluar (di Semua menu).
   { key: 'uang', label: 'Uang', emoji: '📊', tint: '#DCEBFF', category: 'keuangan', status: 'soon', tab: 1, icon: PhChartPieSlice },
   { key: 'duit', label: 'Duit', emoji: '💸', tint: '#FFE9D6', category: 'keuangan', status: 'ready' },
+  { key: 'budget', label: 'Atur budget', emoji: '🎯', tint: '#E4F7C4', category: 'keuangan', status: 'ready' },
   { key: 'kartu', label: 'Kartu & Rekening', emoji: '💳', tint: '#F3E1FF', category: 'keuangan', status: 'ready' },
   { key: 'kategori', label: 'Kategori', emoji: '🏷️', tint: '#FFF3B8', category: 'keuangan', status: 'ready' },
   { key: 'tagihan', label: 'Tagihan', emoji: '🧾', tint: '#E4F7C4', category: 'keuangan', status: 'soon' },

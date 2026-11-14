@@ -11,10 +11,12 @@ const duitStub = { render: () => null }
 const expenseFormStub = { render: () => null }
 const categoryFormStub = { render: () => null }
 const notifSettingsStub = { render: () => null }
+const budgetStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
+  BudgetPage: budgetStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -62,6 +64,10 @@ describe('buildTabRoutes', () => {
     expect(find('menu/kategori').component).toBe(categoryStub)
     expect(find('menu/kategori/tambah').component).toBe(categoryFormStub)
     expect(find('menu/kategori/:id').component).toBe(categoryFormStub)
+  })
+
+  it('opens Atur budget under Semua menu', () => {
+    expect(find('menu/budget').component).toBe(budgetStub)
   })
 
   it('has the notifications pages', () => {
