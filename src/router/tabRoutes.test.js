@@ -13,13 +13,18 @@ const find = (path) => routes.find((r) => r.path === path)
 
 describe('buildTabRoutes', () => {
   it('has a page for every tab', () => {
-    for (const p of ['home', 'duit', 'todo', 'menu', 'profil']) expect(find(p), p).toBeTruthy()
+    for (const p of ['home', 'uang', 'todo', 'menu', 'profil']) expect(find(p), p).toBeTruthy()
   })
 
   it('opens modules outside the tab bar under menu/<key>, with a back button to Semua menu', () => {
     const tagihan = find('menu/tagihan')
     expect(tagihan.props).toMatchObject({ title: 'Tagihan', emoji: '🧾', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'agenda', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
+  })
+
+  it('sends the old Duit tab link to the Uang tab', () => {
+    expect(find('duit').redirect).toBe('/tabs/uang')
+    expect(find('menu/duit').props).toMatchObject({ title: 'Duit', backTo: '/tabs/menu' })
   })
 
   it('redirects old links to the new module pages', () => {

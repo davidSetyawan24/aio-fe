@@ -91,7 +91,7 @@ describe('notifications store', () => {
 
 describe('isMainPage', () => {
   it('only counts the tab root pages', () => {
-    for (const p of ['/tabs/home', '/tabs/duit', '/tabs/todo', '/tabs/menu', '/tabs/profil']) expect(isMainPage(p), p).toBe(true)
-    for (const p of ['/tabs/profil/password', '/tabs/menu/tagihan', '/tabs/notifikasi', '/login']) expect(isMainPage(p), p).toBe(false)
+    for (const p of ['/tabs/home', '/tabs/uang', '/tabs/todo', '/tabs/menu', '/tabs/profil']) expect(isMainPage(p), p).toBe(true)
+    for (const p of ['/tabs/profil/password', '/tabs/menu/tagihan', '/tabs/menu/duit', '/tabs/notifikasi', '/login']) expect(isMainPage(p), p).toBe(false)
   })
 })

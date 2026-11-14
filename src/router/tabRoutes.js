@@ -1,7 +1,7 @@
 import { modulePath, modules } from '@/modules/registry.js'
 
 /** Link lama sebelum navigasi baru (14/11) → alamat baru. */
-const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', agenda: '/tabs/menu/agenda' }
+const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', agenda: '/tabs/menu/agenda', duit: '/tabs/uang' }
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes({ ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage }) {

@@ -1,4 +1,4 @@
-import { PhCheckCircle, PhHouse, PhSquaresFour, PhUserCircle, PhWallet } from '@phosphor-icons/vue'
+import { PhChartPieSlice, PhCheckCircle, PhHouse, PhSquaresFour, PhUserCircle } from '@phosphor-icons/vue'
 
 /**
  * SATU-SATUNYA daftar modul AIO Space. Tab bar, sidebar, router, dan halaman "Semua menu" baca dari sini.
@@ -11,7 +11,9 @@ export const categories = [
 ]
 
 export const modules = [
-  { key: 'duit', label: 'Duit', emoji: '💸', tint: '#FFE9D6', category: 'keuangan', status: 'soon', tab: 1, icon: PhWallet },
+  // 14/11: tab "Uang" = laporan (rekap, grafik) + tombol input cepat. "Duit" = catat duit keluar (di Semua menu).
+  { key: 'uang', label: 'Uang', emoji: '📊', tint: '#DCEBFF', category: 'keuangan', status: 'soon', tab: 1, icon: PhChartPieSlice },
+  { key: 'duit', label: 'Duit', emoji: '💸', tint: '#FFE9D6', category: 'keuangan', status: 'soon' },
   { key: 'tagihan', label: 'Tagihan', emoji: '🧾', tint: '#E4F7C4', category: 'keuangan', status: 'soon' },
   { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
   { key: 'todo', label: 'To-do', emoji: '✅', tint: '#E4F7C4', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCheckCircle },
