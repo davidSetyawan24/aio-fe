@@ -71,3 +71,11 @@ export function localToday(now = new Date()) {
   const p = (n) => String(n).padStart(2, '0')
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
 }
+
+/** Label pendek di atas batang grafik: 45rb, 1,3jt (0 = kosong). */
+export function barLabel(n) {
+  if (!n) return ''
+  if (n < 1000) return String(n)
+  if (n < 1e6) return `${Math.round(n / 1000)}rb`
+  return `${(n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })}jt`
+}

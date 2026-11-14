@@ -86,4 +86,25 @@ describe('DuitPage', () => {
     await w.find('[data-test="add"]').trigger('click')
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/duit/catat')
   })
+
+  describe('on a wide screen (iPad landscape / Mac)', () => {
+    beforeEach(() => {
+      window.matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    })
+    afterEach(() => {
+      delete window.matchMedia
+    })
+
+    it('shows the roomy black card: short amounts above the bars and this month\'s total', async () => {
+      const w = await mountPage()
+      expect(w.findAll('[data-test="bar"]').map((b) => b.find('em').text())).toEqual(['', '', '', '', '212rb', '', '45rb'])
+      expect(w.find('[data-test="month-fact"]').text()).toBe('bulan ini Rp257.000')
+    })
+
+    it('puts the Catat form as a card next to the list, without the floating button', async () => {
+      const w = await mountPage()
+      expect(w.find('[data-test="side-form"] form').exists()).toBe(true)
+      expect(w.find('[data-test="add"]').exists()).toBe(false)
+    })
+  })
 })

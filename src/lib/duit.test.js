@@ -1,4 +1,4 @@
-import { dayLabel, longDay, filterSuggestions, formatAmount, groupByDay, monthName, parseAmount, prevMonth, weekdayShort } from './duit.js'
+import { barLabel, dayLabel, longDay, filterSuggestions, formatAmount, groupByDay, monthName, parseAmount, prevMonth, weekdayShort } from './duit.js'
 
 describe('duit helpers', () => {
   it('reads an amount from whatever was typed or pasted', () => {
@@ -48,5 +48,13 @@ describe('duit helpers', () => {
     expect(prevMonth('2026-01')).toBe('2025-12')
     expect(monthName('2026-10')).toBe('Oktober')
     expect(monthName('2025-12', '2026-11')).toBe('Desember 2025')
+  })
+
+  it('labels chart bars short', () => {
+    expect(barLabel(0)).toBe('')
+    expect(barLabel(500)).toBe('500')
+    expect(barLabel(45000)).toBe('45rb')
+    expect(barLabel(212500)).toBe('213rb')
+    expect(barLabel(1250000)).toBe('1,3jt')
   })
 })
