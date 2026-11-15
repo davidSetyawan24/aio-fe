@@ -113,7 +113,7 @@ const catat = () => go(wide.value ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
 .u-head :deep(.h1 span) { font-size: .62em; letter-spacing: -0.02em; }
 .u-error { color: var(--red); font-size: 13px; font-weight: 600; margin: 0 6px 12px; }
 
-.mnav { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); margin-bottom: 4px; }
+.mnav { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); margin-bottom: 16px; }
 .mnav b { font-size: 14px; font-weight: 800; }
 .mnav button { width: 38px; height: 38px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); display: grid; place-items: center; cursor: pointer; }
 .mnav button:disabled { opacity: .3; cursor: default; }
