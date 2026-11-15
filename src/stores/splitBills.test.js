@@ -38,6 +38,8 @@ describe('splitBills store', () => {
     expect(store.byId(7).place).toBe('Lunas')
     await store.remove(7)
     expect(api.del).toHaveBeenCalledWith('/split-bills/7')
+    expect(store.byId(7)).toBeDefined()
+    store.forget(7)
     expect(store.byId(7)).toBeUndefined()
     expect(api.get.mock.calls.filter(([u]) => u === '/split-bills').length).toBeGreaterThanOrEqual(4)
   })

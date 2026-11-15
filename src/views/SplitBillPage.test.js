@@ -11,6 +11,8 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: (fn) => fn(),
+  actionSheetController: { create: async () => ({ present: vi.fn(), onDidDismiss: async () => ({ data: 'delete' }) }) },
+  toastController: { create: async () => ({ present: vi.fn() }) },
 }))
 
 const summary = {
@@ -26,7 +28,7 @@ const bill = { id: 7, place: 'Sushi Tei', emoji: '🍣', spentOn: '2026-11-14', 
 
 let api
 async function mountPage(data = summary) {
-  api = { get: vi.fn(async (url) => (url === '/split-bills' ? data : { bill })) }
+  api = { get: vi.fn(async (url) => (url === '/split-bills' ? data : { bill })), del: vi.fn(async () => null) }
   setSplitBillsApi(api)
   const pinia = createPinia()
   setActivePinia(pinia)
@@ -86,6 +88,17 @@ describe('SplitBillPage', () => {
       expect(ionRouter.push).not.toHaveBeenCalled()
       expect(api.get).toHaveBeenCalledWith('/split-bills/7')
       expect(w.findComponent(SplitBillDetail).props('billId')).toBe(7)
+    })
+
+    it('clears the right panel after the picked bill is deleted', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="bill"]')[0].trigger('click')
+      await flushPromises()
+      await w.find('[data-test="delete"]').trigger('click')
+      await flushPromises()
+      expect(api.del).toHaveBeenCalledWith('/split-bills/7')
+      expect(w.find('[data-test="bill"].picked').exists()).toBe(false)
+      expect(w.find('[data-test="panel"]').text()).toContain('Abis makan bareng?')
     })
 
     it('makes a new split bill right in the panel, then shows it', async () => {

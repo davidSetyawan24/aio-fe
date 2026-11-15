@@ -60,11 +60,15 @@ export const useSplitBillsStore = defineStore('splitBills', {
       return bill
     },
 
+    /** Hapus di BE. Cache-nya sengaja belum dibuang: halaman yang lagi nampilin harus dikasih tau dulu, baru `forget()`. */
     async remove(id) {
       await splitApi.del(`/split-bills/${id}`)
+      this.refresh()
+    },
+
+    forget(id) {
       const { [Number(id)]: _gone, ...rest } = this.bills
       this.bills = rest
-      this.refresh()
     },
 
     /** Foto struk → hasil baca (nggak disimpen di mana-mana). */

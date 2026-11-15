@@ -144,9 +144,12 @@ async function confirmDelete() {
   if (data !== 'delete') return (busy.value = null)
   error.value = ''
   try {
-    await store.remove(bill.value.id)
+    const id = bill.value.id
+    await store.remove(id)
     showToast('Split bill dihapus.')
+    // Kasih tau halaman DULU, baru buang dari cache: begitu dibuang komponen ini dicopot dan emit-nya dibuang Vue.
     emit('deleted')
+    store.forget(id)
   } catch (err) {
     error.value = apiErrorMessage(err)
   } finally {

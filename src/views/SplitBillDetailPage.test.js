@@ -10,12 +10,22 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: (fn) => fn(),
+  actionSheetController: { create: async () => ({ present: vi.fn(), onDidDismiss: async () => ({ data: 'delete' }) }) },
+  toastController: { create: async () => ({ present: vi.fn() }) },
 }))
 
 const bill = { id: 7, place: 'Sushi Tei', emoji: '🍣', spentOn: '2026-11-14', total: 0, outstanding: 0, discount: 0, service: 0, tax: 0, other: 0, people: [], items: [], shares: [] }
 
+let api
 async function mountPage(found = true) {
-  setSplitBillsApi({ get: vi.fn(async () => (found ? { bill } : Promise.reject({ status: 404, message: 'Split bill nggak ketemu.' }))) })
+  api = {
+    get: vi.fn(async (url) => {
+      if (url === '/split-bills') return { outstanding: 0, waitingCount: 0, unpaidPeople: [], bills: [] }
+      return found ? { bill } : Promise.reject({ status: 404, message: 'Split bill nggak ketemu.' })
+    }),
+    del: vi.fn(async () => null),
+  }
+  setSplitBillsApi(api)
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/split-bill/:id', component: SplitBillDetailPage }] })
@@ -39,6 +49,14 @@ describe('SplitBillDetailPage', () => {
     detail.vm.$emit('edit')
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/split-bill/7/ubah')
     detail.vm.$emit('deleted')
+    expect(ionRouter.back).toHaveBeenCalled()
+  })
+
+  it('goes back to the list after Hapus is tapped and confirmed', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(api.del).toHaveBeenCalledWith('/split-bills/7')
     expect(ionRouter.back).toHaveBeenCalled()
   })
 
