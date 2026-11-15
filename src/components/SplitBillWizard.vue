@@ -37,8 +37,9 @@
       <template v-else-if="!items.length && !manual">
         <div class="big-q">Fotoin struknya <span>biar gue yang ngetikin.</span></div>
         <label class="cam">
-          <span class="ic"><PhCamera :size="34" weight="fill" /></span><b>Foto struk</b><span>Kamera kebuka. Struknya lurusin dikit ya, biar kebaca 😄</span>
-          <input data-test="photo" type="file" accept="image/*" capture="environment" @change="onPhoto" />
+          <span class="ic"><PhCamera :size="34" weight="fill" /></span><b>Foto struk</b><span>Foto langsung atau pilih dari galeri. Struknya lurusin dikit ya, biar kebaca 😄</span>
+          <!-- Tanpa `capture`: iPhone nampilin pilihan Ambil Foto / Galeri / File (struk yang udah difoto / dikirim temen juga bisa). -->
+          <input data-test="photo" type="file" accept="image/*" @change="onPhoto" />
         </label>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <button class="manual" data-test="manual" @click="startManual">atau ketik item sendiri</button>
@@ -52,10 +53,12 @@
             <input type="date" data-test="date" aria-label="Tanggal" :value="spentOn" :max="today" min="2000-01-01" @change="onDate" />
           </label>
         </div>
-        <span v-if="scanResult" class="match" :class="{ bad: !scanResult.matches }" data-test="match">
-          <component :is="scanResult.matches ? PhCheck : PhWarning" :size="13" weight="bold" />
-          {{ scanResult.matches ? `Kebaca ${scanResult.count} item · total cocok sama struk` : `Beda ${rp(Math.abs(scanResult.difference))} sama total struk, cek lagi ya` }}
-        </span>
+        <div v-if="scanResult" class="scanline">
+          <span class="match" :class="{ bad: !check.ok }" data-test="match">
+            <component :is="check.ok ? PhCheck : PhWarning" :size="13" weight="bold" />{{ check.text }}
+          </span>
+          <button class="rescan" data-test="rescan" @click="rescan"><PhCamera :size="14" weight="bold" /> Foto ulang</button>
+        </div>
 
         <div class="label">Item <small>tap buat benerin</small></div>
         <div class="shell"><div class="core items">
@@ -255,8 +258,7 @@ async function onPhoto(e) {
     if (r.spentOn) spentOn.value = r.spentOn
     items.value = r.items.map((it) => ({ id: newId(), ...it, who: [] }))
     Object.assign(charges, { discount: r.discount, service: r.service, tax: r.tax, other: r.other })
-    scanResult.value = { matches: r.matches, difference: r.difference, count: r.items.length }
-    if (!r.items.length) manual.value = true
+    scanResult.value = { total: r.total, count: r.items.length }
     showToast('Struk kebaca ✨ cek lagi ya kalau ada yang meleset')
   } catch (err) {
     error.value = apiErrorMessage(err)
@@ -265,6 +267,21 @@ async function onPhoto(e) {
     scanning.value = false
     if (e.target) e.target.value = ''
   }
+}
+/** Cek total struk dihitung ulang tiap item / biaya dibenerin. */
+const check = computed(() => {
+  const r = scanResult.value
+  if (!r) return { ok: true, text: '' }
+  if (r.total === null) return { ok: false, text: `Kebaca ${r.count} item · total struk nggak kebaca, cek lagi ya` }
+  if (r.total === grand.value) return { ok: true, text: `Kebaca ${r.count} item · total cocok sama struk` }
+  return { ok: false, text: `Beda ${rp(Math.abs(r.total - grand.value))} sama total struk, cek lagi ya` }
+})
+function rescan() {
+  items.value = []
+  Object.assign(charges, { discount: 0, service: 0, tax: 0, other: 0 })
+  scanResult.value = null
+  manual.value = false
+  error.value = ''
 }
 function startManual() {
   manual.value = true
@@ -412,6 +429,9 @@ async function save() {
 
 .match { display: inline-flex; align-items: center; gap: 5px; margin: 12px 4px 0; padding: 5px 10px; border-radius: 99px; background: rgba(43, 168, 100, .12); color: var(--green); font-size: 12px; font-weight: 700; }
 .match.bad { background: rgba(245, 165, 36, .14); color: #C27C00; }
+.scanline { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.rescan { display: inline-flex; align-items: center; gap: 5px; margin: 12px 4px 0; padding: 5px 10px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text);
+  font: 700 12px var(--ion-font-family); cursor: pointer; }
 .label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 22px 8px 10px; }
 .label small { font-size: 12px; letter-spacing: .02em; text-transform: none; color: var(--text); font-weight: 700; }
 .items { padding: 4px 6px; }

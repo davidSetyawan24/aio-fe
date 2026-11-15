@@ -96,11 +96,33 @@ describe('SplitBillWizard ② struk', () => {
     expect(w.find('[data-test="grand"]').text()).toContain('Rp103.950')
   })
 
-  it('warns when the total does not add up', async () => {
+  it('warns when the total does not add up, and keeps checking while items are fixed', async () => {
     const w = await toStep2()
-    api.post.mockImplementationOnce(async () => ({ ...read, matches: false, difference: 50 }))
+    api.post.mockImplementationOnce(async () => ({ ...read, total: 104000, matches: false, difference: 50 }))
     await photo(w)
     expect(w.find('[data-test="match"]').text()).toBe('Beda Rp50 sama total struk, cek lagi ya')
+    await w.findAll('[data-test="item"]')[0].trigger('click')
+    await type(w, '[data-test="sheet-price"]', '68050')
+    await w.find('[data-test="sheet-save"]').trigger('click')
+    expect(w.find('[data-test="match"]').text()).toBe('Kebaca 2 item · total cocok sama struk')
+  })
+
+  it('says so when the receipt total could not be read', async () => {
+    const w = await toStep2()
+    api.post.mockImplementationOnce(async () => ({ ...read, total: null, matches: false, difference: 0 }))
+    await photo(w)
+    expect(w.find('[data-test="match"]').text()).toBe('Kebaca 2 item · total struk nggak kebaca, cek lagi ya')
+  })
+
+  it('lets you take the photo again, and also pick one from the gallery (no camera-only)', async () => {
+    const w = await toStep2()
+    expect(w.find('[data-test="photo"]').attributes('capture')).toBeUndefined()
+    await photo(w)
+    await w.find('[data-test="rescan"]').trigger('click')
+    expect(w.find('[data-test="photo"]').exists()).toBe(true)
+    expect(w.findAll('[data-test="item"]')).toHaveLength(0)
+    await photo(w)
+    expect(w.findAll('[data-test="item"]')).toHaveLength(2)
   })
 
   it('shows the server message when reading fails and still lets you type items', async () => {
