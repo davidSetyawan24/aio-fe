@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage }
   const moduleRoutes = modules.map((m) => {
@@ -30,6 +30,8 @@ export function buildTabRoutes(pages) {
     { path: 'menu/split-bill/baru', component: SplitBillFormPage },
     { path: 'menu/split-bill/:id', component: SplitBillDetailPage },
     { path: 'menu/split-bill/:id/ubah', component: SplitBillFormPage },
+    { path: 'menu/bayar-rutin/baru', component: BayarRutinFormPage },
+    { path: 'menu/bayar-rutin/:id/ubah', component: BayarRutinFormPage },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },

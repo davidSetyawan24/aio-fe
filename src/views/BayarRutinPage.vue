@@ -113,6 +113,8 @@
         </template>
       </div>
 
+      <BayarRutinPanel v-if="wide" :open="panelOpen" :bill-id="panelId" :form-key="panelKey" @close="panelOpen = false" @done="onPanelDone" />
+
       <button v-if="!wide" slot="fixed" class="br-fab" data-test="add" @click="openForm(null)">
         Tambah <span class="ic"><PhPlus :size="19" weight="bold" /></span>
       </button>
@@ -121,9 +123,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { PhBell, PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
+import BayarRutinPanel from '@/components/BayarRutinPanel.vue'
 import BayarRutinRow from '@/components/BayarRutinRow.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { addMonth, monthLabel, reminderLabel, scheduleText, sortReminders } from '@/lib/bayarRutin.js'
@@ -183,9 +186,23 @@ async function tick(row) {
   }
 }
 
+// HP: halaman form. PC: panel geser dari kanan (isi form sama persis).
+const panelOpen = ref(false)
+const panelId = ref(null)
+const panelKey = ref(0)
 function openForm(id) {
-  ionRouter.push(id ? `/tabs/menu/bayar-rutin/${id}/ubah` : '/tabs/menu/bayar-rutin/baru')
+  if (!wide.value) return ionRouter.push(id ? `/tabs/menu/bayar-rutin/${id}/ubah` : '/tabs/menu/bayar-rutin/baru')
+  panelId.value = id
+  panelKey.value += 1
+  panelOpen.value = true
 }
+async function onPanelDone(message) {
+  panelOpen.value = false
+  await toast(message)
+}
+watch(wide, (isWide) => {
+  if (!isWide) panelOpen.value = false
+})
 </script>
 
 <style scoped>

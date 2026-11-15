@@ -1,7 +1,9 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import BayarRutinForm from '@/components/BayarRutinForm.vue'
 import { setBayarRutinApi } from '@/stores/bayarRutin.js'
+import { setWalletApi } from '@/stores/wallet.js'
 import BayarRutinPage from './BayarRutinPage.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
@@ -49,6 +51,7 @@ async function mountPage(data = list()) {
     del: vi.fn(async () => ({ row: {} })),
   }
   setBayarRutinApi(api)
+  setWalletApi({ get: vi.fn(async () => ({ sources: [] })) })
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/bayar-rutin', component: BayarRutinPage }] })
@@ -156,6 +159,31 @@ describe('BayarRutinPage', () => {
       expect(w.find('[data-test="hero"]').exists()).toBe(true)
       expect(w.find('[data-test="sec-open"]').exists()).toBe(true)
       expect(w.find('[data-test="all"]').exists()).toBe(true)
+    })
+
+    it('opens add and edit in the side panel instead of a new page', async () => {
+      const w = await mountPage()
+      const panel = () => w.find('[data-test="panel"]')
+      expect(panel().classes()).not.toContain('show')
+      await w.find('[data-test="pc-add"]').trigger('click')
+      expect(panel().classes()).toContain('show')
+      expect(w.findComponent(BayarRutinForm).props('billId')).toBeNull()
+      await w.find('[data-test="panel-close"]').trigger('click')
+      expect(panel().classes()).not.toContain('show')
+      await w.find('[data-test="sec-open"] [data-test="edit"]').trigger('click')
+      expect(panel().classes()).toContain('show')
+      expect(w.findComponent(BayarRutinForm).props('billId')).toBe(1)
+      expect(w.find('[data-test="panel"]').text()).toContain('Netflix')
+      expect(ionRouter.push).not.toHaveBeenCalled()
+    })
+
+    it('closes the panel and shows a toast once saved', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="master"]')[0].trigger('click')
+      w.findComponent(BayarRutinForm).vm.$emit('done', 'Disimpen.')
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+      expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Disimpen.' }))
     })
   })
 })

@@ -18,12 +18,13 @@ const splitFormStub = { render: () => null }
 const agendaStub = { render: () => null }
 const agendaFormStub = { render: () => null }
 const billsStub = { render: () => null }
+const billFormStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
-  BayarRutinPage: billsStub,
+  BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -90,8 +91,10 @@ describe('buildTabRoutes', () => {
     expect(find('menu/split-bill/:id/ubah').component).toBe(splitFormStub)
   })
 
-  it('opens Bayar Rutin under Semua menu', () => {
+  it('opens Bayar Rutin and its form under Semua menu', () => {
     expect(find('menu/bayar-rutin').component).toBe(billsStub)
+    expect(find('menu/bayar-rutin/baru').component).toBe(billFormStub)
+    expect(find('menu/bayar-rutin/:id/ubah').component).toBe(billFormStub)
   })
 
   it('has the notifications pages', () => {
