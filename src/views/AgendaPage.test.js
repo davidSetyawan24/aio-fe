@@ -8,11 +8,13 @@ import AgendaPage from './AgendaPage.vue'
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
 const sheet = vi.hoisted(() => ({ present: vi.fn(), onDidDismiss: vi.fn() }))
 const sheetCreate = vi.hoisted(() => vi.fn())
+const toastCreate = vi.hoisted(() => vi.fn())
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: (fn) => fn(),
   actionSheetController: { create: sheetCreate },
+  toastController: { create: toastCreate },
 }))
 
 const TODAY = '2026-11-15' // Minggu
@@ -83,6 +85,7 @@ beforeEach(() => {
   ionRouter.push.mockClear()
   sheet.onDidDismiss.mockReset().mockResolvedValue({ data: 'one' })
   sheetCreate.mockReset().mockResolvedValue(sheet)
+  toastCreate.mockReset().mockResolvedValue({ present: vi.fn() })
 })
 
 describe('AgendaPage', () => {
@@ -234,6 +237,8 @@ describe('AgendaPage', () => {
       await flushPromises()
       expect(api.put).toHaveBeenCalledTimes(1)
       expect(api.put).toHaveBeenCalledWith('/recurring-bills/7/payments/2026-11', {})
+      expect(toastCreate).toHaveBeenCalledTimes(1)
+      expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Netflix lunas ✓' }))
     })
 
     it('puts the bill back and says why when it cannot be saved', async () => {

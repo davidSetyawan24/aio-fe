@@ -71,6 +71,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { toastController } from '@ionic/vue'
 import { PhCaretRight } from '@phosphor-icons/vue'
 import { HR, relLabel, weekdayOf } from '@/lib/agenda.js'
 import { dayPieces, firstScrollMinute, HOUR_LABELS, MIN_MINUTES } from '@/lib/agendaTimeline.js'
@@ -108,7 +109,16 @@ function summary(date) {
   return `${events.length} acara · ${todos.length} to-do${bills.length ? ` · ${bills.length} bayar rutin` : ''}`
 }
 /** Centang Bayar Rutin di grid minggu (PC). */
-const toggleBill = (b) => store.toggleBill(b).catch((err) => emit('error', err))
+async function toggleBill(b) {
+  const willPay = b.status !== 'paid'
+  try {
+    if (!(await store.toggleBill(b))) return
+  } catch (err) {
+    return emit('error', err)
+  }
+  const message = willPay ? `${b.name} lunas ✓` : `${b.name} batal lunas`
+  await (await toastController.create({ message, duration: 2000, position: 'top', cssClass: 'aio-toast' })).present()
+}
 </script>
 
 <style scoped>

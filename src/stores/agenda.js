@@ -85,7 +85,7 @@ export const useAgendaStore = defineStore('agenda', {
     /** Centang Bayar Rutin = Lunas (endpoint yang sama kayak menu Bayar Rutin). Langsung berubah di layar, balik kalau gagal. */
     async toggleBill(row) {
       const key = billKey(row)
-      if (this.pending[key]) return
+      if (this.pending[key]) return false
       const before = row.status
       const paid = before !== 'paid'
       this.pending = { ...this.pending, [key]: true }
@@ -97,6 +97,7 @@ export const useAgendaStore = defineStore('agenda', {
         this.refresh()
         const bills = useBayarRutinStore()
         if (bills.month) bills.refresh()
+        return true
       } catch (err) {
         this.setBillStatus(key, before)
         throw err

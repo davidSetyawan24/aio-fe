@@ -21,6 +21,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { toastController } from '@ionic/vue'
 import { PhCheck, PhRepeat } from '@phosphor-icons/vue'
 import { shortDue } from '@/lib/bayarRutin.js'
 import { rp } from '@/lib/wallet.js'
@@ -31,7 +32,16 @@ const props = defineProps({ bills: { type: Array, required: true } })
 const emit = defineEmits(['error'])
 const store = useAgendaStore()
 const left = computed(() => props.bills.filter((b) => b.status !== 'paid').reduce((s, b) => s + b.amount, 0))
-const toggle = (b) => store.toggleBill(b).catch((err) => emit('error', err))
+async function toggle(b) {
+  const willPay = b.status !== 'paid'
+  try {
+    if (!(await store.toggleBill(b))) return
+  } catch (err) {
+    return emit('error', err)
+  }
+  const message = willPay ? `${b.name} lunas ✓` : `${b.name} batal lunas`
+  await (await toastController.create({ message, duration: 2000, position: 'top', cssClass: 'aio-toast' })).present()
+}
 </script>
 
 <style scoped>
