@@ -19,12 +19,13 @@ const agendaStub = { render: () => null }
 const agendaFormStub = { render: () => null }
 const billsStub = { render: () => null }
 const billFormStub = { render: () => null }
+const uangStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
-  BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub,
+  BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -37,6 +38,10 @@ describe('buildTabRoutes', () => {
     const invoice = find('menu/invoice')
     expect(invoice.props).toMatchObject({ title: 'Invoice', emoji: '📄', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
+  })
+
+  it('opens the Uang tab on its own page', () => {
+    expect(find('uang').component).toBe(uangStub)
   })
 
   it('opens the Agenda tab on its own page', () => {
