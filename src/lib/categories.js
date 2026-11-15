@@ -7,3 +7,21 @@ export const CATEGORY_EMOJIS = [
   '🍜', '☕', '🛒', '🚗', '🎬', '💊', '👕', '🎁', '🏋️', '✂️', '🐱', '📚',
   '🎮', '⛽', '🅿️', '🍰', '🧋', '🏠', '💡', '📱', '✈️', '🧴', '💈', '🙏',
 ]
+
+/**
+ * Ringkasan bulan ini buat kartu hitam Kategori (PC).
+ * `usage` = { [categoryId]: { count, total } } dari catatan Duit bulan ini.
+ */
+export function categoryMonthSummary(categories, usage) {
+  let total = 0
+  let usedCount = 0
+  let top = null
+  for (const category of categories) {
+    const u = usage[category.id]
+    if (!u?.count) continue
+    usedCount += 1
+    total += u.total
+    if (!top || u.total > top.total) top = { category, total: u.total, count: u.count }
+  }
+  return { total, usedCount, unusedCount: categories.length - usedCount, top }
+}
