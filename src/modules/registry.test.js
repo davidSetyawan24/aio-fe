@@ -17,7 +17,7 @@ describe('module registry', () => {
 
   it('has the agreed modules, Duit, Atur budget, Kartu & Rekening and Kategori ready', () => {
     expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill', 'To-do', 'Agenda', 'Catatan', 'Kalender Dia'])
-    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['duit', 'budget', 'kartu', 'kategori'])
+    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['duit', 'budget', 'kartu', 'kategori', 'split-bill'])
     expect(modulePath(modules.find((m) => m.key === 'budget'))).toBe('/tabs/menu/budget')
     expect(modulePath(modules.find((m) => m.key === 'kategori'))).toBe('/tabs/menu/kategori')
   })

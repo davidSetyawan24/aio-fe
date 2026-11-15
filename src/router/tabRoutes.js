@@ -5,9 +5,9 @@ const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', agenda: '/tabs/menu/agenda', 
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
-  const ready = { duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage }
+  const ready = { duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage }
   const moduleRoutes = modules.map((m) => {
     const path = modulePath(m).replace('/tabs/', '')
     if (ready[m.key]) return { path, component: ready[m.key] }
@@ -27,6 +27,9 @@ export function buildTabRoutes(pages) {
     { path: 'menu/duit/:id', component: ExpenseFormPage },
     { path: 'menu/kategori/tambah', component: CategoryFormPage },
     { path: 'menu/kategori/:id', component: CategoryFormPage },
+    { path: 'menu/split-bill/baru', component: SplitBillFormPage },
+    { path: 'menu/split-bill/:id', component: SplitBillDetailPage },
+    { path: 'menu/split-bill/:id/ubah', component: SplitBillFormPage },
     { path: 'notifikasi', component: NotificationsPage },
     { path: 'notifikasi/atur', component: NotificationSettingsPage },
     ...Object.entries(OLD_LINKS).map(([path, redirect]) => ({ path, redirect })),

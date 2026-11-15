@@ -12,11 +12,14 @@ const expenseFormStub = { render: () => null }
 const categoryFormStub = { render: () => null }
 const notifSettingsStub = { render: () => null }
 const budgetStub = { render: () => null }
+const splitStub = { render: () => null }
+const splitDetailStub = { render: () => null }
+const splitFormStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
-  BudgetPage: budgetStub,
+  BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -68,6 +71,13 @@ describe('buildTabRoutes', () => {
 
   it('opens Atur budget under Semua menu', () => {
     expect(find('menu/budget').component).toBe(budgetStub)
+  })
+
+  it('opens Split bill and a bill\'s detail under Semua menu', () => {
+    expect(find('menu/split-bill').component).toBe(splitStub)
+    expect(find('menu/split-bill/:id').component).toBe(splitDetailStub)
+    expect(find('menu/split-bill/baru').component).toBe(splitFormStub)
+    expect(find('menu/split-bill/:id/ubah').component).toBe(splitFormStub)
   })
 
   it('has the notifications pages', () => {
