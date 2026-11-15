@@ -63,7 +63,7 @@
                 <button type="button" aria-label="Minggu berikutnya" data-test="next" @click="shiftDays(7)"><PhCaretRight :size="15" /></button>
               </span>
             </div>
-            <AgendaWeek :dates="week" :today="today" :wide="wide" @go-day="goDay" @event="openEvent" />
+            <AgendaWeek :dates="week" :today="today" :wide="wide" :now-minute="nowMinute" @go-day="goDay" @event="openEvent" />
             <button v-if="!wide" type="button" class="drawer" data-test="drawer" @click="openDrawer">
               <span class="ic">📥</span><span class="grow"><b>Kapan-kapan</b><span>To-do yang belum ada tanggalnya</span></span><span class="n">{{ store.undated.length }}</span>
             </button>

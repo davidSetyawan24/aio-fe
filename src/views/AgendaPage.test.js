@@ -255,6 +255,28 @@ describe('AgendaPage', () => {
       expect(w.find('[data-test="form-dialog"] [data-test="title"]').element.value).toBe('Bayar listrik')
     })
 
+    it('lays the week out by the hour, with all-day items and to-dos on top', async () => {
+      const w = await mountPage()
+      await w.find('[data-view="week"]').trigger('click')
+      await flushPromises()
+      const cols = w.findAll('[data-test="wcol"]')
+      expect(cols).toHaveLength(7)
+      const sunday = cols[6]
+      const blocks = sunday.findAll('[data-test="wk-event"]')
+      expect(blocks.map((b) => b.text())).toEqual([expect.stringContaining('Brunch keluarga'), expect.stringContaining('Nonton sama Dia')])
+      expect(blocks[0].attributes('style')).toContain('top: 520px') // 10:00 × 52px
+      expect(sunday.find('[data-test="now-line"]').exists()).toBe(true)
+      expect(cols[5].find('[data-test="now-line"]').exists()).toBe(false)
+      const top = w.findAll('[data-test="wk-allday"]')[6]
+      expect(top.text()).toContain('Bayar listrik')
+      expect(top.text()).toContain('Bayar iuran RT')
+      await blocks[1].trigger('click')
+      expect(w.find('[data-test="event-detail"]').text()).toContain('Nonton sama Dia')
+      await w.findAll('[data-test="wcol-h"]')[0].trigger('click')
+      await flushPromises()
+      expect(w.find('h1').text()).toContain('Senin, 9 Nov')
+    })
+
     it('shows 7 columns for the week and a big month that lists items with "+N lagi"', async () => {
       const w = await mountPage()
       await w.find('[data-view="week"]').trigger('click')

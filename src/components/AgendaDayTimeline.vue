@@ -18,6 +18,7 @@
             class="tl-ev"
             :class="{ tiny: p.end - p.start < 45 }"
             data-test="tl-event"
+            :title="`${p.event.title} · ${timeText(p)}`"
             :style="blockStyle(p)"
             @click="$emit('event', p.event)"
           >
@@ -33,9 +34,10 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { PhMapPin } from '@phosphor-icons/vue'
 import { dayPieces, firstScrollMinute, HOUR_LABELS } from '@/lib/agendaTimeline.js'
+import { useStartScroll } from '@/lib/useStartScroll.js'
 
 /** Hari di PC: baris "Seharian" + jam 00–24, acara jadi blok setinggi durasinya. */
 const props = defineProps({
@@ -67,36 +69,9 @@ function timeText(p) {
   return `${e.startTime}–${e.endTime}`
 }
 
-/*
- * Scroll awal ke 07.00 / sebelum acara pertama. Pas halaman Ionic masih disembunyiin (lagi transisi) browser nolak scroll-nya,
- * jadi kalau belum nyangkut dicoba lagi begitu area jamnya keliatan (ResizeObserver).
- */
+// Scroll awal ke 07.00 / sebelum acara pertama; diulang tiap ganti tanggal.
 const startMinute = computed(() => firstScrollMinute([pieces.value.timed]))
-let pending = false
-function applyScroll() {
-  const el = scroller.value
-  if (!pending || !el) return
-  // −10px: label jam paling atas jangan kepotong.
-  const target = Math.max(0, (startMinute.value / 60) * HOUR - 10)
-  el.scrollTop = target
-  if (Math.abs(el.scrollTop - target) < 1) pending = false
-}
-async function scrollToStart() {
-  pending = true
-  await nextTick()
-  applyScroll()
-}
-let observer = null
-onMounted(() => {
-  if (typeof ResizeObserver !== 'undefined' && scroller.value) {
-    observer = new ResizeObserver(applyScroll)
-    observer.observe(scroller.value)
-  }
-  scrollToStart()
-})
-onBeforeUnmount(() => observer?.disconnect())
-// Ganti tanggal, atau acara hari itu baru kemuat → scroll ulang.
-watch([() => props.date, startMinute], scrollToStart)
+useStartScroll(scroller, startMinute, HOUR, [() => props.date])
 </script>
 
 <style scoped>
