@@ -35,8 +35,13 @@ self.addEventListener('notificationclick', (event) => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       const open = windows.find((w) => new URL(w.url).origin === self.location.origin)
       if (open) {
-        await open.focus?.()
+        // Pesan DULU: kalau fokus jendela ditolak browser, app tetep pindah ke layar notif.
         open.postMessage({ type: 'aio-open', url })
+        try {
+          await open.focus()
+        } catch {
+          // fokus gagal nggak masalah, app udah dikabarin
+        }
         return
       }
       await rememberPendingOpen(self.caches, url)
