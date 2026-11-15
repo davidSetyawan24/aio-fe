@@ -48,13 +48,14 @@ function items(date) {
 </script>
 
 <style scoped>
-.big { margin-top: 18px; }
-.bigmonth { padding: 12px; }
+/* Setinggi layar (PC): baris tanggal dibagi rata ke sisa tinggi, minimal 112px. */
+.big { margin-top: 18px; flex: 1; display: flex; flex-direction: column; }
+.bigmonth { padding: 12px; flex: 1; display: flex; flex-direction: column; }
 .mhead { display: flex; justify-content: flex-end; padding: 0 6px 10px; }
 .arrows { display: flex; gap: 6px; }
 .arrows button { width: 34px; height: 34px; border: 0; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); color: var(--text); display: grid; place-items: center; cursor: pointer; }
 .wk { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 4px 0 10px; }
-.bgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.bgrid { flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(112px, 1fr); gap: 6px; }
 .bcell { min-height: 112px; padding: 8px; border: 0; border-radius: 16px; background: var(--app-bg); color: var(--text); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
   font-family: var(--ion-font-family); overflow: hidden; }
 .bcell:hover { box-shadow: inset 0 0 0 1.5px var(--hair); }

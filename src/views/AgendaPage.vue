@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true">
-      <div class="page" :class="wide ? ['canvas', { fill: view !== 'month' }] : 'narrow'">
+      <div class="page" :class="wide ? ['canvas', 'fill', { 'fill-grow': view === 'month' }] : 'narrow'">
         <PageHeader eyebrow="Agenda" bell />
         <div class="head">
           <h1 class="h1 rise" style="--i: 1">{{ titleMain }}<span class="h1-sub">{{ titleSub }}</span></h1>
@@ -261,7 +261,7 @@ function editEvent(e) {
 
 <style scoped>
 .narrow { max-width: 620px; padding-bottom: 150px; }
-.canvas { max-width: 1320px; padding: 40px 48px 64px; }
+.canvas { max-width: none; padding: 40px 48px 64px; }
 .error { color: var(--red); font-size: 13px; font-weight: 600; margin: 0 6px 12px; }
 .h1 { margin-bottom: 16px; }
 .h1-sub { display: block; font-size: .62em; letter-spacing: -0.02em; margin-top: 4px; }
@@ -331,6 +331,8 @@ function editEvent(e) {
   .seg { flex: none; width: 300px; }
   /* Hari & Minggu: setinggi layar, area jam scroll sendiri (jendela pendek → minimal 520px, halaman yang scroll). */
   .fill { height: 100%; display: flex; flex-direction: column; padding-bottom: 24px; }
+  /* Bulan: minimal setinggi layar, tapi boleh lebih (kotak tanggal min 112px) → halaman yang scroll, jarak bawah tetep. */
+  .fill.fill-grow { height: auto; min-height: 100%; }
   .daywide { display: grid; grid-template-columns: 290px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 22px; margin-top: 18px; flex: 1; min-height: 520px; }
   .aside-col { min-height: 0; overflow-y: auto; padding: 0 2px 4px; scrollbar-width: none; }
   .aside-col::-webkit-scrollbar { display: none; }

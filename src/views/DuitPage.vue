@@ -216,7 +216,7 @@ function onSideSaved(_expense, again) {
 
 <style scoped>
 .narrow { max-width: 620px; padding-bottom: 110px; }
-.canvas { max-width: 1320px; padding-bottom: 60px; }
+.canvas { max-width: none; padding-bottom: 60px; }
 .total { color: var(--text); font-weight: 800; }
 .inline { margin-left: .25em; }
 .error { color: var(--red); font-size: 13px; font-weight: 600; margin: 0 6px 12px; }

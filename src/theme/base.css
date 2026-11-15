@@ -8,6 +8,8 @@ ion-content::part(scroll) { padding-bottom: calc(120px + env(safe-area-inset-bot
 /* page */
 .page { padding: calc(env(safe-area-inset-top) + 18px) 18px 0; max-width: 1180px; margin: 0 auto; }
 @media (min-width: 768px) { .page { padding: 36px 36px 0; } }
+/* PC (≥1100px): konten ngisi lebar layar, nggak ada batas lebar (aturan David 14/11). Halaman sempit (.narrow) tetep nimpa sendiri. */
+@media (min-width: 1100px) { .page { max-width: none; padding-left: 48px; padding-right: 48px; } }
 .eyebrow { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; background: var(--card);
   box-shadow: 0 0 0 1px var(--hair); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 9px; background: var(--lime); box-shadow: 0 0 0 3px rgba(200,240,74,.25); }
