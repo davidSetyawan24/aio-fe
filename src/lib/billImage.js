@@ -1,4 +1,4 @@
-/** "Simpan jadi gambar": ringkasan split bill digambar sendiri di <canvas> (tanpa library), lalu dibagiin lewat menu Bagikan bawaan. */
+/** "Simpan jadi gambar": ringkasan split bill digambar sendiri di <canvas> (tanpa library), lalu di-download (Mac) / dibagiin (iPhone/iPad). */
 import { summaryRows } from '@/lib/splitBill.js'
 
 const W = 1080
@@ -107,13 +107,23 @@ function draw(bill) {
   return canvas
 }
 
-/** Bagikan gambar (iPhone: Simpan Gambar / WhatsApp). Browser yang nggak bisa share file → download PNG. */
+/**
+ * Cara nyimpen (keputusan David 15/11): Mac (mouse) langsung download; iPhone/iPad (layar sentuh) pakai menu Bagikan,
+ * karena download di iOS masuk app Files, bukan galeri Foto. Browser yang nggak bisa share file → download.
+ */
+export function saveMode({ touch, canShare }) {
+  return touch && canShare ? 'share' : 'download'
+}
+
+const isTouch = () => Boolean(typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches)
+
+/** Simpan gambar ringkasan: download (Mac) atau menu Bagikan (iPhone/iPad: Simpan Gambar / WhatsApp). */
 export async function shareBillImage(bill) {
   const canvas = draw(bill)
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('Gambarnya gagal dibikin.')
   const file = new File([blob], `split-bill-${bill.id}.png`, { type: 'image/png' })
-  if (navigator.canShare?.({ files: [file] })) {
+  if (saveMode({ touch: isTouch(), canShare: Boolean(navigator.canShare?.({ files: [file] })) }) === 'share') {
     try {
       await navigator.share({ files: [file], title: `Split bill ${bill.place}` })
       return 'shared'

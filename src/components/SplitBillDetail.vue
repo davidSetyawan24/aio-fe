@@ -49,7 +49,7 @@
     <p v-if="error" class="error" role="alert">{{ error }}</p>
 
     <button class="pill ghost wide-btn" data-test="image" @click="saveImage">Simpan jadi gambar <span class="ic"><PhDownloadSimple :size="17" weight="bold" /></span></button>
-    <p class="hint">Gambarnya kebuka di menu Bagikan: "Simpan Gambar" ke galeri, atau langsung kirim ke grup.</p>
+    <p class="hint">{{ touch ? 'Gambarnya kebuka di menu Bagikan: "Simpan Gambar" ke galeri, atau langsung kirim ke grup.' : 'Gambarnya langsung ke-download (PNG).' }}</p>
     <div class="row2">
       <button class="pill ghost wide-btn" data-test="edit" @click="emit('edit')">Ubah <span class="ic"><PhPencilSimple :size="17" weight="bold" /></span></button>
       <button class="pill ghost wide-btn del" data-test="delete" :disabled="busy === 'delete'" @click="confirmDelete">Hapus <span class="ic"><PhTrash :size="17" weight="bold" /></span></button>
@@ -79,6 +79,8 @@ const store = useSplitBillsStore()
 const bill = computed(() => store.byId(props.billId))
 const busy = ref(null)
 const error = ref('')
+/** HP/iPad (layar sentuh) → menu Bagikan; Mac → langsung download. */
+const touch = typeof window !== 'undefined' && Boolean(window.matchMedia?.('(pointer: coarse)').matches)
 
 
 const rows = computed(() =>
