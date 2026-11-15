@@ -83,6 +83,22 @@ describe('waText', () => {
   })
 })
 
+describe('summaryRows (buat gambar) — rincian', () => {
+  it('carries each person\'s item and charge lines, and shortens a long place name', () => {
+    const base = { place: 'Restoran Sunda Saung Kabayan Cabang Kelapa Gading Jakarta Utara', spentOn: '2026-11-14', ...sushi, ...computeShares(sushi), total: 316865, people: sushi.people.map((p) => ({ ...p, paid: p.me })) }
+    const rows = summaryRows(base)
+    expect(rows.title).toBe('Restoran Sunda Saung Kabayan Cab… · 14 Nov')
+    expect(rows.people[1].lines).toEqual([
+      { label: 'Chicken Katsu Don', amount: 'Rp55.000' },
+      { label: 'Salmon Skin Roll (bagi 2)', amount: 'Rp36.000' },
+      { label: 'Ocha (bagi 4)', amount: 'Rp8.000' },
+      { label: 'Diskon', amount: '−Rp9.802', sep: true },
+      { label: 'Service', amount: 'Rp4.623' },
+      { label: 'Pajak', amount: 'Rp9.709' },
+    ])
+  })
+})
+
 describe('summaryRows (buat gambar)', () => {
   it('lists every person with their total and paid status', () => {
     const bill = { place: 'Sushi Tei', spentOn: '2026-11-14', ...sushi, ...computeShares(sushi), total: 316865, people: sushi.people.map((p) => ({ ...p, paid: p.me || p.id === 'andi' })) }

@@ -114,9 +114,12 @@ function tagih(person) {
 async function saveImage() {
   if (busy.value) return
   busy.value = 'image'
+  error.value = ''
   try {
     const how = await shareBillImage(bill.value)
     if (how === 'downloaded') showToast('Gambarnya kedownload 📸')
+  } catch {
+    error.value = 'Gambarnya gagal dibikin, coba lagi ya.'
   } finally {
     busy.value = null
   }

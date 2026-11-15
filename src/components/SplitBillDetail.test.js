@@ -104,6 +104,14 @@ describe('SplitBillDetail', () => {
     expect(shareBillImage).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }))
   })
 
+  it('says so when the picture could not be made', async () => {
+    const w = await mountDetail()
+    shareBillImage.mockRejectedValueOnce(new Error('canvas'))
+    await w.find('[data-test="image"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[role="alert"]').text()).toBe('Gambarnya gagal dibikin, coba lagi ya.')
+  })
+
   it('asks before deleting, then tells the page; edit asks the page too', async () => {
     const w = await mountDetail()
     await w.find('[data-test="edit"]').trigger('click')

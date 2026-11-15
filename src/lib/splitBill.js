@@ -67,12 +67,24 @@ export function waText(bill, personId) {
   ].join('\n')
 }
 
-/** Isi gambar ringkasan (digambar di canvas). */
+const PLACE_MAX = 32
+const shorten = (text) => (text.length > PLACE_MAX ? `${text.slice(0, PLACE_MAX).trimEnd()}…` : text)
+
+/** Isi gambar ringkasan (digambar di canvas): tiap orang + rincian item, pemisah, biaya, total. */
 export function summaryRows(bill) {
   return {
-    title: `${bill.place} · ${shortDate(bill.spentOn)}`,
+    title: `${shorten(bill.place)} · ${shortDate(bill.spentOn)}`,
     total: rp(bill.total),
-    people: bill.people.map((p) => ({ name: p.name, me: p.me, paid: p.paid, total: rp(bill.shares.find((s) => s.personId === p.id)?.total ?? 0) })),
+    people: bill.people.map((p) => {
+      const share = bill.shares.find((s) => s.personId === p.id)
+      const items = (share?.items ?? []).map((l) => ({ label: shorten(itemLabel(l)), amount: rp(l.amount) }))
+      const extras = [
+        ...(share ? chargeRows(bill, share).map((c) => ({ label: c.label, amount: money(c.amount) })) : []),
+        ...(share?.rounding ? [{ label: 'Pembulatan', amount: money(share.rounding) }] : []),
+      ]
+      if (extras.length) extras[0] = { ...extras[0], sep: true }
+      return { name: p.name, me: p.me, paid: p.paid, total: rp(share?.total ?? 0), lines: [...items, ...extras] }
+    }),
   }
 }
 
