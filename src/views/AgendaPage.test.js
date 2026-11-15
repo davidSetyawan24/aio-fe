@@ -212,6 +212,38 @@ describe('AgendaPage', () => {
       expect(w.find('[data-test="add-top"]').exists()).toBe(true)
     })
 
+    it('lays the day out by the hour, with the to-dos on the left', async () => {
+      const w = await mountPage()
+      const blocks = w.findAll('[data-test="tl-event"]')
+      expect(blocks.map((b) => b.text())).toEqual([expect.stringContaining('Brunch keluarga'), expect.stringContaining('Nonton sama Dia')])
+      // 10:00 → 10 jam × 64px; 19:00–21:30 → 2,5 jam
+      expect(blocks[0].attributes('style')).toContain('top: 640px')
+      expect(blocks[1].attributes('style')).toContain('height: 157px')
+      expect(w.find('[data-test="event"]').exists()).toBe(false)
+      expect(todoRow(w, 'Bayar listrik').exists()).toBe(true)
+      expect(w.find('[data-test="aside"]').text()).toContain('Bayar listrik')
+      expect(w.find('[data-test="aside"]').text()).toContain('1/5 beres')
+      await blocks[0].trigger('click')
+      expect(w.find('[data-test="event-detail"]').text()).toContain('Brunch keluarga')
+    })
+
+    it('starts the hours at 07.00, or just before an earlier first event once the day has loaded', async () => {
+      const w = await mountPage()
+      const scroller = () => w.find('[data-test="tl-scroll"]').element
+      expect(scroller().scrollTop).toBe(438) // 07.00 × 64px − 10px biar label jamnya nggak kepotong
+      await w.findAll('[data-test="aside"] [data-day]').find((d) => d.attributes('data-day') === '2026-11-21').trigger('click')
+      await flushPromises()
+      expect(scroller().scrollTop).toBe(438) // Futsal 08.00 → tetep 07.00
+    })
+
+    it('shows the "now" line only on today', async () => {
+      const w = await mountPage()
+      expect(w.find('[data-test="now-line"]').exists()).toBe(true)
+      await w.findAll('[data-test="aside"] [data-day]').find((d) => d.attributes('data-day') === '2026-11-16').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-test="now-line"]').exists()).toBe(false)
+    })
+
     it('adds and edits in a dialog instead of a new page', async () => {
       const w = await mountPage()
       await w.find('[data-test="add-top"]').trigger('click')

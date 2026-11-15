@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true">
-      <div class="page" :class="wide ? 'canvas' : 'narrow'">
+      <div class="page" :class="wide ? ['canvas', { fill: view !== 'month' }] : 'narrow'">
         <PageHeader eyebrow="Agenda" bell />
         <div class="head">
           <h1 class="h1 rise" style="--i: 1">{{ titleMain }}<span class="h1-sub">{{ titleSub }}</span></h1>
@@ -24,10 +24,17 @@
             <div v-if="wide" class="daywide">
               <div class="aside-col" data-test="aside">
                 <MonthCalendar compact :month="month" :selected="sel" :today="today" @pick="sel = $event" @shift="shiftMonth" />
+                <div class="lbl">To-do <small>{{ selTodos.length ? `${selTodos.filter((t) => t.done).length}/${selTodos.length} beres` : '' }}</small></div>
+                <div class="shell">
+                  <div class="core todo-list">
+                    <AgendaTodoRow v-for="t in selTodos" :key="`${t.id}:${t.occurrence}`" :row="t" @edit="editTodo" @error="showError" />
+                    <div v-if="!selTodos.length" class="todo-empty">Belum ada to-do.</div>
+                  </div>
+                </div>
                 <div class="lbl">📥 Kapan-kapan <small>{{ store.undated.length }}</small></div>
                 <div class="shell"><div class="core flat"><KapanKapanList :items="store.undated" :today="today" @edit="editTodo" /></div></div>
               </div>
-              <AgendaDayList :day="store.day(sel)" @event="openEvent" @edit-todo="editTodo" @error="showError" />
+              <AgendaDayTimeline :day="store.day(sel)" :date="sel" :now-minute="sel === today ? nowMinute : null" @event="openEvent" />
             </div>
             <template v-else>
               <div class="strip-head">
@@ -98,9 +105,11 @@ import { useRoute } from 'vue-router'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
 import AgendaDayList from '@/components/AgendaDayList.vue'
+import AgendaDayTimeline from '@/components/AgendaDayTimeline.vue'
 import AgendaForm from '@/components/AgendaForm.vue'
 import AgendaMonthBig from '@/components/AgendaMonthBig.vue'
 import AgendaSheet from '@/components/AgendaSheet.vue'
+import AgendaTodoRow from '@/components/AgendaTodoRow.vue'
 import AgendaWeek from '@/components/AgendaWeek.vue'
 import EventDetail from '@/components/EventDetail.vue'
 import KapanKapanList from '@/components/KapanKapanList.vue'
@@ -133,6 +142,16 @@ const form = ref({ kind: 'todo', item: null, date: '', occurrence: null })
 const formKey = ref(0)
 
 const today = computed(() => store.today ?? localToday())
+const selTodos = computed(() => (sel.value ? store.day(sel.value).todos : []))
+
+/** Menit sekarang (jam lokal) buat garis merah di tampilan jam-jaman — disegerin tiap menit. */
+const minuteNow = () => {
+  const d = new Date()
+  return d.getHours() * 60 + d.getMinutes()
+}
+const nowMinute = ref(minuteNow())
+const nowTimer = setInterval(() => (nowMinute.value = minuteNow()), 60_000)
+onBeforeUnmount(() => clearInterval(nowTimer))
 const month = computed(() => monthStart(sel.value ?? today.value))
 const week = computed(() => weekDates(sel.value ?? today.value))
 const num = (date) => Number(date.slice(8))
@@ -310,7 +329,12 @@ function editEvent(e) {
   .h1 { margin-bottom: 0; }
   .ctrls { margin-bottom: 4px; }
   .seg { flex: none; width: 300px; }
-  .daywide { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 18px; }
-  .aside-col { position: sticky; top: 24px; }
+  /* Hari & Minggu: setinggi layar, area jam scroll sendiri (jendela pendek → minimal 520px, halaman yang scroll). */
+  .fill { height: 100%; display: flex; flex-direction: column; padding-bottom: 24px; }
+  .daywide { display: grid; grid-template-columns: 290px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 22px; margin-top: 18px; flex: 1; min-height: 520px; }
+  .aside-col { min-height: 0; overflow-y: auto; padding: 0 2px 4px; scrollbar-width: none; }
+  .aside-col::-webkit-scrollbar { display: none; }
+  .todo-list { padding: 4px 6px; }
+  .todo-empty { padding: 14px; color: var(--muted); font-size: 13px; text-align: center; }
 }
 </style>
