@@ -23,7 +23,7 @@ const notifications = useNotificationsStore()
 const error = ref('')
 
 const KINDS = [
-  { key: 'tagihan', label: 'Tagihan jatuh tempo', sub: 'H-3 dan hari H', emoji: '🧾', tint: '#E4F7C4' },
+  { key: 'tagihan', label: 'Bayar Rutin', sub: 'Sesuai pengingat tiap bayar rutin', emoji: '🔁', tint: '#E4F7C4' },
   { key: 'todo', label: 'To-do', sub: 'Pas tenggatnya hari ini', emoji: '✅', tint: '#DCEBFF' },
   { key: 'agenda', label: 'Agenda', sub: '30 menit sebelum acara', emoji: '📅', tint: '#F3E1FF' },
   { key: 'keamanan', label: 'Keamanan', sub: 'Ada device baru login ke akun lo', emoji: '🔐', tint: '#FFE0E6' },

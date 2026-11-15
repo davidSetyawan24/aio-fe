@@ -34,6 +34,9 @@ describe('NotificationSettingsList', () => {
     const w = await mountList()
     expect(api.get).toHaveBeenCalledWith('/notifications/settings')
     for (const key of ['tagihan', 'todo', 'agenda', 'keamanan']) expect(toggle(w, key).attributes('aria-checked'), key).toBe('true')
+    expect(w.text()).toContain('Bayar Rutin')
+    expect(w.text()).toContain('Sesuai pengingat tiap bayar rutin')
+    expect(w.text()).not.toContain('Tagihan')
   })
 
   it('saves a switch right away', async () => {

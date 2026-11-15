@@ -22,7 +22,7 @@
         <div class="shell rise" style="--i: 3">
           <NotificationSettingsList />
         </div>
-        <p class="hint rise" style="--i: 4">Isi & jadwal tiap notif nyusul pas fiturnya (Tagihan, To-do, Agenda) jadi. Pilihan di sini berlaku buat akun lo.</p>
+        <p class="hint rise" style="--i: 4">Jadwal pengingatnya diatur di tiap Bayar Rutin, to-do, & acara. Pilihan di sini berlaku buat akun lo.</p>
       </div>
     </ion-content>
   </ion-page>

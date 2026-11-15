@@ -88,6 +88,13 @@ describe('NotificationsPage', () => {
     const w = await mountPage([])
     expect(w.find('h1').text()).toBe('Notifikasi.Masih sepi.')
     expect(w.find('[data-test="empty"]').text()).toContain('Belum ada notif.')
+    expect(w.find('[data-test="empty"]').text()).toContain('bayar rutin yang mau jatuh tempo')
+  })
+
+  it('shows a Bayar Rutin reminder with its own icon', async () => {
+    const w = await mountPage([{ id: 3, type: 'tagihan', title: '🔁 Netflix jatuh tempo besok', body: 'Rp186.000 · dari Jago Fixed Cost', link: '/tabs/menu/bayar-rutin', read: false, createdAt: ago(0) }])
+    expect(w.find('[data-test="notif"]').text()).toContain('🔁')
+    expect(w.find('[data-test="notif"]').text()).not.toContain('🧾')
   })
 
   it('opens the settings', async () => {

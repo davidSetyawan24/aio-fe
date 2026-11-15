@@ -21,7 +21,7 @@
               <div class="core empty" data-test="empty">
                 <div class="art">🔔</div>
                 <b>Belum ada notif.</b>
-                <p>Nanti tagihan yang mau jatuh tempo, to-do, agenda, dan login baru bakal nongol di sini. Santai dulu 😌</p>
+                <p>Nanti bayar rutin yang mau jatuh tempo, to-do, agenda, dan login baru bakal nongol di sini. Santai dulu 😌</p>
               </div>
             </div>
 
@@ -87,7 +87,7 @@ const wide = useMedia('(min-width: 1100px)')
 
 /** Emoji + tint per jenis notif (pastel, sesuai mockup). */
 const LOOKS = {
-  tagihan: { emoji: '🧾', tint: '#E4F7C4' },
+  tagihan: { emoji: '🔁', tint: '#E4F7C4' },
   todo: { emoji: '✅', tint: '#DCEBFF' },
   agenda: { emoji: '📅', tint: '#F3E1FF' },
   keamanan: { emoji: '🔐', tint: '#FFE0E6' },

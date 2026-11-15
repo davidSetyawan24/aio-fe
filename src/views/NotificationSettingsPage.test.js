@@ -41,6 +41,7 @@ describe('NotificationSettingsPage', () => {
   it('shows the four kinds as switches, all on', async () => {
     const w = await mountPage()
     for (const key of ['tagihan', 'todo', 'agenda', 'keamanan']) expect(toggle(w, key).attributes('aria-checked'), key).toBe('true')
+    expect(w.text()).toContain('Jadwal pengingatnya diatur di tiap Bayar Rutin, to-do, & acara.')
   })
 
   it('has the phone push switch as "Segera" and disabled', async () => {
