@@ -1,15 +1,16 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { ApiError } from '@/lib/api.js'
 import { setNotificationsApi } from '@/stores/notifications.js'
 import NotificationSettingsPage from './NotificationSettingsPage.vue'
 
 const toast = vi.hoisted(() => ({ present: vi.fn() }))
 const toastCreate = vi.hoisted(() => vi.fn())
+const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn() }))
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
-  useIonRouter: () => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn() }),
+  useIonRouter: () => ionRouter,
+  onIonViewWillEnter: (fn) => fn(),
   toastController: { create: toastCreate },
 }))
 
@@ -31,7 +32,10 @@ async function mountPage(patch) {
 }
 const toggle = (w, key) => w.find(`[data-test="toggle-${key}"]`)
 
-beforeEach(() => toastCreate.mockReset().mockResolvedValue(toast))
+beforeEach(() => {
+  toastCreate.mockReset().mockResolvedValue(toast)
+  ionRouter.navigate.mockClear()
+})
 
 describe('NotificationSettingsPage', () => {
   it('shows the four kinds as switches, all on', async () => {
@@ -45,19 +49,22 @@ describe('NotificationSettingsPage', () => {
     expect(w.find('[data-test="toggle-push"]').attributes('disabled')).toBeDefined()
   })
 
-  it('saves a switch right away', async () => {
-    const w = await mountPage()
-    await toggle(w, 'keamanan').trigger('click')
-    await flushPromises()
-    expect(api.patch).toHaveBeenCalledWith('/notifications/settings', { keamanan: false })
-    expect(toggle(w, 'keamanan').attributes('aria-checked')).toBe('false')
+  it('stays here on a phone or tablet', async () => {
+    await mountPage()
+    expect(ionRouter.navigate).not.toHaveBeenCalled()
   })
 
-  it('flips back and says why when saving fails', async () => {
-    const w = await mountPage(vi.fn(async () => { throw new ApiError('Nggak bisa nyambung ke server.', 0) }))
-    await toggle(w, 'todo').trigger('click')
-    await flushPromises()
-    expect(toggle(w, 'todo').attributes('aria-checked')).toBe('true')
-    expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Nggak bisa nyambung ke server.' }))
+  describe('on a wide screen', () => {
+    beforeEach(() => {
+      window.matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    })
+    afterEach(() => {
+      delete window.matchMedia
+    })
+
+    it('goes back to Notifikasi, where the switches already are', async () => {
+      await mountPage()
+      expect(ionRouter.navigate).toHaveBeenCalledWith('/tabs/notifikasi', 'back', 'replace')
+    })
   })
 })
