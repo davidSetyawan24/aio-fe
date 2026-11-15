@@ -149,7 +149,9 @@
         </template>
       </div>
 
-      <Teleport to="body">
+      <!-- Ke dalem ion-app (bukan body): ion-app bikin tumpukan z-index sendiri, popup Ionic (konfirmasi Hapus) dipasang di situ.
+           Kalau panel di body, konfirmasinya ketutup scrim panel & nggak bisa dipencet. -->
+      <Teleport to="ion-app">
         <div v-if="wide" class="wallet-scrim" :class="{ show: panelOpen }" @click="closePanel" />
         <aside v-if="wide" class="wallet-panel" :class="{ show: panelOpen }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!panelOpen)">
           <div class="panel-head">
@@ -366,7 +368,7 @@ button.item:active { background: var(--soft); }
 .cards .empty { grid-column: 1 / -1; }
 </style>
 
-<!-- Panel form PC di-teleport ke body → style-nya global (diawali wallet-, nggak bentrok). -->
+<!-- Panel form PC di-teleport ke ion-app → style-nya global (diawali wallet-, nggak bentrok). -->
 <style>
 .wallet-scrim { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .35); opacity: 0; pointer-events: none; transition: opacity .4s var(--spring); }
 .wallet-scrim.show { opacity: 1; pointer-events: auto; }
