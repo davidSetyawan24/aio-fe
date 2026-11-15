@@ -12,6 +12,7 @@ const sheetCreate = vi.hoisted(() => vi.fn())
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
+  onIonViewWillEnter: (fn) => fn(),
   toastController: { create: toastCreate },
   actionSheetController: { create: sheetCreate },
 }))
@@ -58,6 +59,7 @@ const save = async (w) => {
 
 beforeEach(() => {
   ionRouter.back.mockClear()
+  ionRouter.navigate.mockClear()
   toastCreate.mockReset().mockResolvedValue(toast)
   sheet.onDidDismiss.mockReset().mockResolvedValue({ data: 'delete' })
   sheetCreate.mockReset().mockResolvedValue(sheet)
@@ -146,5 +148,25 @@ describe('CategoryFormPage — ubah', () => {
     await w.router.push('/tabs/menu/kartu/2')
     await flushPromises()
     expect(w.find('[data-test="name"]').element.value).toBe('Makan')
+  })
+})
+
+describe('CategoryFormPage — layar lebar', () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+  })
+  afterEach(() => {
+    delete window.matchMedia
+  })
+
+  it('goes back to Kategori when opened directly (the form lives in a panel there)', async () => {
+    await mountForm('/tabs/menu/kategori/tambah')
+    expect(ionRouter.navigate).toHaveBeenCalledWith('/tabs/menu/kategori', 'back', 'replace')
+  })
+
+  it('stays on the page when opened from Catat', async () => {
+    const w = await mountForm('/tabs/menu/kategori/tambah?from=catat')
+    expect(ionRouter.navigate).not.toHaveBeenCalled()
+    expect(w.find('[data-test="name"]').exists()).toBe(true)
   })
 })
