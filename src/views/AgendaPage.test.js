@@ -106,6 +106,34 @@ describe('AgendaPage', () => {
     expect(w.find('a.loc').attributes('href')).toBe('https://www.google.com/maps/search/?api=1&query=Social%20House%2C%20Grand%20Indonesia')
   })
 
+  it('HP: today sits in the middle of the strip, 3 days back and 3 ahead', async () => {
+    const w = await mountPage()
+    const days = () => w.find('[data-test="strip"]').findAll('button').map((b) => b.attributes('data-day'))
+    expect(days()).toEqual(['2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15', '2026-11-16', '2026-11-17', '2026-11-18'])
+    expect(w.find('.strip-head b').text()).toBe('12 Nov – 18 Nov')
+    expect(api.get).toHaveBeenLastCalledWith('/agenda?from=2026-11-12&to=2026-11-18')
+    // tap tanggal lain → strip diem
+    await w.find('[data-day="2026-11-17"]').trigger('click')
+    expect(days()[0]).toBe('2026-11-12')
+    expect(w.find('h1').text()).toContain('Selasa, 17 Nov')
+    // › geser 7 hari, tanggal yang dipilih ikut
+    await w.find('[data-test="next"]').trigger('click')
+    await flushPromises()
+    expect(days()[0]).toBe('2026-11-19')
+    expect(w.find('h1').text()).toContain('Selasa, 24 Nov')
+    expect(api.get).toHaveBeenLastCalledWith('/agenda?from=2026-11-19&to=2026-11-25')
+    // Hari ini → balik ke tengah lagi
+    await w.find('[data-test="today"]').trigger('click')
+    await flushPromises()
+    expect(days()[3]).toBe('2026-11-15')
+  })
+
+  it('HP: a date opened from elsewhere outside the strip becomes its middle', async () => {
+    const w = await mountPage('/tabs/agenda?tanggal=2026-12-01')
+    const days = w.find('[data-test="strip"]').findAll('button').map((b) => b.attributes('data-day'))
+    expect(days[3]).toBe('2026-12-01')
+  })
+
   it('moves to another day from the strip, and back with "Hari ini"', async () => {
     const w = await mountPage()
     expect(w.find('[data-test="today"]').exists()).toBe(false)
@@ -208,8 +236,6 @@ describe('AgendaPage', () => {
   describe('Bayar Rutin', () => {
     const billRow = (w, name) => w.findAll('[data-test="bill"]').find((r) => r.text().includes(name))
     const openTomorrow = async (w) => {
-      await w.find('[data-test="next"]').trigger('click')
-      await flushPromises()
       await w.find('[data-day="2026-11-16"]').trigger('click')
       await flushPromises()
     }
@@ -253,12 +279,8 @@ describe('AgendaPage', () => {
 
     it('marks days with an unpaid bill with a yellow dot and shows them in the week and month', async () => {
       const w = await mountPage()
-      await w.find('[data-test="next"]').trigger('click')
-      await flushPromises()
       expect(w.find('[data-day="2026-11-16"] .bdot').exists()).toBe(true)
       expect(w.find('[data-day="2026-11-17"] .bdot').exists()).toBe(false)
-      await w.find('[data-test="today"]').trigger('click')
-      await flushPromises()
       await w.find('[data-view="week"]').trigger('click')
       await flushPromises()
       await w.find('[data-test="next"]').trigger('click')

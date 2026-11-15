@@ -39,14 +39,14 @@
             </div>
             <template v-else>
               <div class="strip-head">
-                <b>{{ weekLabel }}</b>
+                <b>{{ stripLabel }}</b>
                 <span class="arrows">
-                  <button type="button" aria-label="Minggu sebelumnya" data-test="prev" @click="shiftDays(-7)"><PhCaretLeft :size="15" /></button>
-                  <button type="button" aria-label="Minggu berikutnya" data-test="next" @click="shiftDays(7)"><PhCaretRight :size="15" /></button>
+                  <button type="button" aria-label="7 hari sebelumnya" data-test="prev" @click="shiftStrip(-7)"><PhCaretLeft :size="15" /></button>
+                  <button type="button" aria-label="7 hari berikutnya" data-test="next" @click="shiftStrip(7)"><PhCaretRight :size="15" /></button>
                 </span>
               </div>
               <div class="strip" data-test="strip">
-                <button v-for="date in week" :key="date" type="button" class="dpill" :class="{ on: date === sel, today: date === today }" :data-day="date" @click="sel = date">
+                <button v-for="date in strip" :key="date" type="button" class="dpill" :class="{ on: date === sel, today: date === today }" :data-day="date" @click="sel = date">
                   <small>{{ HR[weekdayOf(date)] }}</small><b>{{ Number(date.slice(8)) }}</b>
                   <span class="dots"><i v-if="store.day(date).events.length" /><i v-if="store.day(date).todos.some((t) => !t.done)" class="tdot" /><i v-if="store.day(date).bills.some((b) => b.status !== 'paid')" class="bdot" /></span>
                 </button>
@@ -117,7 +117,7 @@ import EventDetail from '@/components/EventDetail.vue'
 import KapanKapanList from '@/components/KapanKapanList.vue'
 import MonthCalendar from '@/components/MonthCalendar.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { addDays, addMonths, BLN, dayTitle, HR, localToday, monthName, monthStart, rangeFor, weekDates, weekdayOf, weekStart } from '@/lib/agenda.js'
+import { addDays, addMonths, BLN, dayTitle, HR, localToday, monthName, monthStart, rangeFor, stripAround, weekDates, weekdayOf, weekStart } from '@/lib/agenda.js'
 import { useMedia } from '@/lib/media.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { useAgendaStore } from '@/stores/agenda.js'
@@ -159,7 +159,22 @@ const month = computed(() => monthStart(sel.value ?? today.value))
 const week = computed(() => weekDates(sel.value ?? today.value))
 const num = (date) => Number(date.slice(8))
 const mon = (date) => BLN[Number(date.slice(5, 7)) - 1]
-const weekLabel = computed(() => `${num(week.value[0])} ${mon(week.value[0])} – ${num(week.value[6])} ${mon(week.value[6])}`)
+
+/**
+ * Strip tanggal tampilan Hari (HP/iPad tegak): pertama dibuka hari ini di tengah (3 ke belakang, 3 ke depan).
+ * Tap tanggal → strip diem; ‹ › geser 7 hari; tanggal yang dipilih di luar strip (link notif, Hari ini, dari Minggu/Bulan) → jadi tengahnya.
+ */
+const stripStart = ref(null)
+const strip = computed(() => (stripStart.value ? stripAround(addDays(stripStart.value, 3)) : []))
+const centerOn = (date) => (stripStart.value = stripAround(date)[0])
+watch(sel, (date) => {
+  if (date && (!stripStart.value || date < stripStart.value || date > addDays(stripStart.value, 6))) centerOn(date)
+}, { immediate: true, flush: 'sync' }) // sync: strip udah bener sebelum data dimuat
+const stripLabel = computed(() => (strip.value.length ? `${num(strip.value[0])} ${mon(strip.value[0])} – ${num(strip.value[6])} ${mon(strip.value[6])}` : ''))
+function shiftStrip(n) {
+  stripStart.value = addDays(stripStart.value, n)
+  sel.value = addDays(sel.value, n)
+}
 
 const titleMain = computed(() => {
   if (!sel.value) return 'Agenda'
@@ -188,19 +203,19 @@ const offToday = computed(() => {
 let loadedKey = ''
 async function ensure(force = false) {
   if (!sel.value) return
-  const { from, to } = rangeFor(view.value, sel.value, wide.value)
+  const { from, to } = rangeFor(view.value, sel.value, wide.value, stripStart.value)
   const key = `${from}|${to}`
   if (!force && key === loadedKey) return
   loadedKey = key
   try {
-    await store.load(view.value, sel.value, wide.value)
+    await store.load(view.value, sel.value, wide.value, stripStart.value)
     error.value = ''
   } catch (err) {
     loadedKey = ''
     error.value = apiErrorMessage(err)
   }
 }
-watch([view, sel, wide], () => ensure())
+watch([view, sel, wide, stripStart], () => ensure())
 
 onIonViewWillEnter(async () => {
   // Link notif: /tabs/agenda?tanggal=YYYY-MM-DD → buka tanggal itu.
@@ -210,7 +225,10 @@ onIonViewWillEnter(async () => {
   if (fromLink) view.value = 'day'
   await ensure(true)
   // Tanggal HP bisa beda sama server (WIB): pertama kali, ikut "hari ini" server.
-  if (!fromLink && store.today && sel.value === localToday() && sel.value !== store.today) sel.value = store.today
+  if (!fromLink && store.today && sel.value === localToday() && sel.value !== store.today) {
+    sel.value = store.today
+    centerOn(store.today)
+  }
 })
 function onVisible() {
   if (document.visibilityState === 'visible') store.refresh()
@@ -227,7 +245,10 @@ function goDay(date) {
   sel.value = date
   view.value = 'day'
 }
-const backToToday = () => (sel.value = today.value)
+function backToToday() {
+  sel.value = today.value
+  centerOn(today.value)
+}
 const showError = (err) => (error.value = apiErrorMessage(err))
 
 function openDrawer() {

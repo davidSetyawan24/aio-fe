@@ -5,6 +5,7 @@ import {
   mapsUrl,
   monthCells,
   rangeFor,
+  stripAround,
   relLabel,
   reminderKey,
   reminderLabel,
@@ -34,6 +35,9 @@ describe('agenda lib', () => {
     // Bulan (dan Hari di PC, karena ada kalender kecil): 6 minggu penuh dari Senin sebelum tgl 1.
     expect(rangeFor('month', TODAY, false)).toEqual({ from: '2026-10-26', to: '2026-12-06' })
     expect(rangeFor('day', TODAY, true)).toEqual({ from: '2026-10-26', to: '2026-12-06' })
+    // HP: strip 7 hari mulai dari stripStart (hari ini di tengah)
+    expect(rangeFor('day', TODAY, false, '2026-11-12')).toEqual({ from: '2026-11-12', to: '2026-11-18' })
+    expect(rangeFor('week', TODAY, false, '2026-11-12')).toEqual({ from: '2026-11-09', to: '2026-11-15' })
   })
 
   it('lists the month grid, dropping a last week that is all next month', () => {
@@ -80,5 +84,12 @@ describe('agenda lib', () => {
 
   it('links a typed location to a Google Maps search', () => {
     expect(mapsUrl('Fairmont Jakarta, Senayan')).toBe('https://www.google.com/maps/search/?api=1&query=Fairmont%20Jakarta%2C%20Senayan')
+  })
+})
+
+describe('stripAround', () => {
+  it('7 hari dengan tanggal itu di tengah (3 ke belakang, 3 ke depan)', () => {
+    expect(stripAround('2026-11-15')).toEqual(['2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15', '2026-11-16', '2026-11-17', '2026-11-18'])
+    expect(stripAround('2026-03-01')[0]).toBe('2026-02-26')
   })
 })

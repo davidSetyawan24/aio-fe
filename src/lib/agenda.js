@@ -43,12 +43,19 @@ export function monthCells(date) {
   return cells
 }
 
-/** Rentang yang diminta ke server per tampilan. Bulan (dan Hari di PC — ada kalender kecil) = 6 minggu penuh. */
-export function rangeFor(view, date, wide) {
+/** Strip tanggal HP: 7 hari dengan `date` di tengah (3 ke belakang, 3 ke depan). */
+export const stripAround = (date) => Array.from({ length: 7 }, (_, i) => addDays(date, i - 3))
+
+/**
+ * Rentang yang diminta ke server per tampilan. Bulan (dan Hari di PC — ada kalender kecil) = 6 minggu penuh.
+ * Hari di HP = 7 hari strip mulai `stripStart` (kalau ada).
+ */
+export function rangeFor(view, date, wide, stripStart) {
   if (view === 'month' || (view === 'day' && wide)) {
     const start = weekStart(monthStart(date))
     return { from: start, to: addDays(start, 41) }
   }
+  if (view === 'day' && stripStart) return { from: stripStart, to: addDays(stripStart, 6) }
   const from = weekStart(date)
   return { from, to: addDays(from, 6) }
 }

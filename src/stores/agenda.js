@@ -28,8 +28,8 @@ export const useAgendaStore = defineStore('agenda', {
   },
 
   actions: {
-    async load(view, date, wide) {
-      this.range = rangeFor(view, date, wide)
+    async load(view, date, wide, stripStart) {
+      this.range = rangeFor(view, date, wide, stripStart)
       await this.fetchRange()
     },
 
