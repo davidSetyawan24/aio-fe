@@ -2,23 +2,23 @@
   <!-- Ke dalem ion-app (bukan body): ion-app bikin tumpukan z-index sendiri, popup Ionic (konfirmasi Hapus) dipasang di situ.
        Kalau panel di body, konfirmasinya ketutup scrim panel & nggak bisa dipencet. -->
   <Teleport to="ion-app">
-    <div class="cat-scrim" :class="{ show: open }" @click="$emit('close')" />
+    <div class="cat-scrim" :class="{ show: open }" @click="requestClose" />
     <aside class="cat-panel" :class="{ show: open }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
       <div class="panel-head">
         <span class="eyebrow"><span class="dot" />Kategori</span>
-        <button class="x" aria-label="Tutup" @click="$emit('close')"><PhX :size="18" weight="bold" /></button>
+        <button class="x" aria-label="Tutup" @click="requestClose"><PhX :size="18" weight="bold" /></button>
       </div>
       <h2 class="panel-h1">
         <template v-if="categoryId"><b>{{ categories.byId(categoryId)?.name ?? 'Kategori' }}</b>.<br /><span>Ubah kategori</span></template>
         <template v-else>Kategori baru.<br /><span>Nama, emoji, warna</span></template>
       </h2>
-      <CategoryForm v-if="open" :key="formKey" :category-id="categoryId" :for-catat="forCatat" @done="$emit('done', $event)" />
+      <CategoryForm v-if="open" ref="form" :key="formKey" :category-id="categoryId" :for-catat="forCatat" @done="$emit('done', $event)" />
     </aside>
   </Teleport>
 </template>
 
 <script setup>
-import { onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { PhX } from '@phosphor-icons/vue'
 import CategoryForm from '@/components/CategoryForm.vue'
 import { useCategoriesStore } from '@/stores/categories.js'
@@ -35,12 +35,19 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'done'])
 const categories = useCategoriesStore()
+const form = ref(null)
+
+/** Tutup — kecuali form lagi nyimpen/hapus: kalau ditutup di tengah jalan hasilnya nggak nyampe (kategori baru "nyangkut"). */
+function requestClose() {
+  if (form.value?.busy) return
+  emit('close')
+}
 
 // Esc nutup panel — kecuali lagi ada konfirmasi Ionic (mis. "Hapus?") di atasnya: Esc-nya buat batalin itu aja.
 const onKey = (e) => {
   if (e.key !== 'Escape' || !props.open) return
   if (document.querySelector('ion-action-sheet, ion-alert')) return
-  emit('close')
+  requestClose()
 }
 document.addEventListener('keydown', onKey)
 onBeforeUnmount(() => document.removeEventListener('keydown', onKey))

@@ -74,6 +74,10 @@ const props = defineProps({
 })
 const emit = defineEmits(['done'])
 
+const busy = ref(false)
+// Panel ngecek ini: selama lagi nyimpen / hapus, panel nggak boleh ditutup (biar hasil simpennya nyampe).
+defineExpose({ busy })
+
 const categories = useCategoriesStore()
 const isEdit = computed(() => props.categoryId != null && props.categoryId !== '')
 const original = computed(() => (isEdit.value ? categories.byId(props.categoryId) : null))
@@ -84,7 +88,6 @@ const emoji = ref('🎬')
 const tint = ref(CATEGORY_TINTS[4])
 const error = ref('')
 const shake = ref(false)
-const busy = ref(false)
 const trimmedName = computed(() => name.value.trim())
 
 watch(
