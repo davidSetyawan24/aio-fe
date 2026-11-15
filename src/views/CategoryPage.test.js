@@ -122,6 +122,18 @@ describe('CategoryPage', () => {
       expect(panel(w).classes()).toContain('show')
     })
 
+    // Review 15/11: Esc buat batalin konfirmasi Hapus jangan ikut nutup panel (isian yang belum disimpen ilang).
+    it('keeps the panel open when Esc only cancels a confirmation on top of it', async () => {
+      const w = await mountPage(spent())
+      await w.findAll('[data-test="tile"]')[0].trigger('click')
+      const confirm = document.createElement('ion-action-sheet')
+      document.body.appendChild(confirm)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      confirm.remove()
+      expect(panel(w).classes()).toContain('show')
+    })
+
     it('closes the panel and says so once the form is done', async () => {
       const w = await mountPage(spent())
       await w.findAll('[data-test="tile"]')[0].trigger('click')

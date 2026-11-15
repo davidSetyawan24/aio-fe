@@ -116,6 +116,21 @@ describe('WalletPage — PC (layar lebar)', () => {
     expect(w.find('[data-test="panel"]').text()).toContain('Tambah baru')
   })
 
+  // Review 15/11: Esc buat batalin konfirmasi Hapus jangan ikut nutup panel (isian yang belum disimpen ilang).
+  it('keeps the panel open when Esc only cancels a confirmation on top of it', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="pc-add"]').trigger('click')
+    const confirm = document.createElement('ion-action-sheet')
+    document.body.appendChild(confirm)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flushPromises()
+    confirm.remove()
+    expect(w.find('[data-test="panel"]').classes()).toContain('show')
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flushPromises()
+    expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+  })
+
   it('stars a card from the big card without opening the panel', async () => {
     const w = await mountPage()
     await w.find('[data-test="bigcc"] [data-test="star-4"]').trigger('click')

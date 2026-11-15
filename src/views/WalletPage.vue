@@ -263,8 +263,11 @@ async function onPanelDone(message) {
   closePanel()
   await (await toastController.create({ message, duration: 2500, position: 'top', cssClass: 'aio-toast' })).present()
 }
+// Esc nutup panel — kecuali lagi ada konfirmasi Ionic (mis. "Hapus?") di atasnya: Esc-nya buat batalin itu aja.
 const onKey = (e) => {
-  if (e.key === 'Escape' && panelOpen.value) closePanel()
+  if (e.key !== 'Escape' || !panelOpen.value) return
+  if (document.querySelector('ion-action-sheet, ion-alert')) return
+  closePanel()
 }
 document.addEventListener('keydown', onKey)
 onBeforeUnmount(() => {
