@@ -114,7 +114,9 @@ describe('createApi extras', () => {
     const api = createApi({ baseURL: 'http://x', adapter: fakeAdapter(200, { success: true, message: '', data: { ok: 1 } }, seen) })
     await expect(api.patch('/auth/devices/2', { name: 'a' })).resolves.toEqual({ ok: 1 })
     await api.del('/auth/devices/2')
-    expect(seen.map((c) => c.method)).toEqual(['patch', 'delete'])
+    await api.del('/push/subscription', { endpoint: 'https://x' })
+    expect(seen.map((c) => c.method)).toEqual(['patch', 'delete', 'delete'])
+    expect(JSON.parse(seen[2].data)).toEqual({ endpoint: 'https://x' })
   })
 
   it('has put with a body', async () => {

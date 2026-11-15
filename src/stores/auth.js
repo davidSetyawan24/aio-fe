@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { api as defaultApi } from '@/lib/api.js'
+import { usePushStore } from './push.js'
 
 let authApi = defaultApi
 
@@ -75,6 +76,8 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
+      // Push device ini dimatiin DULUAN: walau logout ke server gagal (offline), HP ini nggak dapet notif lagi.
+      await usePushStore().forgetOnLogout()
       try {
         await authApi.post('/auth/logout')
       } catch {

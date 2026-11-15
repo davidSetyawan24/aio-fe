@@ -56,9 +56,13 @@
               </div>
             </div>
             <div class="rise" style="--i: 3">
-              <div class="group-label side-label">Atur notifikasi<small>berlaku buat akun lo</small></div>
+              <div class="group-label side-label">Device ini<small>notif di layar</small></div>
+              <div class="shell"><PushDeviceRow /></div>
+            </div>
+            <div class="rise" style="--i: 4">
+              <div class="group-label side-label">Atur notifikasi<small>berlaku buat semua device</small></div>
               <div class="shell"><NotificationSettingsList /></div>
-              <p class="hint">Notif di layar HP (kayak WhatsApp) nyusul. iPhone/iPad: app harus dibuka dari Home Screen.</p>
+              <p class="hint">Jadwal pengingatnya diatur di tiap Bayar Rutin, to-do, & acara.</p>
             </div>
           </aside>
         </div>
@@ -72,6 +76,7 @@ import { computed, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretRight, PhChecks, PhSlidersHorizontal } from '@phosphor-icons/vue'
 import NotificationSettingsList from '@/components/NotificationSettingsList.vue'
+import PushDeviceRow from '@/components/PushDeviceRow.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useMedia } from '@/lib/media.js'
 import { dayGroup, timeLabel } from '@/lib/notifTime.js'

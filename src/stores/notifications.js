@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { syncBadge } from '@/lib/badge.js'
 import { api as defaultApi } from '@/lib/api.js'
 import { tabItems } from '@/modules/registry.js'
 
@@ -20,13 +21,13 @@ export const useNotificationsStore = defineStore('notifications', {
   actions: {
     async refreshCount() {
       const { unread } = await notificationsApi.get('/notifications/unread-count')
-      this.unread = unread
+      this.setUnread(unread)
     },
 
     async load() {
       const data = await notificationsApi.get('/notifications')
       this.items = data.items
-      this.unread = data.unread
+      this.setUnread(data.unread)
       this.loaded = true
     },
 
@@ -35,13 +36,26 @@ export const useNotificationsStore = defineStore('notifications', {
       if (!item || item.read) return
       this.items = this.items.map((n) => (n.id === id ? { ...n, read: true } : n))
       const { unread } = await notificationsApi.post(`/notifications/${id}/read`)
+      this.setUnread(unread)
+    },
+
+    /** Notif di-tap dari layar HP (push): tandain dibaca walau daftar lonceng belum dimuat. */
+    async readFromPush(id) {
+      this.items = this.items.map((n) => (n.id === id ? { ...n, read: true } : n))
+      const { unread } = await notificationsApi.post(`/notifications/${id}/read`)
+      this.setUnread(unread)
+    },
+
+    /** Angka lonceng + angka merah di ikon app selalu sama. */
+    setUnread(unread) {
       this.unread = unread
+      syncBadge(unread)
     },
 
     async markAllRead() {
       await notificationsApi.post('/notifications/read-all')
       this.items = this.items.map((n) => ({ ...n, read: true }))
-      this.unread = 0
+      this.setUnread(0)
     },
 
     async loadSettings() {

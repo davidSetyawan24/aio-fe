@@ -27,6 +27,8 @@ import { router } from './router/index.js'
 import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
 import { isMainPage, useNotificationsStore } from './stores/notifications.js'
+import { takeNotifId } from './lib/push.js'
+import { usePushStore } from './stores/push.js'
 
 // scrollAssist dimatiin: tebakan tinggi keyboard Ionic (290px) salah buat keyboard iOS asli, dan geseran
 // otomatisnya bentrok sama "mode ngetik" di halaman login. Form wajib dirancang tetep kelihatan di atas keyboard.
@@ -46,6 +48,18 @@ router.afterEach((to) => isMainPage(to.path) && refreshBell())
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && refreshBell())
 // Pengingat Agenda dibikin server tiap menit → lonceng ikut dicek tiap 60 detik selama app keliatan.
 startBellPolling(refreshBell)
+
+// Notif di layar HP: keadaan device ini dicek sekali abis login (sekalian kirim ulang langganan ke server).
+// Dibuka dari tap notif (`?n=<id>`) → notif itu ditandain dibaca, `n` dibuang dari alamat.
+router.afterEach((to) => {
+  if (useAuthStore().status !== 'authed') return
+  const push = usePushStore()
+  if (push.state === 'loading') push.init().catch(() => {})
+  const { id, path } = takeNotifId(to.fullPath)
+  if (id === null) return
+  useNotificationsStore().readFromPush(id).catch(() => {})
+  router.replace(path)
+})
 
 // Mount langsung (nggak nunggu router siap) biar layar pembuka kelihatan selama status login dicek.
 app.mount('#app')

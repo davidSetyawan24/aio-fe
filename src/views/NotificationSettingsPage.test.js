@@ -44,10 +44,10 @@ describe('NotificationSettingsPage', () => {
     expect(w.text()).toContain('Jadwal pengingatnya diatur di tiap Bayar Rutin, to-do, & acara.')
   })
 
-  it('has the phone push switch as "Segera" and disabled', async () => {
+  it('baris Device ini udah hidup (bukan "Segera" lagi)', async () => {
     const w = await mountPage()
-    expect(w.find('[data-test="push"]').text()).toContain('Segera')
-    expect(w.find('[data-test="toggle-push"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-test="push-row"]').exists()).toBe(true)
+    expect(w.text()).not.toContain('Segera')
   })
 
   it('stays here on a phone or tablet', async () => {

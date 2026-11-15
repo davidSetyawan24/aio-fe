@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
 import { setAuthApi, useAuthStore } from './auth.js'
+import { usePushStore } from './push.js'
 
 const david = { id: 1, username: 'david', name: 'David Setyawan' }
 
@@ -77,6 +78,18 @@ describe('login', () => {
 })
 
 describe('logout', () => {
+  it('berhenti langganan push di device ini DULUAN, baru logout ke server', async () => {
+    const calls = []
+    setAuthApi(fakeApi({ post: async (url) => { calls.push(url); return null } }))
+    const push = usePushStore()
+    vi.spyOn(push, 'forgetOnLogout').mockImplementation(async () => { calls.push('push') })
+    const auth = useAuthStore()
+    auth.status = 'authed'
+    await auth.logout()
+    expect(calls).toEqual(['push', '/auth/logout'])
+    expect(auth.status).toBe('guest')
+  })
+
   it('becomes guest even when the request fails', async () => {
     setAuthApi(fakeApi({ post: async () => { throw new ApiError('Nggak bisa nyambung ke server.', 0) } }))
     const auth = useAuthStore()

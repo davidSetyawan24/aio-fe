@@ -62,7 +62,8 @@ export function createApi({ baseURL, adapter, onUnauthorized, extraHeaders } = {
     post: (url, body, opts) => send('post', url, body, opts),
     patch: (url, body) => send('patch', url, body),
     put: (url, body) => send('put', url, body),
-    del: (url) => send('delete', url),
+    /** `body` opsional (mis. hapus langganan push butuh `endpoint`). */
+    del: (url, body) => send('delete', url, body),
   }
 }
 

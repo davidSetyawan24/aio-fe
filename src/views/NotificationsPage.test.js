@@ -120,6 +120,10 @@ describe('NotificationsPage', () => {
       expect(side.find('[data-test="sum"]').text()).toContain('dari 2 notif')
       expect(side.findComponent(NotificationSettingsList).exists()).toBe(true)
       expect(side.find('[data-test="toggle-agenda"]').attributes('aria-checked')).toBe('true')
+      // Baris "Device ini" (notif di layar) ada di atas saklar per jenis
+      const html = side.html()
+      expect(side.find('[data-test="push-row"]').exists()).toBe(true)
+      expect(html.indexOf('data-test="push-row"')).toBeLessThan(html.indexOf('data-test="toggle-agenda"'))
       expect(w.find('[data-test="read-all"]').exists()).toBe(false)
       expect(w.find('[data-test="settings"]').exists()).toBe(false)
       expect(w.findAll('[data-test="notif"]')).toHaveLength(2)

@@ -8,11 +8,15 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Service worker sendiri (src/sw.js): simpen file app + nerima notif di layar HP (Web Push) + tap notif.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       // Manifest juga disajikan pas `npm run dev`, biar bisa langsung Add to Home Screen dari HP/iPad.
       devOptions: { enabled: true, type: 'module' },
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon-180.png', 'icons/favicon-32.png'],
       // Font Plus Jakarta Sans ikut disimpen di HP (rancangan usulan e: tetep jalan walau sinyal jelek).
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
+      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'], maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 },
       manifest: {
         name: 'AIO Space',
         short_name: 'AIO Space',

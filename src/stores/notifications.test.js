@@ -89,6 +89,36 @@ describe('notifications store', () => {
   })
 })
 
+describe('dari push & angka di ikon', () => {
+  afterEach(() => {
+    delete navigator.setAppBadge
+    delete navigator.clearAppBadge
+  })
+
+  it('tap notif push → ditandain dibaca walau daftar belum dimuat; angka ikon ikut', async () => {
+    navigator.setAppBadge = vi.fn(async () => {})
+    navigator.clearAppBadge = vi.fn(async () => {})
+    const api = fakeApi({ post: vi.fn(async () => ({ unread: 2 })) })
+    setNotificationsApi(api)
+    const store = useNotificationsStore()
+    await store.readFromPush(5)
+    expect(api.post).toHaveBeenCalledWith('/notifications/5/read')
+    expect(store.unread).toBe(2)
+    expect(navigator.setAppBadge).toHaveBeenLastCalledWith(2)
+  })
+
+  it('angka lonceng berubah → angka ikon ikut (0 = dihapus)', async () => {
+    navigator.setAppBadge = vi.fn(async () => {})
+    navigator.clearAppBadge = vi.fn(async () => {})
+    setNotificationsApi(fakeApi())
+    const store = useNotificationsStore()
+    await store.refreshCount()
+    expect(navigator.setAppBadge).toHaveBeenLastCalledWith(4)
+    await store.markAllRead()
+    expect(navigator.clearAppBadge).toHaveBeenCalled()
+  })
+})
+
 describe('isMainPage', () => {
   it('only counts the tab root pages', () => {
     for (const p of ['/tabs/home', '/tabs/uang', '/tabs/agenda', '/tabs/menu', '/tabs/profil']) expect(isMainPage(p), p).toBe(true)
