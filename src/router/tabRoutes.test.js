@@ -15,11 +15,13 @@ const budgetStub = { render: () => null }
 const splitStub = { render: () => null }
 const splitDetailStub = { render: () => null }
 const splitFormStub = { render: () => null }
+const agendaStub = { render: () => null }
+const agendaFormStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
-  BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub,
+  BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -32,6 +34,11 @@ describe('buildTabRoutes', () => {
     const tagihan = find('menu/tagihan')
     expect(tagihan.props).toMatchObject({ title: 'Tagihan', emoji: '🧾', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
+  })
+
+  it('opens the Agenda tab on its own page', () => {
+    expect(find('agenda').component).toBe(agendaStub)
+    for (const p of ['agenda/baru', 'agenda/acara/:id/ubah', 'agenda/todo/:id/ubah']) expect(find(p)?.component, p).toBe(agendaFormStub)
   })
 
   it('sends the old Duit tab link to the Uang tab', () => {

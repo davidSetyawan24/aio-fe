@@ -23,7 +23,7 @@ export const modules = [
   // Split bill — foto struk, dibaca Mistral OCR, dibagi ke temen-temen.
   { key: 'split-bill', label: 'Split bill', emoji: '🍕', tint: '#FFE0E6', category: 'keuangan', status: 'ready' },
   // 15/11: tab "To-do" diganti "Agenda"; to-do nanti tinggal di dalem Agenda (bukan modul sendiri).
-  { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCalendarBlank },
+  { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'ready', tab: 2, icon: PhCalendarBlank },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
   { key: 'kalender-dia', label: 'Kalender Dia', emoji: '🌙', tint: '#E9E4FF', category: 'pribadi', status: 'soon' },

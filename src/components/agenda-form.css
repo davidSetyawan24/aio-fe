@@ -1,0 +1,20 @@
+/* Bareng: form acara & to-do + picker pengingat/ulangi (dipakai lewat <style scoped src>). */
+.field { margin-top: 16px; }
+.flabel { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 6px 6px; }
+.flabel em { font-style: normal; font-weight: 600; }
+.input { width: 100%; height: 50px; padding: 0 16px; border: 0; outline: 0; border-radius: 18px; background: var(--soft); color: var(--text); font: 600 16px var(--ion-font-family); }
+.input:focus { box-shadow: inset 0 0 0 2px var(--ink); }
+textarea.input { height: 88px; padding: 14px 16px; resize: none; line-height: 1.4; }
+.with-ic { position: relative; }
+.with-ic svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.with-ic .input { padding-left: 44px; }
+.two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; }
+.row-pk { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk { height: 38px; padding: 0 13px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 13px var(--ion-font-family); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.pk.on { background: var(--ink); color: var(--on-ink); }
+.pk.ghost { background: transparent; box-shadow: inset 0 0 0 1.5px var(--hair); color: var(--muted); }
+.pk input[type=date] { border: 0; background: transparent; color: inherit; font: inherit; font-size: 16px; width: 130px; }
+.pk .x { opacity: .6; }
+.err { color: var(--red); font-size: 12.5px; font-weight: 600; margin: 6px 6px 0; }
+.hint { color: var(--muted); font-size: 12px; margin: 6px 6px 0; line-height: 1.45; }
