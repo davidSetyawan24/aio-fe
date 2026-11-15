@@ -46,10 +46,11 @@
           <aside v-if="wide" class="side-col" data-test="side">
             <div class="shell rise" style="--i: 2">
               <div class="sum" data-test="sum">
-                <div class="k">{{ notifications.unread ? 'Belum dibaca' : 'Kotak notif' }}</div>
-                <div class="v"><template v-if="notifications.unread">{{ notifications.unread }} <span>notif baru</span></template><template v-else>Beres 🎉</template></div>
-                <div class="facts"><span class="fact">{{ notifications.items.length ? `dari ${notifications.items.length} notif` : 'Belum ada notif' }}</span></div>
-                <button class="readall" data-test="sum-read-all" :disabled="!notifications.unread || busy" @click="readAll">
+                <div class="k">{{ notifications.loaded && notifications.unread ? 'Belum dibaca' : 'Kotak notif' }}</div>
+                <div v-if="!notifications.loaded" class="v wait">{{ error ? 'Belum bisa dimuat' : 'Bentar ya…' }}</div>
+                <div v-else class="v"><template v-if="notifications.unread">{{ notifications.unread }} <span>notif baru</span></template><template v-else>Beres 🎉</template></div>
+                <div v-if="notifications.loaded" class="facts"><span class="fact">{{ notifications.items.length ? `dari ${notifications.items.length} notif` : 'Belum ada notif' }}</span></div>
+                <button class="readall" data-test="sum-read-all" :disabled="!notifications.loaded || !notifications.unread || busy" @click="readAll">
                   Tandai semua dibaca <span class="ic"><PhChecks :size="18" weight="bold" /></span>
                 </button>
               </div>
@@ -104,7 +105,11 @@ const groups = computed(() =>
   ORDER.map((label) => ({ label, items: notifications.items.filter((n) => dayGroup(n.createdAt) === label) })).filter((g) => g.items.length),
 )
 
+// Saklar di kolom kanan cuma dimuat pas dipasang; tiap balik ke sini (halaman Ionic tetep hidup) dicoba / disegerin lagi.
+let enteredBefore = false
 onIonViewWillEnter(async () => {
+  if (enteredBefore && wide.value) notifications.loadSettings().catch(() => {})
+  enteredBefore = true
   try {
     await notifications.load()
     error.value = ''
@@ -143,7 +148,8 @@ async function readAll() {
 .chipbtn:disabled { opacity: .45; pointer-events: none; }
 .error { color: var(--red); font-size: 13px; font-weight: 600; margin: 10px 6px 0; }
 .group-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 22px 8px 10px; }
-.list { padding: 6px; }
+/* Cuma daftar notif: .list polos bakal kena juga ke akar NotificationSettingsList (scoped nembus ke akar anak). */
+.list-col .list { padding: 6px; }
 .notif { position: relative; display: flex; gap: 14px; width: 100%; padding: 12px 12px 12px 14px; border: 0; border-radius: 20px; background: transparent; color: var(--text);
   font: inherit; text-align: left; cursor: pointer; transition: background-color .3s var(--spring); }
 .notif + .notif { margin-top: 2px; }
@@ -175,18 +181,22 @@ async function readAll() {
 .pc .empty { padding: 64px 24px 60px; }
 .pc .empty p { max-width: 360px; }
 .pc .notif { align-items: center; padding: 13px 16px 13px 18px; }
-.pc .notif:hover { background: var(--soft); }
-.pc .notif.unread:hover { background: color-mix(in srgb, var(--lime) 16%, transparent); }
+/* Hover cuma di device yang punya mouse — di iPad landscape (layout PC) efeknya nyangkut abis di-tap. */
+@media (hover: hover) {
+  .pc .notif:hover { background: var(--soft); }
+  .pc .notif.unread:hover { background: color-mix(in srgb, var(--lime) 16%, transparent); }
+  .notif:hover .go { opacity: 1; transform: translateX(2px); }
+}
 .pc .em { width: 44px; height: 44px; }
 .pc .t { font-size: 15px; }
 .go { flex-shrink: 0; color: var(--muted); opacity: 0; transition: opacity .2s, transform .3s var(--spring); }
-.notif:hover .go { opacity: 1; transform: translateX(2px); }
 .side-col { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
 .sum { position: relative; overflow: hidden; padding: 24px 24px 22px; border-radius: 25px; background: #141410; color: #F3F2EE; }
 .sum::before { content: ''; position: absolute; right: -80px; top: -150px; width: 360px; height: 360px; border-radius: 99px; background: radial-gradient(circle, rgba(200, 240, 74, .2), transparent 65%); }
 .sum > * { position: relative; }
 .sum .k { font-size: 12px; font-weight: 600; color: rgba(243, 242, 238, .6); }
 .sum .v { font-size: 44px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.05; margin-top: 6px; }
+.sum .v.wait { font-size: 26px; letter-spacing: -0.03em; margin-top: 10px; }
 .sum .v span { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: rgba(243, 242, 238, .6); }
 .sum .facts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .sum .fact { padding: 6px 11px; border-radius: 99px; background: rgba(243, 242, 238, .08); font-size: 12px; font-weight: 600; color: rgba(243, 242, 238, .75); }

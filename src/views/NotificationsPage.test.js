@@ -1,15 +1,21 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { setNotificationsApi } from '@/stores/notifications.js'
+import { ApiError } from '@/lib/api.js'
+import { setNotificationsApi, useNotificationsStore } from '@/stores/notifications.js'
 import NotificationSettingsList from '@/components/NotificationSettingsList.vue'
 import NotificationsPage from './NotificationsPage.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
+/** Callback "halaman mau tampil" — disimpen biar test bisa niru balik ke halaman ini. */
+const willEnter = vi.hoisted(() => [])
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
-  onIonViewWillEnter: (fn) => fn(),
+  onIonViewWillEnter: (fn) => {
+    willEnter.push(fn)
+    fn()
+  },
 }))
 
 const now = Date.now()
@@ -18,10 +24,12 @@ const unreadToday = { id: 1, type: 'keamanan', title: 'iPad baru login ke akun l
 const readOld = { id: 2, type: 'keamanan', title: 'Mac baru login ke akun lo', body: 'Chrome · Mac.', link: null, read: true, createdAt: ago(20) }
 
 let api
-async function mountPage(items) {
+const ALL_ON = { tagihan: true, todo: true, agenda: true, keamanan: true }
+async function mountPage(items, get) {
+  willEnter.length = 0
   api = {
-    get: vi.fn(async (url) => (url === '/notifications/settings'
-      ? { settings: { tagihan: true, todo: true, agenda: true, keamanan: true } }
+    get: get ?? vi.fn(async (url) => (url === '/notifications/settings'
+      ? { settings: { ...ALL_ON } }
       : { items, unread: items.filter((n) => !n.read).length })),
     post: vi.fn(async () => ({ unread: 0 })),
   }
@@ -125,6 +133,43 @@ describe('NotificationsPage', () => {
       expect(w.find('[data-test="empty"]').exists()).toBe(true)
       expect(w.find('[data-test="sum"]').text()).toContain('Belum ada notif')
       expect(w.find('[data-test="sum-read-all"]').attributes('disabled')).toBeDefined()
+    })
+
+    // Review 15/11: kartu ringkasan jangan ngasih angka sebelum daftar kebuka / kalau gagal dimuat.
+    it('keeps the summary card neutral until the list has loaded', async () => {
+      const w = await mountPage([], vi.fn((url) => (url === '/notifications/settings' ? Promise.resolve({ settings: { ...ALL_ON } }) : new Promise(() => {}))))
+      useNotificationsStore().unread = 3
+      await flushPromises()
+      const sum = w.find('[data-test="sum"]')
+      expect(sum.text()).toContain('Bentar ya…')
+      expect(sum.text()).not.toContain('notif baru')
+      expect(w.find('[data-test="sum-read-all"]').attributes('disabled')).toBeDefined()
+    })
+
+    it('does not claim everything is read when the list fails to load', async () => {
+      const w = await mountPage([], vi.fn(async (url) => {
+        if (url === '/notifications/settings') return { settings: { ...ALL_ON } }
+        throw new ApiError('Nggak bisa nyambung ke server.', 0)
+      }))
+      const sum = w.find('[data-test="sum"]')
+      expect(sum.text()).not.toContain('Beres')
+      expect(sum.text()).toContain('Belum bisa dimuat')
+      expect(w.find('[data-test="sum-read-all"]').attributes('disabled')).toBeDefined()
+    })
+
+    // Review 15/11: saklar yang gagal dimuat dicoba lagi pas balik ke halaman ini.
+    it('retries the switches when coming back to the page', async () => {
+      let settingsCalls = 0
+      const w = await mountPage([unreadToday], vi.fn(async (url) => {
+        if (url !== '/notifications/settings') return { items: [unreadToday], unread: 1 }
+        settingsCalls += 1
+        if (settingsCalls === 1) throw new ApiError('Nggak bisa nyambung ke server.', 0)
+        return { settings: { ...ALL_ON } }
+      }))
+      expect(w.find('[data-test="toggle-agenda"]').exists()).toBe(false)
+      willEnter.forEach((fn) => fn())
+      await flushPromises()
+      expect(w.find('[data-test="toggle-agenda"]').attributes('aria-checked')).toBe('true')
     })
   })
 })
