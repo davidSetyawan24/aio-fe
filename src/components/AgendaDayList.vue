@@ -6,6 +6,9 @@
         <div class="core list">
           <div v-for="e in day.events" :key="`${e.id}:${e.occurrence}`" class="ev" data-test="event" role="button" tabindex="0" @click="$emit('event', e)" @keydown.enter="$emit('event', e)">
             <div v-if="e.allDay" class="time allday"><b>Seharian</b><span v-if="e.dayCount > 1">hari {{ e.dayIndex }}/{{ e.dayCount }}</span></div>
+            <div v-else-if="e.dayCount > 1" class="time">
+              <b>{{ e.dayIndex === 1 ? e.startTime : e.dayIndex === e.dayCount ? `s.d. ${e.endTime}` : 'Seharian' }}</b><span>hari {{ e.dayIndex }}/{{ e.dayCount }}</span>
+            </div>
             <div v-else class="time"><b>{{ e.startTime }}</b><span>{{ e.endTime }}</span></div>
             <div class="bar" />
             <div class="grow">
@@ -69,6 +72,7 @@ const doneCount = computed(() => props.day.todos.filter((t) => t.done).length)
 .time b { display: block; font-size: 14px; font-weight: 800; }
 .time span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 600; }
 .time.allday b { font-size: 12px; }
+.time b { white-space: nowrap; }
 .bar { width: 4px; border-radius: 9px; background: var(--green); flex-shrink: 0; }
 .grow { flex: 1; min-width: 0; }
 .et { font-size: 15px; font-weight: 700; }

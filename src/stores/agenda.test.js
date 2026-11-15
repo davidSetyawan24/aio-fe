@@ -34,6 +34,18 @@ describe('agenda store', () => {
     expect(store.undated.map((t) => t.title)).toEqual(['Beli kado'])
   })
 
+  it('keeps the newest range when an older answer arrives late', async () => {
+    const store = useAgendaStore()
+    let slow
+    api.get.mockImplementationOnce(() => new Promise((resolve) => (slow = resolve)))
+    const first = store.load('day', '2026-11-01', false)
+    await store.load('day', '2026-11-15', false)
+    slow({ today: '2026-11-15', days: { '2026-10-26': { events: [], todos: [] } }, undated: [] })
+    await first
+    expect(store.range).toEqual({ from: '2026-11-09', to: '2026-11-15' })
+    expect(store.day('2026-11-15').todos).toHaveLength(2)
+  })
+
   it('ticks a to-do on screen right away, sending the occurrence only for repeating ones', async () => {
     const store = useAgendaStore()
     await store.load('day', '2026-11-15', false)

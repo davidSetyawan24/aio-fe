@@ -49,6 +49,8 @@ const when = computed(() => {
 /** Acara berulang: "Cuma yang ini / Yang ini & seterusnya". Acara biasa: konfirmasi. */
 async function remove() {
   if (busy.value) return
+  // Dikunci dari sebelum action sheet kebuka: tap dobel nggak boleh munculin dua pilihan / dua hapus.
+  busy.value = true
   const e = props.event
   const recurring = isRecurring(e)
   const sheet = await actionSheetController.create(
@@ -66,8 +68,7 @@ async function remove() {
   )
   await sheet.present()
   const { data } = await sheet.onDidDismiss()
-  if (!['one', 'following', 'all'].includes(data) || busy.value) return
-  busy.value = true
+  if (!['one', 'following', 'all'].includes(data)) return (busy.value = false)
   error.value = ''
   try {
     await store.deleteEvent(e.id, data === 'all' ? undefined : data, data === 'all' ? undefined : e.occurrence)

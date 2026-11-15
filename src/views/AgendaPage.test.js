@@ -147,6 +147,18 @@ describe('AgendaPage', () => {
     expect(api.del).toHaveBeenCalledWith('/agenda/events/5?scope=one&occurrence=2026-11-21')
   })
 
+  it('asks only once when Hapus is tapped twice', async () => {
+    const w = await mountPage()
+    // Action sheet masih kebuka (belum dipilih) pas tap kedua.
+    sheet.onDidDismiss.mockReturnValue(new Promise(() => {}))
+    await w.find('[data-test="event"]').trigger('click')
+    const del = w.find('[data-test="event-detail"] [data-test="delete"]')
+    await del.trigger('click')
+    await del.trigger('click')
+    await flushPromises()
+    expect(sheetCreate).toHaveBeenCalledTimes(1)
+  })
+
   it('goes to the edit page for an event or a to-do on a phone', async () => {
     const w = await mountPage()
     await todoRow(w, 'Buang sampah').find('[data-test="edit-todo"]').trigger('click')

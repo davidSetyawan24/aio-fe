@@ -129,6 +129,16 @@ describe('AgendaTodoForm', () => {
     expect(api.post).not.toHaveBeenCalled()
   })
 
+  it('asks only once when Hapus is tapped twice', async () => {
+    // Action sheet masih kebuka (belum dipilih) pas tap kedua.
+    sheet.onDidDismiss.mockReturnValue(new Promise(() => {}))
+    const w = mountForm({ todo: { id: 4, title: 'Beli galon', dueOn: TODAY, note: null, reminders: [], repeat: NONE } })
+    await w.find('[data-test="delete"]').trigger('click')
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(sheetCreate).toHaveBeenCalledTimes(1)
+  })
+
   it('deletes only the tapped date of a repeating to-do', async () => {
     const todo = { id: 4, title: 'Buang sampah', dueOn: '2026-10-20', note: null, reminders: [], repeat: { freq: 'weekly', days: [2], until: null } }
     const w = mountForm({ todo, occurrence: '2026-11-17' })

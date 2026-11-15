@@ -10,6 +10,8 @@ export function setAgendaApi(apiLike) {
 }
 
 const EMPTY_DAY = Object.freeze({ events: [], todos: [] })
+/** Nomor permintaan terakhir: jawaban yang lebih lama (mis. minggu yang udah lewat digeser) nggak boleh nimpa. */
+let latest = 0
 const rowKey = (row) => `${row.id}:${row.occurrence ?? ''}`
 const scopeQuery = (scope, occurrence) => (scope && occurrence ? `?scope=${scope}&occurrence=${occurrence}` : '')
 /** Isian utuh to-do buat PUT (Jadwalin = isian sama, tanggal baru). */
@@ -25,26 +27,24 @@ export const useAgendaStore = defineStore('agenda', {
 
   actions: {
     async load(view, date, wide) {
-      const range = rangeFor(view, date, wide)
-      const data = await agendaApi.get(`/agenda?from=${range.from}&to=${range.to}`)
-      this.range = range
-      this.today = data.today
-      this.days = data.days
-      this.undated = data.undated
+      this.range = rangeFor(view, date, wide)
+      await this.fetchRange()
     },
 
     /** Dimuat ulang di belakang layar abis nyimpen — yang udah sukses jangan keliatan gagal. */
     refresh() {
       if (!this.range) return Promise.resolve()
+      return this.fetchRange().catch(() => {})
+    },
+
+    async fetchRange() {
+      const mine = ++latest
       const { from, to } = this.range
-      return agendaApi
-        .get(`/agenda?from=${from}&to=${to}`)
-        .then((data) => {
-          this.today = data.today
-          this.days = data.days
-          this.undated = data.undated
-        })
-        .catch(() => {})
+      const data = await agendaApi.get(`/agenda?from=${from}&to=${to}`)
+      if (mine !== latest) return
+      this.today = data.today
+      this.days = data.days
+      this.undated = data.undated
     },
 
     /** Centang / batal — langsung berubah di layar, balik lagi kalau gagal. Tap dobel selama nyimpen diabaikan. */
