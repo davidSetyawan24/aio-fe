@@ -3,6 +3,9 @@
 const DAY = 24 * 60
 /** Scroll awal: jam 07.00, atau 30 menit sebelum acara pertama kalau lebih pagi. */
 const DEFAULT_SCROLL = 7 * 60
+/** Tinggi minimum blok (dalam menit) — acara pendek tetep kebaca; dipakai juga buat ngecek tabrakan biar blok nggak saling nutup. */
+export const MIN_MINUTES = 20
+const SKIP = 'skip'
 
 export const HOUR_LABELS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}.00`)
 
@@ -11,12 +14,15 @@ export const toMinutes = (hhmm) => {
   return h * 60 + m
 }
 
-/** Menit mulai/selesai di hari ini — null kalau acaranya masuk baris "Seharian". */
+/** Menit mulai/selesai di hari ini — null kalau masuk baris "Seharian", SKIP kalau nggak ada yang perlu digambar. */
 function spanOf(e) {
-  if (e.allDay) return null
+  if (e.allDay || !e.startTime || !e.endTime) return null
   if (e.dayCount > 1) {
     if (e.dayIndex === 1) return [toMinutes(e.startTime), DAY]
-    if (e.dayIndex === e.dayCount) return [0, toMinutes(e.endTime)]
+    if (e.dayIndex === e.dayCount) {
+      const end = toMinutes(e.endTime)
+      return end === 0 ? SKIP : [0, end] // selesai pas 00.00 → hari terakhirnya kosong
+    }
     return null // hari tengah acara berhari-hari
   }
   const start = toMinutes(e.startTime)
@@ -34,6 +40,7 @@ export function dayPieces(events) {
   const pieces = []
   for (const event of events) {
     const span = spanOf(event)
+    if (span === SKIP) continue
     if (!span) allDay.push(event)
     else pieces.push({ event, start: span[0], end: span[1], col: 0, cols: 1 })
   }
@@ -48,13 +55,15 @@ export function dayPieces(events) {
     colEnds = []
   }
   for (const p of pieces) {
+    // Pakai ujung yang KEGAMBAR (min 20 menit): acara 5 menit yang mepet acara berikutnya tetep dijejerin, nggak ketiban.
+    const drawnEnd = Math.max(p.end, p.start + MIN_MINUTES)
     if (p.start >= groupEnd) closeGroup()
     let col = colEnds.findIndex((end) => end <= p.start)
     if (col === -1) col = colEnds.push(0) - 1
-    colEnds[col] = p.end
+    colEnds[col] = drawnEnd
     p.col = col
     group.push(p)
-    groupEnd = Math.max(groupEnd, p.end)
+    groupEnd = Math.max(groupEnd, drawnEnd)
   }
   closeGroup()
   return { allDay, timed: pieces }
@@ -62,7 +71,8 @@ export function dayPieces(events) {
 
 /** Menit buat scroll awal area jam (satu hari atau seminggu: kirim daftar `timed` tiap hari). */
 export function firstScrollMinute(timedLists) {
-  const starts = timedLists.flat().map((p) => p.start)
+  // Lanjutan acara berhari-hari (mulai 00.00) bukan "acara pertama" → nggak ikut.
+  const starts = timedLists.flat().filter((p) => !(p.event.dayCount > 1 && p.event.dayIndex > 1)).map((p) => p.start)
   if (!starts.length) return DEFAULT_SCROLL
   return Math.max(0, Math.min(DEFAULT_SCROLL, Math.min(...starts) - 30))
 }

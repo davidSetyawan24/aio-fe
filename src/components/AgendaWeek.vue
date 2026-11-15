@@ -66,7 +66,7 @@
 import { computed, ref } from 'vue'
 import { PhCaretRight } from '@phosphor-icons/vue'
 import { HR, relLabel, weekdayOf } from '@/lib/agenda.js'
-import { dayPieces, firstScrollMinute, HOUR_LABELS } from '@/lib/agendaTimeline.js'
+import { dayPieces, firstScrollMinute, HOUR_LABELS, MIN_MINUTES } from '@/lib/agendaTimeline.js'
 import { useStartScroll } from '@/lib/useStartScroll.js'
 import { useAgendaStore } from '@/stores/agenda.js'
 
@@ -90,7 +90,7 @@ useStartScroll(scroller, startMinute, HOUR, [() => props.dates[0]])
 function blockStyle(p) {
   return {
     top: `${(p.start / 60) * HOUR}px`,
-    height: `${Math.max(((p.end - p.start) / 60) * HOUR - 3, 20)}px`,
+    height: `${(Math.max(p.end - p.start, MIN_MINUTES) / 60) * HOUR - 3}px`,
     left: `calc(3px + (100% - 6px) * ${p.col} / ${p.cols})`,
     width: `calc((100% - 6px) / ${p.cols} - 3px)`,
   }

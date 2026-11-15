@@ -61,4 +61,34 @@ describe('agendaTimeline', () => {
     expect(firstScrollMinute([[], dayPieces([ev(1, '05:30', '06:00')]).timed])).toBe(300)
     expect(firstScrollMinute([dayPieces([ev(1, '00:10', '01:00')]).timed])).toBe(0)
   })
+
+  // Review 15/11
+  it('drops the last-day piece of a multi-day event that ends exactly at 00:00', () => {
+    const { allDay, timed } = dayPieces([ev(1, '20:00', '00:00', { dayIndex: 2, dayCount: 2 })])
+    expect(timed).toEqual([])
+    expect(allDay).toEqual([])
+  })
+
+  it('does not let a multi-day continuation pull the start scroll to midnight', () => {
+    const cont = dayPieces([ev(1, '08:00', '18:00', { dayIndex: 3, dayCount: 3 })]).timed
+    expect(firstScrollMinute([cont])).toBe(420)
+    const first = dayPieces([ev(2, '05:30', '18:00', { dayIndex: 1, dayCount: 2 })]).timed
+    expect(firstScrollMinute([cont, first])).toBe(300)
+  })
+
+  it('treats very short back-to-back events as clashing, so neither hides the other', () => {
+    const { timed } = dayPieces([ev(1, '10:00', '10:05'), ev(2, '10:05', '10:30')])
+    expect(cols(timed)).toEqual({ 1: [0, 2], 2: [1, 2] })
+  })
+
+  it('keeps an event that ends exactly when the next starts full width when both are long enough', () => {
+    const { timed } = dayPieces([ev(1, '09:00', '10:00'), ev(2, '10:00', '11:00')])
+    expect(cols(timed)).toEqual({ 1: [0, 1], 2: [0, 1] })
+  })
+
+  it('shows a timed event without times as all day instead of crashing', () => {
+    const { allDay, timed } = dayPieces([ev(1, null, null)])
+    expect(allDay.map((e) => e.id)).toEqual([1])
+    expect(timed).toEqual([])
+  })
 })

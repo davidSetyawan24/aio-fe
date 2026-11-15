@@ -36,7 +36,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { PhMapPin } from '@phosphor-icons/vue'
-import { dayPieces, firstScrollMinute, HOUR_LABELS } from '@/lib/agendaTimeline.js'
+import { dayPieces, firstScrollMinute, HOUR_LABELS, MIN_MINUTES } from '@/lib/agendaTimeline.js'
 import { useStartScroll } from '@/lib/useStartScroll.js'
 
 /** Hari di PC: baris "Seharian" + jam 00–24, acara jadi blok setinggi durasinya. */
@@ -55,7 +55,7 @@ const scroller = ref(null)
 
 function blockStyle(p) {
   const top = (p.start / 60) * HOUR
-  const height = Math.max(((p.end - p.start) / 60) * HOUR - 3, 22)
+  const height = (Math.max(p.end - p.start, MIN_MINUTES) / 60) * HOUR - 3
   return {
     top: `${top}px`,
     height: `${height}px`,
