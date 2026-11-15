@@ -30,9 +30,14 @@
     </div>
 
     <div v-else-if="push.state === 'blocked'" class="foot">
-      <ol class="steps">
+      <ol v-if="ios" class="steps">
         <li><span>Buka <b>Pengaturan</b> {{ noun }} → <b>Notifikasi</b></span></li>
         <li><span>Cari <b>AIO</b>, nyalain <b>Izinkan Notifikasi</b></span></li>
+        <li><span>Balik ke sini, tap <b>Cek lagi</b></span></li>
+      </ol>
+      <ol v-else class="steps">
+        <li><span>Klik <b>ikon gembok</b> di sebelah alamat web</span></li>
+        <li><span>Ubah <b>Notifikasi</b> jadi <b>Izinkan</b></span></li>
         <li><span>Balik ke sini, tap <b>Cek lagi</b></span></li>
       </ol>
       <button class="link" data-test="push-recheck" @click="push.recheck()">Cek lagi <PhArrowClockwise :size="13" weight="bold" /></button>
@@ -52,19 +57,25 @@ import { usePushStore } from '@/stores/push.js'
 /** Baris "Notif di <device> ini" (grup DEVICE INI) — 6 keadaan mockup push-notif.html. Dipakai Atur notifikasi (HP) & kolom kanan Notifikasi (PC). */
 const props = defineProps({ kind: { type: String, default: '' } })
 const push = usePushStore()
-const noun = computed(() => deviceNoun(props.kind || detectKind(globalThis.navigator)))
+const kind = computed(() => props.kind || detectKind(globalThis.navigator))
+const noun = computed(() => deviceNoun(kind.value))
+/** iPhone/iPad: izin notif diatur di Pengaturan device; selain itu di pengaturan situs browser. */
+const ios = computed(() => kind.value === 'iPhone' || kind.value === 'iPad')
 
 const SUBS = {
   loading: 'Lagi ngecek device ini…',
   off: 'Belum nyala. Pengingat cuma masuk lonceng di dalem app.',
   asking: 'Pilih Allow / Izinkan di jendela yang muncul…',
   on: 'Nyala ✓ · notif nongol walau app ditutup',
-  safari: 'iPhone cuma ngizinin notif dari AIO yang dibuka lewat ikon di Home Screen.',
-  blocked: 'Izinnya keblok di iPhone.',
+  safari: () => `${noun.value === 'iPad' ? 'iPad' : 'iPhone'} cuma ngizinin notif dari AIO yang dibuka lewat ikon di Home Screen.`,
+  blocked: () => (ios.value ? `Izinnya keblok di ${noun.value}.` : 'Izinnya keblok di browser ini.'),
   nosupport: 'Browser/iOS di device ini belum bisa notif di layar (iPhone minimal iOS 16.4). Pengingat tetep masuk lonceng.',
   noserver: 'Notif di layar belum disetel di server. Pengingat tetep masuk lonceng.',
 }
-const sub = computed(() => SUBS[push.state] ?? '')
+const sub = computed(() => {
+  const s = SUBS[push.state] ?? ''
+  return typeof s === 'function' ? s() : s
+})
 const tone = computed(() => ({ ok: push.state === 'on', bad: push.state === 'blocked' }))
 
 onMounted(() => {

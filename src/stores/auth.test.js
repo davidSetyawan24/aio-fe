@@ -77,6 +77,13 @@ describe('login', () => {
   })
 })
 
+it('sesi habis (markGuest) → keadaan push dicek ulang abis login lagi', () => {
+  const push = usePushStore()
+  push.state = 'on'
+  useAuthStore().markGuest()
+  expect(push.state).toBe('loading')
+})
+
 describe('logout', () => {
   it('berhenti langganan push di device ini DULUAN, baru logout ke server', async () => {
     const calls = []

@@ -1,4 +1,4 @@
-import { deviceNoun, notificationFromPush, openUrl, pushState, pushSupport, takeNotifId, urlBase64ToUint8Array } from './push.js'
+import { consumePendingOpen, deviceNoun, notificationFromPush, openPath, openUrl, rememberPendingOpen, pushState, pushSupport, takeNotifId, urlBase64ToUint8Array } from './push.js'
 
 const UA = {
   iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
@@ -85,5 +85,28 @@ describe('notificationFromPush', () => {
   it('notif tes / isi rusak tetep nongol', () => {
     expect(notificationFromPush({ id: null, title: 'Notif tes 👋', body: 'x', link: null, unread: 0 }).options).toMatchObject({ tag: 'tes', data: { url: '/tabs/home' } })
     expect(notificationFromPush(null)).toMatchObject({ title: 'AIO Space', options: { body: 'Ada notif baru.', data: { url: '/tabs/home' } }, unread: null })
+  })
+})
+
+describe('buka dari notif (iOS)', () => {
+  /** Cache API palsu secukupnya. */
+  const fakeCaches = () => {
+    const store = new Map()
+    const cache = { put: async (k, r) => store.set(k, r), match: async (k) => store.get(k), delete: async (k) => store.delete(k) }
+    return { open: async () => cache, store }
+  }
+  it('alamat yang ditunda pas app dibuka dari notif dipake sekali', async () => {
+    const caches = fakeCaches()
+    await rememberPendingOpen(caches, 'https://aio.davidsetyawan.com/tabs/profil?n=12')
+    expect(await consumePendingOpen(caches)).toBe('/tabs/profil?n=12')
+    expect(await consumePendingOpen(caches)).toBeNull()
+  })
+  it('Cache API nggak ada / error → null', async () => {
+    expect(await consumePendingOpen(undefined)).toBeNull()
+    expect(await consumePendingOpen({ open: async () => { throw new Error('x') } })).toBeNull()
+  })
+  it('alamat penuh → path app', () => {
+    expect(openPath('https://aio.davidsetyawan.com/tabs/agenda?tanggal=2026-11-16&n=3')).toBe('/tabs/agenda?tanggal=2026-11-16&n=3')
+    expect(openPath('/tabs/home')).toBe('/tabs/home')
   })
 })

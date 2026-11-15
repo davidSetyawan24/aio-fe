@@ -70,3 +70,42 @@ export function notificationFromPush(data) {
     unread: typeof d.unread === 'number' ? d.unread : null,
   }
 }
+
+const PENDING_CACHE = 'aio-buka-notif'
+const PENDING_KEY = '/__buka-notif'
+
+/** Alamat penuh → path app ('/tabs/…?…'). */
+export function openPath(url) {
+  try {
+    const u = new URL(url, 'http://x')
+    return `${u.pathname}${u.search}`
+  } catch {
+    return '/tabs/home'
+  }
+}
+
+/**
+ * Service worker: inget alamat notif yang di-tap pas app belum kebuka. iOS kadang buka app di halaman awal
+ * (bukan alamatnya) → app ngambil alamat ini pas mulai (`consumePendingOpen`).
+ */
+export async function rememberPendingOpen(caches, url) {
+  try {
+    await (await caches.open(PENDING_CACHE)).put(PENDING_KEY, new Response(url))
+  } catch {
+    // nggak penting: paling buka Beranda
+  }
+}
+
+/** App mulai: ambil (sekali) alamat notif yang ditunda. Nggak ada → null. */
+export async function consumePendingOpen(caches) {
+  try {
+    if (!caches) return null
+    const cache = await caches.open(PENDING_CACHE)
+    const hit = await cache.match(PENDING_KEY)
+    if (!hit) return null
+    await cache.delete(PENDING_KEY)
+    return openPath(await hit.text())
+  } catch {
+    return null
+  }
+}

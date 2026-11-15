@@ -95,4 +95,16 @@ describe('PushDeviceRow', () => {
     mountRow('loading')
     expect(push.init).toHaveBeenCalledTimes(1)
   })
+
+  it('teks ikut device: iPad keblok/safari, Mac pakai pengaturan situs browser', () => {
+    let w = mountRow('blocked', 'iPad')
+    expect(w.text()).toContain('Izinnya keblok di iPad.')
+    expect(w.text()).toContain('Pengaturan')
+    w = mountRow('safari', 'iPad')
+    expect(w.text()).toContain('iPad cuma ngizinin notif dari AIO yang dibuka lewat ikon di Home Screen.')
+    w = mountRow('blocked', 'Mac')
+    expect(w.text()).toContain('Izinnya keblok di browser ini.')
+    expect(w.text()).toContain('ikon gembok')
+    expect(w.findAll('ol li')).toHaveLength(3)
+  })
 })

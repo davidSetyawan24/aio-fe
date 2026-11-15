@@ -28,6 +28,7 @@ import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
 import { isMainPage, useNotificationsStore } from './stores/notifications.js'
 import { takeNotifId } from './lib/push.js'
+import { listenPushOpen } from './lib/pushOpen.js'
 import { usePushStore } from './stores/push.js'
 
 // scrollAssist dimatiin: tebakan tinggi keyboard Ionic (290px) salah buat keyboard iOS asli, dan geseran
@@ -60,6 +61,9 @@ router.afterEach((to) => {
   useNotificationsStore().readFromPush(id).catch(() => {})
   router.replace(path)
 })
+
+// Tap notif di layar HP: pesan dari service worker (app kebuka) / alamat yang ketunda (app dibuka dari notif).
+listenPushOpen({ serviceWorker: navigator.serviceWorker, caches: globalThis.caches, navigate: (path) => router.push(path) }).catch(() => {})
 
 // Mount langsung (nggak nunggu router siap) biar layar pembuka kelihatan selama status login dicek.
 app.mount('#app')

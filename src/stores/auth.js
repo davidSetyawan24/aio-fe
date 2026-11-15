@@ -89,6 +89,8 @@ export const useAuthStore = defineStore('auth', {
     markGuest() {
       this.user = null
       this.status = 'guest'
+      // Sesi habis / logout: keadaan notif di layar dicek ulang dari nol abis login lagi (server bisa udah ngapus langganannya).
+      usePushStore().state = 'loading'
     },
   },
 })

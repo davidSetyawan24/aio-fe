@@ -2,7 +2,7 @@
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { notificationFromPush } from './lib/push.js'
+import { notificationFromPush, rememberPendingOpen } from './lib/push.js'
 
 // File hasil build (diisi vite-plugin-pwa). Versi baru langsung dipake (sama kayak autoUpdate sebelumnya).
 precacheAndRoute(self.__WB_MANIFEST)
@@ -24,7 +24,9 @@ self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all([self.registration.showNotification(title, options), badge ?? Promise.resolve()]))
 })
 
-// Tap notif → buka layar yang pas (`?n=<id>` bikin app nandain notif itu dibaca). Tab AIO yang udah kebuka dipake ulang.
+// Tap notif → buka layar yang pas (`?n=<id>` bikin app nandain notif itu dibaca).
+// App udah kebuka → fokus + kabarin lewat pesan (client.navigate rawan error di iOS, WebKit bug 263687).
+// App belum kebuka → alamatnya disimpen dulu (iOS kadang buka halaman awal, bukan alamatnya; app ngambil pas mulai).
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = new URL(event.notification.data?.url || '/tabs/home', self.location.origin).href
@@ -33,10 +35,12 @@ self.addEventListener('notificationclick', (event) => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       const open = windows.find((w) => new URL(w.url).origin === self.location.origin)
       if (open) {
-        await open.focus()
-        return open.navigate(url).catch(() => self.clients.openWindow(url))
+        await open.focus?.()
+        open.postMessage({ type: 'aio-open', url })
+        return
       }
-      return self.clients.openWindow(url)
+      await rememberPendingOpen(self.caches, url)
+      await self.clients.openWindow(url)
     })(),
   )
 })

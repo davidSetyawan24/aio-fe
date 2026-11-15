@@ -16,8 +16,15 @@ export function setPushEnv(fake) {
 }
 const browser = () => env ?? { navigator: globalThis.navigator, window: globalThis.window, Notification: globalThis.Notification }
 
+/** Nunggu service worker maksimal segini (biar logout / kartu nggak nyangkut kalau SW-nya nggak ada). */
+const REGISTRATION_WAIT_MS = 3000
+
 async function currentSubscription() {
-  const reg = await browser().navigator.serviceWorker.ready
+  const sw = browser().navigator?.serviceWorker
+  const reg = sw?.getRegistration
+    ? await Promise.race([sw.getRegistration(), new Promise((resolve) => setTimeout(() => resolve(undefined), REGISTRATION_WAIT_MS))])
+    : undefined
+  if (!reg) return { reg: null, sub: null }
   return { reg, sub: await reg.pushManager.getSubscription() }
 }
 
@@ -36,8 +43,9 @@ export const usePushStore = defineStore('push', {
       if (support !== 'ok') return this.set(pushState({ support }))
       try {
         this.publicKey = (await pushApi.get('/push/public-key')).publicKey
-      } catch {
-        return this.set('noserver')
+      } catch (err) {
+        // Cuma 503 yang artinya "belum disetel"; offline / error lain → dicoba lagi pas pindah halaman.
+        return this.set(err?.status === 503 ? 'noserver' : 'loading')
       }
       const permission = b.Notification?.permission ?? b.window?.Notification?.permission ?? 'default'
       let sub = null
@@ -76,6 +84,7 @@ export const usePushStore = defineStore('push', {
         }
         if (!this.publicKey) this.publicKey = (await pushApi.get('/push/public-key')).publicKey
         const { reg } = await currentSubscription()
+        if (!reg) throw new Error('App belum siap buat notif. Tutup terus buka lagi AIO-nya ya.')
         const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(this.publicKey) })
         await pushApi.put('/push/subscription', sub.toJSON())
         this.state = 'on'
@@ -109,6 +118,10 @@ export const usePushStore = defineStore('push', {
       this.busy = true
       try {
         await pushApi.post('/push/test')
+      } catch (err) {
+        // 422 = device ini udah nggak punya langganan di server (alamat mati / kehapus) → nyalain ulang.
+        if (err?.status === 422) this.state = 'off'
+        throw err
       } finally {
         this.busy = false
       }

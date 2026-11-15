@@ -6,7 +6,7 @@ const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebK
 const subJson = { endpoint: 'https://web.push.apple.com/abc', keys: { p256dh: 'p', auth: 'a' } }
 
 /** Browser palsu: izin, langganan, service worker. */
-function fakeEnv({ permission = 'default', subscribed = false, answer = 'granted' } = {}) {
+function fakeEnv({ permission = 'default', subscribed = false, answer = 'granted', noSw = false } = {}) {
   let current = subscribed ? makeSub() : null
   function makeSub() {
     return { toJSON: () => subJson, endpoint: subJson.endpoint, unsubscribe: vi.fn(async () => { current = null; return true }) }
@@ -20,7 +20,7 @@ function fakeEnv({ permission = 'default', subscribed = false, answer = 'granted
     pushManager,
     Notification,
     current: () => current,
-    navigator: { userAgent: IPHONE, maxTouchPoints: 5, standalone: true, serviceWorker: { ready: Promise.resolve({ pushManager }) } },
+    navigator: { userAgent: IPHONE, maxTouchPoints: 5, standalone: true, serviceWorker: { getRegistration: async () => (noSw ? undefined : { pushManager }) } },
     window: { PushManager: function PushManager() {}, Notification, matchMedia: () => ({ matches: true }) },
   }
 }
@@ -126,5 +126,44 @@ describe('push store', () => {
     await expect(store.forgetOnLogout()).resolves.toBeUndefined()
     expect(env.current()).toBeNull()
     expect(store.state).toBe('loading')
+  })
+
+  it('server/jaringan error selain 503 → nggak dibilang "belum disetel", dicoba lagi nanti', async () => {
+    api.get.mockRejectedValueOnce(new ApiError('Nggak bisa nyambung ke server.', 0))
+    setPushEnv(fakeEnv())
+    const store = usePushStore()
+    await store.init()
+    expect(store.state).toBe('loading')
+  })
+
+  it('service worker nggak ada / nggak jawab → nggak nyangkut', async () => {
+    setPushEnv(fakeEnv({ noSw: true }))
+    let store = usePushStore()
+    await store.init()
+    expect(store.state).toBe('off')
+    await expect(store.forgetOnLogout()).resolves.toBeUndefined()
+
+    vi.useFakeTimers()
+    try {
+      setActivePinia(createPinia())
+      const env = fakeEnv()
+      env.navigator.serviceWorker.getRegistration = () => new Promise(() => {})
+      setPushEnv(env)
+      store = usePushStore()
+      const done = store.forgetOnLogout()
+      await vi.advanceTimersByTimeAsync(3000)
+      await expect(done).resolves.toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('notif tes: alamat device udah mati → balik "belum nyala"', async () => {
+    setPushEnv(fakeEnv({ permission: 'granted', subscribed: true }))
+    const store = usePushStore()
+    await store.init()
+    api.post.mockRejectedValueOnce(new ApiError('Data tidak valid.', 422, { _: ['Alamat push device ini udah mati, nyalain ulang ya.'] }))
+    await expect(store.sendTest()).rejects.toThrow()
+    expect(store.state).toBe('off')
   })
 })
