@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { startBellPolling } from './lib/bellPolling.js'
 import { createPinia } from 'pinia'
 import { IonicVue } from '@ionic/vue'
 
@@ -43,6 +44,8 @@ const refreshBell = () => {
 }
 router.afterEach((to) => isMainPage(to.path) && refreshBell())
 document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && refreshBell())
+// Pengingat Agenda dibikin server tiap menit → lonceng ikut dicek tiap 60 detik selama app keliatan.
+startBellPolling(refreshBell)
 
 // Mount langsung (nggak nunggu router siap) biar layar pembuka kelihatan selama status login dicek.
 app.mount('#app')
