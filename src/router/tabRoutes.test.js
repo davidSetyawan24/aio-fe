@@ -25,13 +25,13 @@ const find = (path) => routes.find((r) => r.path === path)
 
 describe('buildTabRoutes', () => {
   it('has a page for every tab', () => {
-    for (const p of ['home', 'uang', 'todo', 'menu', 'profil']) expect(find(p), p).toBeTruthy()
+    for (const p of ['home', 'uang', 'agenda', 'menu', 'profil']) expect(find(p), p).toBeTruthy()
   })
 
   it('opens modules outside the tab bar under menu/<key>, with a back button to Semua menu', () => {
     const tagihan = find('menu/tagihan')
     expect(tagihan.props).toMatchObject({ title: 'Tagihan', emoji: '🧾', backTo: '/tabs/menu' })
-    for (const key of ['invoice', 'agenda', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
+    for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
   })
 
   it('sends the old Duit tab link to the Uang tab', () => {
@@ -46,7 +46,8 @@ describe('buildTabRoutes', () => {
 
   it('redirects old links to the new module pages', () => {
     expect(find('tagihan').redirect).toBe('/tabs/menu/tagihan')
-    expect(find('agenda').redirect).toBe('/tabs/menu/agenda')
+    expect(find('menu/agenda').redirect).toBe('/tabs/agenda')
+    expect(find('todo').redirect).toBe('/tabs/agenda')
   })
 
   it('opens Ganti password under the Profil tab', () => {

@@ -3,8 +3,9 @@ import { categories, groupByCategory, modulePath, modules, searchModules, tabIte
 describe('module registry', () => {
   it('has the tab bar in the agreed order', () => {
     // 14/11: tab "Duit" jadi "Uang" (laporan); "Duit" (catat duit keluar) pindah ke Semua menu.
-    expect(tabItems().map((t) => t.label)).toEqual(['Beranda', 'Uang', 'To-do', 'Semua menu', 'Profil'])
-    expect(tabItems().map((t) => t.path)).toEqual(['/tabs/home', '/tabs/uang', '/tabs/todo', '/tabs/menu', '/tabs/profil'])
+    // 15/11: tab "To-do" diganti "Agenda"; to-do nanti tinggal di dalem Agenda.
+    expect(tabItems().map((t) => t.label)).toEqual(['Beranda', 'Uang', 'Agenda', 'Semua menu', 'Profil'])
+    expect(tabItems().map((t) => t.path)).toEqual(['/tabs/home', '/tabs/uang', '/tabs/agenda', '/tabs/menu', '/tabs/profil'])
   })
 
   it('puts modules outside the tab bar under /tabs/menu so that tab stays active', () => {
@@ -12,11 +13,11 @@ describe('module registry', () => {
     expect(modulePath(byKey.tagihan)).toBe('/tabs/menu/tagihan')
     expect(modulePath(byKey.duit)).toBe('/tabs/menu/duit')
     expect(modulePath(byKey.uang)).toBe('/tabs/uang')
-    expect(modulePath(byKey.todo)).toBe('/tabs/todo')
+    expect(modulePath(byKey.agenda)).toBe('/tabs/agenda')
   })
 
   it('has the agreed modules, Duit, Atur budget, Kartu & Rekening and Kategori ready', () => {
-    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill', 'To-do', 'Agenda', 'Catatan', 'Kalender Dia'])
+    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill', 'Agenda', 'Catatan', 'Kalender Dia'])
     expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['duit', 'budget', 'kartu', 'kategori', 'split-bill'])
     expect(modulePath(modules.find((m) => m.key === 'budget'))).toBe('/tabs/menu/budget')
     expect(modulePath(modules.find((m) => m.key === 'kategori'))).toBe('/tabs/menu/kategori')
@@ -26,7 +27,7 @@ describe('module registry', () => {
     const groups = groupByCategory(modules)
     expect(groups.map((g) => g.label)).toEqual(['Keuangan', 'Produktivitas', 'Pribadi'])
     expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill'])
-    expect(groups[1].modules.map((m) => m.label)).toEqual(['To-do', 'Agenda', 'Catatan'])
+    expect(groups[1].modules.map((m) => m.label)).toEqual(['Agenda', 'Catatan'])
     expect(groups[2].modules.map((m) => m.label)).toEqual(['Kalender Dia'])
     expect(categories.map((c) => c.key)).toEqual(['keuangan', 'produktivitas', 'pribadi'])
   })

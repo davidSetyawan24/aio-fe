@@ -1,4 +1,4 @@
-import { PhChartPieSlice, PhCheckCircle, PhHouse, PhSquaresFour, PhUserCircle } from '@phosphor-icons/vue'
+import { PhCalendarBlank, PhChartPieSlice, PhHouse, PhSquaresFour, PhUserCircle } from '@phosphor-icons/vue'
 
 /**
  * SATU-SATUNYA daftar modul AIO Space. Tab bar, sidebar, router, dan halaman "Semua menu" baca dari sini.
@@ -22,8 +22,8 @@ export const modules = [
   { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
   // Split bill — foto struk, dibaca Mistral OCR, dibagi ke temen-temen.
   { key: 'split-bill', label: 'Split bill', emoji: '🍕', tint: '#FFE0E6', category: 'keuangan', status: 'ready' },
-  { key: 'todo', label: 'To-do', emoji: '✅', tint: '#E4F7C4', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCheckCircle },
-  { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'soon' },
+  // 15/11: tab "To-do" diganti "Agenda"; to-do nanti tinggal di dalem Agenda (bukan modul sendiri).
+  { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'soon', tab: 2, icon: PhCalendarBlank },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
   { key: 'kalender-dia', label: 'Kalender Dia', emoji: '🌙', tint: '#E9E4FF', category: 'pribadi', status: 'soon' },
