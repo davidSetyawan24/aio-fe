@@ -228,12 +228,15 @@ describe('AgendaPage', () => {
     })
 
     it('starts the hours at 07.00, or just before an earlier first event once the day has loaded', async () => {
+      // jsdom nggak punya layout (tinggi 0 = dianggep lagi disembunyiin) → kasih tinggi biar area jamnya "keliatan".
+      const clientHeight = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600)
       const w = await mountPage()
       const scroller = () => w.find('[data-test="tl-scroll"]').element
       expect(scroller().scrollTop).toBe(438) // 07.00 × 64px − 10px biar label jamnya nggak kepotong
       await w.findAll('[data-test="aside"] [data-day]').find((d) => d.attributes('data-day') === '2026-11-21').trigger('click')
       await flushPromises()
       expect(scroller().scrollTop).toBe(438) // Futsal 08.00 → tetep 07.00
+      clientHeight.mockRestore()
     })
 
     it('shows the "now" line only on today', async () => {
