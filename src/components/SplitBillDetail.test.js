@@ -123,6 +123,31 @@ describe('SplitBillDetail', () => {
     expect(w.emitted('deleted')).toHaveLength(1)
   })
 
+  it('double-tapping Hapus opens one sheet and deletes once', async () => {
+    let answer
+    sheet.onDidDismiss.mockReturnValue(new Promise((resolve) => (answer = resolve)))
+    const w = await mountDetail()
+    await w.find('[data-test="delete"]').trigger('click')
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    answer({ data: 'delete' })
+    await flushPromises()
+    expect(sheetCreate).toHaveBeenCalledTimes(1)
+    expect(api.del).toHaveBeenCalledTimes(1)
+  })
+
+  it('cancelling the sheet lets Hapus be tapped again', async () => {
+    sheet.onDidDismiss.mockResolvedValueOnce({ role: 'cancel' })
+    const w = await mountDetail()
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(api.del).not.toHaveBeenCalled()
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(sheetCreate).toHaveBeenCalledTimes(2)
+    expect(api.del).toHaveBeenCalledTimes(1)
+  })
+
   it('says everything is settled once nobody owes', async () => {
     const bill = makeBill(true)
     bill.people = bill.people.map((p) => ({ ...p, paid: true }))

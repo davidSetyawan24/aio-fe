@@ -129,6 +129,8 @@ async function saveImage() {
 
 async function confirmDelete() {
   if (busy.value) return
+  // Dikunci dari sebelum action sheet kebuka: tap dobel nggak boleh munculin dua pilihan / dua hapus.
+  busy.value = 'delete'
   const sheet = await actionSheetController.create({
     header: 'Hapus split bill ini?',
     subHeader: 'Nggak bisa dibalikin.',
@@ -139,8 +141,7 @@ async function confirmDelete() {
   })
   await sheet.present()
   const { data } = await sheet.onDidDismiss()
-  if (data !== 'delete' || busy.value) return
-  busy.value = 'delete'
+  if (data !== 'delete') return (busy.value = null)
   error.value = ''
   try {
     await store.remove(bill.value.id)
