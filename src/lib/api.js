@@ -45,9 +45,9 @@ export function createApi({ baseURL, adapter, onUnauthorized, extraHeaders } = {
     ...(adapter ? { adapter } : {}),
   })
 
-  async function send(method, url, body) {
+  async function send(method, url, body, opts = {}) {
     try {
-      const res = await http.request({ method, url, data: body, headers: extraHeaders?.() })
+      const res = await http.request({ method, url, data: body, headers: extraHeaders?.(), ...(opts.timeout ? { timeout: opts.timeout } : {}) })
       return res.data?.data ?? null
     } catch (error) {
       const apiError = toApiError(error)
@@ -58,7 +58,8 @@ export function createApi({ baseURL, adapter, onUnauthorized, extraHeaders } = {
 
   return {
     get: (url) => send('get', url),
-    post: (url, body) => send('post', url, body),
+    /** `opts.timeout`: request yang emang lama (mis. baca struk). */
+    post: (url, body, opts) => send('post', url, body, opts),
     patch: (url, body) => send('patch', url, body),
     put: (url, body) => send('put', url, body),
     del: (url) => send('delete', url),

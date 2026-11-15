@@ -124,4 +124,12 @@ describe('createApi extras', () => {
     expect(seen[0].method).toBe('put')
     expect(JSON.parse(seen[0].data)).toEqual({ amount: 1 })
   })
+
+  it('lets one request wait longer (baca struk)', async () => {
+    const seen = []
+    const api = createApi({ baseURL: 'http://x', adapter: fakeAdapter(200, { success: true, message: '', data: { ok: 1 } }, seen) })
+    await api.post('/split-bills/scan', { a: 1 }, { timeout: 60000 })
+    await api.post('/x', { a: 1 })
+    expect(seen.map((c) => c.timeout)).toEqual([60000, 15000])
+  })
 })
