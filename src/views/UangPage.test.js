@@ -91,6 +91,9 @@ const text = (w, sel) => w.find(`[data-test="${sel}"]`).text()
 describe('UangPage', () => {
   it('judul: keluar bulan ini s.d. hari ini + baris bulan', async () => {
     const w = await mountPage()
+    // Lonceng di baris label (selebar halaman, pojok kanan), judul + tombol bulan di baris sendiri (pola Agenda)
+    expect(w.find('.page-head h1').exists()).toBe(false)
+    expect(w.find('.u-head h1').exists()).toBe(true)
     expect(w.find('h1').text()).toContain('Rp1.105.500')
     expect(w.find('h1').text()).toContain('keluar November · s.d. hari ini')
     expect(text(w, 'month')).toContain('November 2026')

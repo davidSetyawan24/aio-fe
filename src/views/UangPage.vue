@@ -2,8 +2,10 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="page u-page" :class="{ wide }">
+        <!-- Lonceng di baris label (pojok kanan halaman); judul + tombol bulan di baris sendiri (pola Agenda). -->
+        <PageHeader eyebrow="Uang" bell />
         <div class="u-head">
-          <PageHeader eyebrow="Uang" bell>{{ rp(data?.total ?? 0) }}<br /><span>keluar {{ name }}{{ data?.isCurrent !== false ? ' · s.d. hari ini' : '' }}</span></PageHeader>
+          <h1 class="h1 rise" style="--i: 1">{{ rp(data?.total ?? 0) }}<br /><span>keluar {{ name }}{{ data?.isCurrent !== false ? ' · s.d. hari ini' : '' }}</span></h1>
           <div class="u-head-r">
             <div class="mnav rise" style="--i: 1" data-test="month">
               <button data-test="prev" aria-label="Bulan sebelumnya" :disabled="atFirst" @click="shift(-1)"><PhCaretLeft :size="16" weight="bold" /></button>
@@ -109,8 +111,8 @@ const catat = () => go(wide.value ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
 <style scoped>
 .u-page { padding-bottom: 110px; }
 .u-page:not(.wide) { max-width: 620px; }
-.u-head :deep(.h1) { font-variant-numeric: tabular-nums; margin-bottom: 14px; }
-.u-head :deep(.h1 span) { font-size: .62em; letter-spacing: -0.02em; }
+.u-head .h1 { font-variant-numeric: tabular-nums; margin-bottom: 14px; }
+.u-head .h1 span { font-size: .62em; letter-spacing: -0.02em; }
 .u-error { color: var(--red); font-size: 13px; font-weight: 600; margin: 0 6px 12px; }
 
 .mnav { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); margin-bottom: 16px; }
@@ -138,8 +140,7 @@ const catat = () => go(wide.value ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
 @media (min-width: 1100px) {
   .u-page { padding-bottom: 64px; }
   .u-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
-  .u-head :deep(.page-head) { flex: 1; min-width: 0; }
-  .u-head :deep(.h1) { margin-bottom: 26px; }
+  .u-head .h1 { flex: 1; min-width: 0; margin-bottom: 26px; }
   .u-head-r { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; flex-shrink: 0; }
   .mnav { padding: 0; background: transparent; box-shadow: none; margin: 0; }
   .mnav b { display: none; }
