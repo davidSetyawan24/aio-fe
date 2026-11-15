@@ -251,6 +251,22 @@ describe('ExpenseForm — catat', () => {
 })
 
 describe('ExpenseForm — kategori baru', () => {
+  // PC (form di samping daftar Duit): "+ Baru" buka panel di halaman yang sama, bukan pindah halaman.
+  it('asks the page for a new category instead of opening another page when inline', async () => {
+    const w = await mountForm({ newCategoryInline: true })
+    ionRouter.push.mockClear()
+    await typeAmount(w, '75000')
+    await w.find('[data-test="new-cat"]').trigger('click')
+    expect(w.emitted('new-category')).toHaveLength(1)
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    apis.setCats([makan, ngopi, { id: 11, name: 'Hiburan', emoji: '🎬', tint: '#FFE0E6' }])
+    useCategoriesStore().justCreatedId = 11
+    await w.vm.pickJustCreated()
+    await flushPromises()
+    expect(w.find('[data-cat="11"]').classes()).toContain('on')
+    expect(w.find('[data-test="amount"]').element.value).toBe('75.000')
+  })
+
   it('ignores a category made elsewhere (not via Baru on this screen)', async () => {
     const w = await mountForm()
     await w.find('[data-cat="1"]').trigger('click')

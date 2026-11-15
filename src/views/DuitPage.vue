@@ -69,12 +69,16 @@
             <div class="shell">
               <div class="core form-card">
                 <button v-if="selected" class="cancel" @click="selected = null">Batal ubah</button>
-                <ExpenseForm ref="sideForm" :expense="selected" :eyebrow="selected ? 'Ubah catatan' : 'Catat duit keluar'" @saved="onSideSaved" @deleted="selected = null" />
+                <ExpenseForm ref="sideForm" :expense="selected" :eyebrow="selected ? 'Ubah catatan' : 'Catat duit keluar'" new-category-inline
+                  @saved="onSideSaved" @deleted="selected = null" @new-category="openCategoryPanel" />
               </div>
             </div>
           </aside>
         </div>
       </div>
+
+      <!-- PC: "+ Baru" kategori di form Catat → panel geser yang sama kayak halaman Kategori (isian Catat tetep). -->
+      <CategoryPanel v-if="wide" :open="categoryPanelOpen" :form-key="categoryPanelKey" for-catat @close="categoryPanelOpen = false" @done="onCategoryDone" />
 
       <input ref="trap" class="focus-trap" aria-hidden="true" tabindex="-1" inputmode="numeric" />
       <button v-if="!wide" slot="fixed" class="fab" data-test="add" @click="add">
@@ -86,8 +90,9 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { PhCaretDown, PhPlus } from '@phosphor-icons/vue'
+import CategoryPanel from '@/components/CategoryPanel.vue'
 import ExpenseForm from '@/components/ExpenseForm.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { barLabel, groupByDay, localToday, longDay, monthName, prevMonth, weekdayShort } from '@/lib/duit.js'
@@ -103,12 +108,17 @@ const loaded = ref(false)
 const loadingOlder = ref(false)
 const selected = ref(null)
 const sideForm = ref(null)
+const categoryPanelOpen = ref(false)
+const categoryPanelKey = ref(0)
 const trap = ref(null)
 
 /* iPad landscape / Mac: satu kanvas di tengah — daftar kiri, form catat sebagai kartu di kanan. */
 const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null
 const wide = ref(Boolean(query?.matches))
-const onMedia = (e) => (wide.value = e.matches)
+const onMedia = (e) => {
+  wide.value = e.matches
+  if (!e.matches) categoryPanelOpen.value = false
+}
 query?.addEventListener?.('change', onMedia)
 onBeforeUnmount(() => query?.removeEventListener?.('change', onMedia))
 
@@ -153,6 +163,16 @@ onIonViewWillEnter(() => {
   refresh()
   sideForm.value?.pickJustCreated()
 })
+
+function openCategoryPanel() {
+  categoryPanelKey.value += 1
+  categoryPanelOpen.value = true
+}
+async function onCategoryDone(message) {
+  categoryPanelOpen.value = false
+  await sideForm.value?.pickJustCreated()
+  await (await toastController.create({ message, duration: 2500, position: 'top', cssClass: 'aio-toast' })).present()
+}
 
 // Balik dari background (mis. besok paginya) → angka hari ini & daftar diperbarui.
 function onVisible() {

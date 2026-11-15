@@ -141,8 +141,10 @@ const props = defineProps({
   autofocus: { type: Boolean, default: false },
   /** Label kecil di sebelah chip tanggal. */
   eyebrow: { type: String, default: '' },
+  /** PC: "+ Baru" kategori minta halaman buka panel (emit `new-category`), bukan pindah ke halaman form kategori. */
+  newCategoryInline: { type: Boolean, default: false },
 })
-const emit = defineEmits(['saved', 'deleted'])
+const emit = defineEmits(['saved', 'deleted', 'new-category'])
 
 const ionRouter = useIonRouter()
 const categories = useCategoriesStore()
@@ -244,7 +246,8 @@ const selectedCategory = computed(() => categoryChips.value.find((c) => c.id ===
 const blob = computed(() => (selectedCategory.value ? `radial-gradient(closest-side, ${selectedCategory.value.tint}, transparent)` : 'transparent'))
 function newCategory() {
   waitingForNew = true
-  ionRouter.push('/tabs/menu/kategori/tambah?from=catat')
+  if (props.newCategoryInline) emit('new-category')
+  else ionRouter.push('/tabs/menu/kategori/tambah?from=catat')
 }
 
 /** Dipanggil pas balik dari form kategori baru: pilih kategori yang barusan dibikin, isian lain tetep. */

@@ -1,16 +1,19 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { setCategoriesApi } from '@/stores/categories.js'
+import CategoryForm from '@/components/CategoryForm.vue'
+import { setCategoriesApi, useCategoriesStore } from '@/stores/categories.js'
 import { setExpensesApi } from '@/stores/expenses.js'
 import { setWalletApi } from '@/stores/wallet.js'
 import DuitPage from './DuitPage.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
+const toastCreate = vi.hoisted(() => vi.fn(async () => ({ present: vi.fn() })))
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: (fn) => fn(),
+  toastController: { create: toastCreate },
 }))
 
 const ngopi = { id: 2, name: 'Ngopi', emoji: '☕', tint: '#FFF3B8', archived: false }
@@ -25,6 +28,7 @@ const summary = {
 }
 
 let expensesApi
+let catList
 /** Angka jatah di ringkasan (null = belum pasang budget). */
 let budget = null
 async function mountPage() {
@@ -37,14 +41,15 @@ async function mountPage() {
     }),
   }
   setExpensesApi(expensesApi)
-  setCategoriesApi({ get: vi.fn(async () => ({ categories: [makan, ngopi] })) })
+  catList = [makan, ngopi]
+  setCategoriesApi({ get: vi.fn(async () => ({ categories: catList })) })
   setWalletApi({ get: vi.fn(async () => ({ sources: [] })) })
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/duit', component: DuitPage }] })
   router.push('/tabs/menu/duit')
   await router.isReady()
-  const w = mount(DuitPage, { global: { plugins: [pinia, router] } })
+  const w = mount(DuitPage, { global: { plugins: [pinia, router], stubs: { teleport: true } } })
   await flushPromises()
   return w
 }
@@ -133,6 +138,27 @@ describe('DuitPage', () => {
       const w = await mountPage()
       expect(w.findAll('[data-test="bar"]').map((b) => b.find('em').text())).toEqual(['', '', '', '', '212rb', '', '45rb'])
       expect(w.find('[data-test="month-fact"]').text()).toBe('bulan ini Rp257.000')
+    })
+
+    it('makes a new category in a side panel and picks it in the Catat form', async () => {
+      const w = await mountPage()
+      ionRouter.push.mockClear()
+      await w.find('[data-test="side-form"] [data-test="new-cat"]').trigger('click')
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      const panel = () => w.find('[data-test="panel"]')
+      expect(panel().classes()).toContain('show')
+      const form = w.findComponent(CategoryForm)
+      expect(form.props('categoryId')).toBeNull()
+      expect(form.props('forCatat')).toBe(true)
+      // Kategori baru kesimpen (CategoryForm → store) → panel bilang beres.
+      catList = [makan, ngopi, { id: 11, name: 'Hiburan', emoji: '🎬', tint: '#FFE0E6', archived: false }]
+      await useCategoriesStore().load()
+      useCategoriesStore().justCreatedId = 11
+      form.vm.$emit('done', 'Kategori baru · 🎬 Hiburan')
+      await flushPromises()
+      expect(panel().classes()).not.toContain('show')
+      expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Kategori baru · 🎬 Hiburan' }))
+      expect(w.find('[data-test="side-form"] [data-cat="11"]').classes()).toContain('on')
     })
 
     it('puts the Catat form as a card next to the list, without the floating button', async () => {
