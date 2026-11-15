@@ -1,6 +1,8 @@
 <template>
-  <!-- Ke body: elemen fixed di dalam ion-content nempel ke dasar konten, bukan dasar layar. -->
-  <Teleport to="body">
+  <!-- Ke ion-app (di luar ion-content): elemen fixed di dalam ion-content nempel ke dasar konten, bukan dasar layar.
+       Bukan ke body: ion-app bikin tumpukan z-index sendiri tempat popup Ionic (konfirmasi Hapus, pilihan "yang ini / seterusnya")
+       dipasang — kalau sheet di body, popup itu ketutup sheet & nggak bisa dipencet. -->
+  <Teleport to="ion-app">
     <div class="scrim" :class="{ show: open }" @click="$emit('close')" />
     <div class="sheet" :class="{ show: open, dialog: wide, big }" role="dialog" :aria-label="label">
       <div class="handle" />
