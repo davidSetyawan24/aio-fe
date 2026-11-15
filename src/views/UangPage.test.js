@@ -142,7 +142,9 @@ describe('UangPage', () => {
 
   it('bulan lalu: kelewat budget & tanpa budget; ‹ nonaktif di bulan pertama', async () => {
     let w = await mountPage({ current: okt({ budget: { total: 2_000_000, left: -40_000 }, firstMonth: '2026-10' }) })
-    expect(text(w, 'hero')).toContain('Kelewat Rp40.000')
+    expect(text(w, 'hero')).toContain('Budget Oktober kelewat')
+    expect(text(w, 'hero')).toContain('−Rp40.000')
+    expect(text(w, 'hero')).not.toContain('Tersisa dana')
     expect(w.find('[data-test="prev"]').attributes('disabled')).toBeDefined()
     w.unmount()
     w = await mountPage({ current: okt({ budget: null }) })

@@ -143,7 +143,8 @@ const catat = () => go(wide.value ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
   .mnav button { background: var(--card); box-shadow: 0 0 0 1px var(--hair); }
   .u-add { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 6px 0 20px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink);
     font: 700 15px var(--ion-font-family); cursor: pointer; }
-  .u-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'hero hero todo' 'cat chart chart' 'tiles tiles tiles';
+  /* Kolom kanan (Perlu diurus) dilebarin biar judul & tombol nggak kejepit di 1440. */
+  .u-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr) minmax(0, 1.2fr); grid-template-areas: 'hero hero todo' 'cat chart chart' 'tiles tiles tiles';
     gap: 0 24px; align-items: start; }
   .u-grid.past { grid-template-areas: 'hero hero hero' 'cat chart chart' 'tiles tiles tiles'; }
   .a-hero { grid-area: hero; align-self: stretch; }

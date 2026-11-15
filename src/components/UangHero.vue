@@ -17,8 +17,8 @@
       <!-- Bulan lalu -->
       <div v-else class="u-main">
         <template v-if="data.budget">
-          <div class="k">Tersisa dana {{ name }}</div>
-          <div class="v" :class="{ over: data.budget.left < 0 }">{{ data.budget.left < 0 ? `Kelewat ${rp(-data.budget.left)}` : rp(data.budget.left) }}</div>
+          <div class="k">{{ data.budget.left < 0 ? `Budget ${name} kelewat` : `Tersisa dana ${name}` }}</div>
+          <div class="v" :class="{ over: data.budget.left < 0 }">{{ data.budget.left < 0 ? `−${rp(-data.budget.left)}` : rp(data.budget.left) }}</div>
         </template>
         <template v-else>
           <div class="k">Keluar {{ name }}</div>

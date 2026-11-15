@@ -67,6 +67,6 @@ const showDay = (i) => [0, 6, 13, 20, 27].includes(i) || i === props.daily.lengt
 .col.on i { opacity: 1; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--muted); }
 .jl { position: absolute; left: 50%; transform: translateX(-50%); width: calc(100% + 2px); max-width: 26px; height: 2px; border-radius: 2px; background: var(--muted); opacity: .75; pointer-events: none; }
 .days { display: flex; gap: 3px; margin-top: 6px; }
-.days span { flex: 1; min-width: 0; text-align: center; font-size: 9.5px; color: var(--muted); font-weight: 700; }
+.days span { flex: 1; min-width: 0; display: flex; justify-content: center; white-space: nowrap; font-size: 9.5px; color: var(--muted); font-weight: 700; }
 @media (min-width: 1100px) { .bars { height: 190px; } }
 </style>
