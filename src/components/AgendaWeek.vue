@@ -15,6 +15,10 @@
           <div v-for="t in store.day(date).todos" :key="`${t.id}:${t.occurrence}`" class="wtd" :class="{ ok: t.done, late: t.late }">
             <span class="cir" /><span>{{ t.title }}</span>
           </div>
+          <button v-for="b in store.day(date).bills" :key="`${b.billId}:${b.period}`" type="button" class="wtd wk-bill" :class="{ ok: b.status === 'paid', late: b.status === 'late' }"
+            data-test="wk-bill" :title="b.status === 'paid' ? `Batal lunas ${b.name}` : `Tandain ${b.name} lunas`" @click="toggleBill(b)">
+            <span class="cir" /><span>🔁 {{ b.name }}</span>
+          </button>
         </div>
       </div>
       <div ref="scroller" class="wk-scroll" data-test="wk-scroll">
@@ -51,10 +55,13 @@
           <span class="s"><b>{{ relLabel(date, today) }}</b>{{ summary(date) }}</span>
           <PhCaretRight :size="16" class="go" />
         </button>
-        <div v-if="store.day(date).events.length || store.day(date).todos.length" class="mini">
+        <div v-if="store.day(date).events.length || store.day(date).todos.length || store.day(date).bills.length" class="mini">
           <div v-for="e in store.day(date).events" :key="`${e.id}:${e.occurrence}`"><span class="tm">{{ e.allDay ? '—' : e.startTime }}</span><span class="bul" /><span class="txt">{{ e.title }}</span></div>
           <div v-for="t in store.day(date).todos" :key="`${t.id}:${t.occurrence}`">
             <span class="tm" /><span class="cir" :class="{ ok: t.done }" /><span class="txt" :class="{ x: t.done }">{{ t.title }}{{ t.late ? ' · telat' : '' }}</span>
+          </div>
+          <div v-for="b in store.day(date).bills" :key="`${b.billId}:${b.period}`">
+            <span class="tm" /><span class="cir bill" :class="{ ok: b.status === 'paid' }" /><span class="txt" :class="{ x: b.status === 'paid' }">🔁 {{ b.name }}{{ b.status === 'late' ? ' · telat' : '' }}</span>
           </div>
         </div>
       </div>
@@ -77,7 +84,7 @@ const props = defineProps({
   /** Menit sekarang (garis merah di kolom hari ini). */
   nowMinute: { type: Number, default: null },
 })
-defineEmits(['go-day', 'event'])
+const emit = defineEmits(['go-day', 'event', 'error'])
 const store = useAgendaStore()
 
 /* ---- PC: grid jam ---- */
@@ -96,9 +103,12 @@ function blockStyle(p) {
   }
 }
 function summary(date) {
-  const { events, todos } = store.day(date)
-  return events.length || todos.length ? `${events.length} acara · ${todos.length} to-do` : 'kosong'
+  const { events, todos, bills } = store.day(date)
+  if (!events.length && !todos.length && !bills.length) return 'kosong'
+  return `${events.length} acara · ${todos.length} to-do${bills.length ? ` · ${bills.length} bayar rutin` : ''}`
 }
+/** Centang Bayar Rutin di grid minggu (PC). */
+const toggleBill = (b) => store.toggleBill(b).catch((err) => emit('error', err))
 </script>
 
 <style scoped>
@@ -129,6 +139,9 @@ function summary(date) {
 .wtd.ok span:last-child { text-decoration: line-through; opacity: .45; }
 .wtd.late { color: var(--red); }
 .wtd.late .cir { box-shadow: inset 0 0 0 1.5px var(--red); }
+.wk-bill { width: 100%; border: 0; background: transparent; color: inherit; text-align: left; font-family: var(--ion-font-family); cursor: pointer; border-radius: 8px; }
+.wk-bill:not(.ok):not(.late) .cir { box-shadow: inset 0 0 0 1.5px var(--amber); }
+.cir.bill:not(.ok) { box-shadow: inset 0 0 0 1.5px var(--amber); }
 
 /* PC: grid jam (ikut mockup agenda-pc.html "Minggu · grid jam") */
 .wk-shell { flex: 1; min-height: 520px; margin-top: 6px; }

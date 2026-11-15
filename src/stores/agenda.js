@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api as defaultApi } from '@/lib/api.js'
 import { isRecurring, rangeFor } from '@/lib/agenda.js'
+import { useBayarRutinStore } from '@/stores/bayarRutin.js'
 
 let agendaApi = defaultApi
 
@@ -9,7 +10,8 @@ export function setAgendaApi(apiLike) {
   agendaApi = apiLike
 }
 
-const EMPTY_DAY = Object.freeze({ events: [], todos: [] })
+const EMPTY_DAY = Object.freeze({ events: [], todos: [], bills: [] })
+const billKey = (row) => `bill:${row.billId}:${row.period}`
 /** Nomor permintaan terakhir: jawaban yang lebih lama (mis. minggu yang udah lewat digeser) nggak boleh nimpa. */
 let latest = 0
 const rowKey = (row) => `${row.id}:${row.occurrence ?? ''}`
@@ -43,7 +45,8 @@ export const useAgendaStore = defineStore('agenda', {
       const data = await agendaApi.get(`/agenda?from=${from}&to=${to}`)
       if (mine !== latest) return
       this.today = data.today
-      this.days = data.days
+      // Bayar Rutin (`bills`) selalu ada biar komponen nggak perlu ngecek.
+      this.days = Object.fromEntries(Object.entries(data.days).map(([date, d]) => [date, { ...d, bills: d.bills ?? [] }]))
       this.undated = data.undated
     },
 
@@ -77,6 +80,35 @@ export const useAgendaStore = defineStore('agenda', {
       const res = await agendaApi.put(`/agenda/todos/${todo.id}`, { ...todoBody(todo), dueOn })
       await this.refresh()
       return res
+    },
+
+    /** Centang Bayar Rutin = Lunas (endpoint yang sama kayak menu Bayar Rutin). Langsung berubah di layar, balik kalau gagal. */
+    async toggleBill(row) {
+      const key = billKey(row)
+      if (this.pending[key]) return
+      const before = row.status
+      const paid = before !== 'paid'
+      this.pending = { ...this.pending, [key]: true }
+      this.setBillStatus(key, paid ? 'paid' : row.dueOn < (this.today ?? '') ? 'late' : 'open')
+      try {
+        const url = `/recurring-bills/${row.billId}/payments/${row.period}`
+        if (paid) await agendaApi.put(url, {})
+        else await agendaApi.del(url)
+        this.refresh()
+        const bills = useBayarRutinStore()
+        if (bills.month) bills.refresh()
+      } catch (err) {
+        this.setBillStatus(key, before)
+        throw err
+      } finally {
+        const { [key]: _, ...rest } = this.pending
+        this.pending = rest
+      }
+    },
+
+    setBillStatus(key, status) {
+      const flip = (b) => (billKey(b) === key ? { ...b, status } : b)
+      this.days = Object.fromEntries(Object.entries(this.days).map(([date, d]) => [date, { ...d, bills: d.bills.map(flip) }]))
     },
 
     async getEvent(id) {

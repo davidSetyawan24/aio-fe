@@ -37,11 +37,12 @@ const props = defineProps({ month: { type: String, required: true }, today: { ty
 defineEmits(['go-day', 'shift'])
 const store = useAgendaStore()
 const cells = computed(() => monthCells(props.month))
-/** Acara dulu (jam + judul), lalu to-do yang belum beres. */
+/** Acara dulu (jam + judul), Bayar Rutin yang belum lunas, lalu to-do yang belum beres. */
 function items(date) {
-  const { events, todos } = store.day(date)
+  const { events, todos, bills } = store.day(date)
   return [
     ...events.map((e) => ({ kind: 'e', text: e.allDay ? e.title : `${e.startTime} ${e.title}` })),
+    ...bills.filter((b) => b.status !== 'paid').map((b) => ({ kind: 'b', text: `🔁 ${b.name}` })),
     ...todos.filter((t) => !t.done).map((t) => ({ kind: 't', text: `○ ${t.title}` })),
   ]
 }
@@ -66,5 +67,7 @@ function items(date) {
 .it { font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; border-radius: 7px; }
 .it.e { background: rgba(43, 168, 100, .12); }
 .it.t { color: var(--muted); font-weight: 600; padding-left: 4px; }
+.it.b { background: rgba(245, 165, 36, .16); color: #C27C00; }
+:root.theme-dark .it.b { color: var(--amber); }
 .more { font-size: 11px; color: var(--muted); font-weight: 700; padding-left: 4px; }
 </style>

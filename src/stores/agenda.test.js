@@ -30,7 +30,7 @@ describe('agenda store', () => {
     expect(api.get).toHaveBeenCalledWith('/agenda?from=2026-10-26&to=2026-12-06')
     expect(store.today).toBe('2026-11-15')
     expect(store.day('2026-11-15').todos).toHaveLength(2)
-    expect(store.day('2026-11-20')).toEqual({ events: [], todos: [] })
+    expect(store.day('2026-11-20')).toEqual({ events: [], todos: [], bills: [] })
     expect(store.undated.map((t) => t.title)).toEqual(['Beli kado'])
   })
 

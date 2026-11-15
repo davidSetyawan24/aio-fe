@@ -20,7 +20,7 @@
           @click="$emit('pick', date)"
         >
           <b>{{ Number(date.slice(8)) }}</b>
-          <span class="dots"><i v-if="store.day(date).events.length" /><i v-if="store.day(date).todos.some((t) => !t.done)" class="tdot" /></span>
+          <span class="dots"><i v-if="store.day(date).events.length" /><i v-if="store.day(date).todos.some((t) => !t.done)" class="tdot" /><i v-if="store.day(date).bills.some((b) => b.status !== 'paid')" class="bdot" /></span>
         </button>
       </div>
     </div>
@@ -64,4 +64,5 @@ const cells = computed(() => monthCells(props.month))
 .dots { display: flex; gap: 3px; height: 5px; }
 .dots i { width: 5px; height: 5px; border-radius: 9px; background: var(--green); }
 .dots i.tdot { background: var(--muted); }
+.dots i.bdot { background: var(--amber); }
 </style>

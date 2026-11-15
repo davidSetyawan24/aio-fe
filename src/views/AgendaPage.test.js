@@ -19,6 +19,7 @@ const TODAY = '2026-11-15' // Minggu
 const NONE = { freq: 'none', days: [], until: null }
 const ev = (over) => ({ id: 1, title: 'Acara', allDay: false, startDate: TODAY, endDate: TODAY, startTime: '10:00', endTime: '12:00', location: null, note: null, reminders: [], repeat: NONE, occurrence: TODAY, dayIndex: 1, dayCount: 1, ...over })
 const td = (over) => ({ id: 1, title: 'To-do', dueOn: TODAY, note: null, reminders: [], repeat: NONE, occurrence: TODAY, done: false, late: 0, ...over })
+const bl = (over) => ({ billId: 7, name: 'Netflix', emoji: '🎬', tint: '#FFE0E6', amount: 186000, sourceId: 10, freq: 'monthly', period: '2026-11', dueOn: TODAY, status: 'open', lateDays: 0, daysLeft: 0, paidOn: null, ...over })
 const content = {
   [TODAY]: {
     events: [
@@ -33,7 +34,14 @@ const content = {
       td({ id: 4, title: 'Balas email Pak Budi', done: true }),
     ],
   },
-  '2026-11-16': { events: [], todos: [td({ id: 5, title: 'Siapin slide meeting', dueOn: '2026-11-16', occurrence: '2026-11-16' })] },
+  '2026-11-16': {
+    events: [],
+    todos: [td({ id: 5, title: 'Siapin slide meeting', dueOn: '2026-11-16', occurrence: '2026-11-16' })],
+    bills: [
+      bl({ billId: 8, name: 'Cicilan motor', amount: 1250000, dueOn: '2026-11-12', status: 'late', lateDays: 4 }),
+      bl({ billId: 7, name: 'Netflix', amount: 186000, dueOn: '2026-11-16', status: 'open', daysLeft: 1 }),
+    ],
+  },
   '2026-11-21': {
     events: [ev({ id: 5, title: 'Futsal', startDate: '2026-10-31', endDate: '2026-10-31', startTime: '08:00', endTime: '10:00', location: 'Futsal Kuningan City', note: 'Bawa sepatu', repeat: { freq: 'weekly', days: [6], until: null }, occurrence: '2026-11-21' })],
     todos: [],
@@ -55,7 +63,7 @@ function agendaFor(url) {
 async function mountPage(path = '/tabs/agenda') {
   api = {
     get: vi.fn(async (url) => agendaFor(url)),
-    put: vi.fn(async () => ({ todo: { id: 11 } })),
+    put: vi.fn(async (url) => (url.startsWith('/recurring-bills') ? new Promise((r) => setTimeout(() => r({ row: {} }), 5)) : { todo: { id: 11 } })),
     patch: vi.fn(() => new Promise((resolve) => setTimeout(() => resolve({ todo: { id: 2 } }), 5))),
     del: vi.fn(async () => null),
   }
@@ -194,6 +202,71 @@ describe('AgendaPage', () => {
     expect(w.text()).toContain('Siapin slide meeting')
   })
 
+  describe('Bayar Rutin', () => {
+    const billRow = (w, name) => w.findAll('[data-test="bill"]').find((r) => r.text().includes(name))
+    const openTomorrow = async (w) => {
+      await w.find('[data-test="next"]').trigger('click')
+      await flushPromises()
+      await w.find('[data-day="2026-11-16"]').trigger('click')
+      await flushPromises()
+    }
+
+    it('lists the bills of the day under the to-dos with what is still unpaid', async () => {
+      const w = await mountPage()
+      expect(w.find('[data-test="bills"]').exists()).toBe(false)
+      await openTomorrow(w)
+      expect(w.find('h1').text()).toBe('Senin, 16 Nov0 acara · 1 to-do · 2 bayar rutin')
+      const section = w.find('[data-test="bills"]').text()
+      expect(section).toContain('Rp1.436.000 belum lunas')
+      expect(billRow(w, 'Cicilan motor').text()).toContain('Telat 4 hari')
+      expect(billRow(w, 'Cicilan motor').text()).toContain('Jatuh tempo 12 Nov')
+      expect(billRow(w, 'Netflix').text()).toContain('Rp186.000')
+    })
+
+    it('marks a bill paid from the Agenda once even on a double tap', async () => {
+      const w = await mountPage()
+      await openTomorrow(w)
+      const check = billRow(w, 'Netflix').find('[data-test="bill-check"]')
+      await check.trigger('click')
+      await check.trigger('click')
+      expect(billRow(w, 'Netflix').classes()).toContain('done')
+      await new Promise((r) => setTimeout(r, 10))
+      await flushPromises()
+      expect(api.put).toHaveBeenCalledTimes(1)
+      expect(api.put).toHaveBeenCalledWith('/recurring-bills/7/payments/2026-11', {})
+    })
+
+    it('puts the bill back and says why when it cannot be saved', async () => {
+      const w = await mountPage()
+      await openTomorrow(w)
+      api.put.mockRejectedValueOnce(new Error('Koneksi putus'))
+      await billRow(w, 'Netflix').find('[data-test="bill-check"]').trigger('click')
+      await flushPromises()
+      expect(billRow(w, 'Netflix').classes()).not.toContain('done')
+      expect(w.find('.error').text()).toBe('Koneksi putus')
+    })
+
+    it('marks days with an unpaid bill with a yellow dot and shows them in the week and month', async () => {
+      const w = await mountPage()
+      await w.find('[data-test="next"]').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-day="2026-11-16"] .bdot').exists()).toBe(true)
+      expect(w.find('[data-day="2026-11-17"] .bdot').exists()).toBe(false)
+      await w.find('[data-test="today"]').trigger('click')
+      await flushPromises()
+      await w.find('[data-view="week"]').trigger('click')
+      await flushPromises()
+      await w.find('[data-test="next"]').trigger('click')
+      await flushPromises()
+      const monday = w.findAll('[data-test="wday"]')[0]
+      expect(monday.text()).toContain('🔁 Netflix')
+      expect(monday.text()).toContain('2 bayar rutin')
+      await w.find('[data-view="month"]').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-test="calendar"] [data-day="2026-11-16"] .bdot').exists()).toBe(true)
+    })
+  })
+
   describe('on a wide screen', () => {
     beforeEach(() => {
       window.matchMedia = vi.fn((q) => ({ matches: q.includes('1100') || q.includes('768'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
@@ -256,6 +329,24 @@ describe('AgendaPage', () => {
       expect(ionRouter.push).not.toHaveBeenCalled()
       expect(w.find('[data-test="form-dialog"]').text()).toContain('Ubah to-do')
       expect(w.find('[data-test="form-dialog"] [data-test="title"]').element.value).toBe('Bayar listrik')
+    })
+
+    it('shows the bills on the left of the day, in the week grid and in the big month', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="aside"] [data-day]').find((d) => d.attributes('data-day') === '2026-11-16').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-test="aside"] [data-test="bills"]').text()).toContain('Netflix')
+      await w.find('[data-view="week"]').trigger('click')
+      await flushPromises()
+      const monday = w.findAll('[data-test="wk-allday"]')[0]
+      expect(monday.text()).toContain('Netflix')
+      await monday.find('[data-test="wk-bill"]').trigger('click')
+      await new Promise((r) => setTimeout(r, 10))
+      await flushPromises()
+      expect(api.put).toHaveBeenCalledWith('/recurring-bills/8/payments/2026-11', {})
+      await w.find('[data-view="month"]').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-cell="2026-11-16"]').text()).toContain('🔁 Netflix')
     })
 
     it('lays the week out by the hour, with all-day items and to-dos on top', async () => {

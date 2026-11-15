@@ -31,6 +31,7 @@
                     <div v-if="!selTodos.length" class="todo-empty">Belum ada to-do.</div>
                   </div>
                 </div>
+                <AgendaBillSection v-if="selBills.length" :bills="selBills" @error="showError" />
                 <div class="lbl">📥 Kapan-kapan <small>{{ store.undated.length }}</small></div>
                 <div class="shell"><div class="core flat"><KapanKapanList :items="store.undated" :today="today" @edit="editTodo" /></div></div>
               </div>
@@ -47,7 +48,7 @@
               <div class="strip" data-test="strip">
                 <button v-for="date in week" :key="date" type="button" class="dpill" :class="{ on: date === sel, today: date === today }" :data-day="date" @click="sel = date">
                   <small>{{ HR[weekdayOf(date)] }}</small><b>{{ Number(date.slice(8)) }}</b>
-                  <span class="dots"><i v-if="store.day(date).events.length" /><i v-if="store.day(date).todos.some((t) => !t.done)" class="tdot" /></span>
+                  <span class="dots"><i v-if="store.day(date).events.length" /><i v-if="store.day(date).todos.some((t) => !t.done)" class="tdot" /><i v-if="store.day(date).bills.some((b) => b.status !== 'paid')" class="bdot" /></span>
                 </button>
               </div>
               <AgendaDayList :day="store.day(sel)" :drawer="sel === today" :undated-count="store.undated.length" @event="openEvent" @edit-todo="editTodo" @drawer="openDrawer" @error="showError" />
@@ -63,7 +64,7 @@
                 <button type="button" aria-label="Minggu berikutnya" data-test="next" @click="shiftDays(7)"><PhCaretRight :size="15" /></button>
               </span>
             </div>
-            <AgendaWeek :dates="week" :today="today" :wide="wide" :now-minute="nowMinute" @go-day="goDay" @event="openEvent" />
+            <AgendaWeek :dates="week" :today="today" :wide="wide" :now-minute="nowMinute" @go-day="goDay" @event="openEvent" @error="showError" />
             <button v-if="!wide" type="button" class="drawer" data-test="drawer" @click="openDrawer">
               <span class="ic">📥</span><span class="grow"><b>Kapan-kapan</b><span>To-do yang belum ada tanggalnya</span></span><span class="n">{{ store.undated.length }}</span>
             </button>
@@ -104,6 +105,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
+import AgendaBillSection from '@/components/AgendaBillSection.vue'
 import AgendaDayList from '@/components/AgendaDayList.vue'
 import AgendaDayTimeline from '@/components/AgendaDayTimeline.vue'
 import AgendaForm from '@/components/AgendaForm.vue'
@@ -143,6 +145,7 @@ const formKey = ref(0)
 
 const today = computed(() => store.today ?? localToday())
 const selTodos = computed(() => (sel.value ? store.day(sel.value).todos : []))
+const selBills = computed(() => (sel.value ? store.day(sel.value).bills : []))
 
 /** Menit sekarang (jam lokal) buat garis merah di tampilan jam-jaman — disegerin tiap menit. */
 const minuteNow = () => {
@@ -171,8 +174,8 @@ const titleSub = computed(() => {
   if (!sel.value) return ''
   if (view.value === 'month') return month.value.slice(0, 4)
   if (view.value === 'week') return week.value[0] === weekStart(today.value) ? 'Minggu ini' : 'Seminggu'
-  const { events, todos } = store.day(sel.value)
-  return `${sel.value === today.value ? 'Hari ini · ' : ''}${events.length} acara · ${todos.length} to-do`
+  const { events, todos, bills } = store.day(sel.value)
+  return `${sel.value === today.value ? 'Hari ini · ' : ''}${events.length} acara · ${todos.length} to-do${bills.length ? ` · ${bills.length} bayar rutin` : ''}`
 })
 const offToday = computed(() => {
   if (!sel.value) return false
@@ -296,6 +299,7 @@ function editEvent(e) {
 .dots { display: flex; gap: 3px; height: 5px; }
 .dots i { width: 5px; height: 5px; border-radius: 9px; background: var(--green); }
 .dots i.tdot { background: var(--muted); }
+.dots i.bdot { background: var(--amber); }
 .month-wrap { margin-top: 16px; }
 .picked { margin: 22px 8px 0; font-size: 13px; font-weight: 800; }
 

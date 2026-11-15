@@ -34,6 +34,7 @@
           <div v-if="!day.todos.length" class="empty">Belum ada to-do.</div>
         </div>
       </div>
+      <AgendaBillSection v-if="day.bills?.length" :bills="day.bills" class="rise" style="--i: 5" @error="$emit('error', $event)" />
       <button v-if="drawer" type="button" class="drawer rise" style="--i: 5" data-test="drawer" @click="$emit('drawer')">
         <span class="ic">📥</span>
         <span class="grow"><b>Kapan-kapan</b><span>To-do yang belum ada tanggalnya</span></span>
@@ -47,6 +48,7 @@
 <script setup>
 import { computed } from 'vue'
 import { PhArrowUpRight, PhBell, PhCaretRight, PhMapPin, PhRepeat } from '@phosphor-icons/vue'
+import AgendaBillSection from '@/components/AgendaBillSection.vue'
 import AgendaTodoRow from '@/components/AgendaTodoRow.vue'
 import { mapsUrl, repeatLabel } from '@/lib/agenda.js'
 
