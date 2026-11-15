@@ -19,6 +19,6 @@ import { tabItems } from '@/modules/registry.js'
 
 const tabs = tabItems()
 const route = useRoute()
-// Halaman modul (/tabs/menu/tagihan) tetep nyalain tab "Semua menu".
+// Halaman modul (/tabs/menu/bayar-rutin) tetep nyalain tab "Semua menu".
 const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`)
 </script>

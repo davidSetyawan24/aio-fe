@@ -18,7 +18,8 @@ export const modules = [
   { key: 'budget', label: 'Atur budget', emoji: '🎯', tint: '#E4F7C4', category: 'keuangan', status: 'ready' },
   { key: 'kartu', label: 'Kartu & Rekening', emoji: '💳', tint: '#F3E1FF', category: 'keuangan', status: 'ready' },
   { key: 'kategori', label: 'Kategori', emoji: '🏷️', tint: '#FFF3B8', category: 'keuangan', status: 'ready' },
-  { key: 'tagihan', label: 'Tagihan', emoji: '🧾', tint: '#E4F7C4', category: 'keuangan', status: 'soon' },
+  // 15/11: "Tagihan" diganti Bayar Rutin (biaya tetap bulanan/tahunan + pengingat).
+  { key: 'bayar-rutin', label: 'Bayar Rutin', emoji: '🔁', tint: '#E4F7C4', category: 'keuangan', status: 'ready' },
   { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
   // Split bill — foto struk, dibaca Mistral OCR, dibagi ke temen-temen.
   { key: 'split-bill', label: 'Split bill', emoji: '🍕', tint: '#FFE0E6', category: 'keuangan', status: 'ready' },

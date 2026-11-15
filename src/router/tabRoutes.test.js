@@ -17,11 +17,13 @@ const splitDetailStub = { render: () => null }
 const splitFormStub = { render: () => null }
 const agendaStub = { render: () => null }
 const agendaFormStub = { render: () => null }
+const billsStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
+  BayarRutinPage: billsStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -31,8 +33,8 @@ describe('buildTabRoutes', () => {
   })
 
   it('opens modules outside the tab bar under menu/<key>, with a back button to Semua menu', () => {
-    const tagihan = find('menu/tagihan')
-    expect(tagihan.props).toMatchObject({ title: 'Tagihan', emoji: '🧾', backTo: '/tabs/menu' })
+    const invoice = find('menu/invoice')
+    expect(invoice.props).toMatchObject({ title: 'Invoice', emoji: '📄', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
   })
 
@@ -52,7 +54,7 @@ describe('buildTabRoutes', () => {
   })
 
   it('redirects old links to the new module pages', () => {
-    expect(find('tagihan').redirect).toBe('/tabs/menu/tagihan')
+    expect(find('tagihan').redirect).toBe('/tabs/menu/bayar-rutin')
     expect(find('menu/agenda').redirect).toBe('/tabs/agenda')
     expect(find('todo').redirect).toBe('/tabs/agenda')
   })
@@ -88,6 +90,10 @@ describe('buildTabRoutes', () => {
     expect(find('menu/split-bill/:id/ubah').component).toBe(splitFormStub)
   })
 
+  it('opens Bayar Rutin under Semua menu', () => {
+    expect(find('menu/bayar-rutin').component).toBe(billsStub)
+  })
+
   it('has the notifications pages', () => {
     expect(find('notifikasi').component).toBe(notifStub)
     expect(find('notifikasi/atur').component).toBe(notifSettingsStub)
@@ -95,7 +101,7 @@ describe('buildTabRoutes', () => {
 
   it('gives tab root pages the bell, detail module pages not', () => {
     expect(find('home').props.bell).toBe(true)
-    expect(find('menu/tagihan').props.bell).toBeFalsy()
+    expect(find('menu/invoice').props.bell).toBeFalsy()
   })
 
   it('redirects the empty tab path to Beranda', () => {

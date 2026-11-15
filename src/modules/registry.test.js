@@ -10,15 +10,15 @@ describe('module registry', () => {
 
   it('puts modules outside the tab bar under /tabs/menu so that tab stays active', () => {
     const byKey = Object.fromEntries(modules.map((m) => [m.key, m]))
-    expect(modulePath(byKey.tagihan)).toBe('/tabs/menu/tagihan')
+    expect(modulePath(byKey['bayar-rutin'])).toBe('/tabs/menu/bayar-rutin')
     expect(modulePath(byKey.duit)).toBe('/tabs/menu/duit')
     expect(modulePath(byKey.uang)).toBe('/tabs/uang')
     expect(modulePath(byKey.agenda)).toBe('/tabs/agenda')
   })
 
   it('has the agreed modules, Duit, Atur budget, Kartu & Rekening and Kategori ready', () => {
-    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill', 'Agenda', 'Catatan', 'Kalender Dia'])
-    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['duit', 'budget', 'kartu', 'kategori', 'split-bill', 'agenda'])
+    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Bayar Rutin', 'Invoice', 'Split bill', 'Agenda', 'Catatan', 'Kalender Dia'])
+    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['duit', 'budget', 'kartu', 'kategori', 'bayar-rutin', 'split-bill', 'agenda'])
     expect(modulePath(modules.find((m) => m.key === 'budget'))).toBe('/tabs/menu/budget')
     expect(modulePath(modules.find((m) => m.key === 'kategori'))).toBe('/tabs/menu/kategori')
   })
@@ -26,7 +26,7 @@ describe('module registry', () => {
   it('groups modules by category in category order', () => {
     const groups = groupByCategory(modules)
     expect(groups.map((g) => g.label)).toEqual(['Keuangan', 'Produktivitas', 'Pribadi'])
-    expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Tagihan', 'Invoice', 'Split bill'])
+    expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Bayar Rutin', 'Invoice', 'Split bill'])
     expect(groups[1].modules.map((m) => m.label)).toEqual(['Agenda', 'Catatan'])
     expect(groups[2].modules.map((m) => m.label)).toEqual(['Kalender Dia'])
     expect(categories.map((c) => c.key)).toEqual(['keuangan', 'produktivitas', 'pribadi'])
@@ -41,8 +41,8 @@ describe('module registry', () => {
   })
 
   it('searches by part of the name, ignoring case and spaces', () => {
-    expect(searchModules('tagih').map((m) => m.key)).toEqual(['tagihan'])
-    expect(searchModules('  TAGIHAN ').map((m) => m.key)).toEqual(['tagihan'])
+    expect(searchModules('rutin').map((m) => m.key)).toEqual(['bayar-rutin'])
+    expect(searchModules('  BAYAR ').map((m) => m.key)).toEqual(['bayar-rutin'])
     expect(searchModules('').length).toBe(modules.length)
     expect(searchModules('xyz')).toEqual([])
   })

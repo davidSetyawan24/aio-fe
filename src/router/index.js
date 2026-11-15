@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from '@ionic/vue-router'
 import TabsLayout from '@/layouts/TabsLayout.vue'
 import AgendaFormPage from '@/views/AgendaFormPage.vue'
 import AgendaPage from '@/views/AgendaPage.vue'
+import BayarRutinPage from '@/views/BayarRutinPage.vue'
 import { useAuthStore } from '@/stores/auth.js'
 import BudgetPage from '@/views/BudgetPage.vue'
 import CategoryFormPage from '@/views/CategoryFormPage.vue'
@@ -32,7 +33,7 @@ const routes = [
     component: TabsLayout,
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
-      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage,
+      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },

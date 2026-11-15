@@ -1,13 +1,13 @@
 import { modulePath, modules } from '@/modules/registry.js'
 
 /** Link lama sebelum navigasi baru (14/11) → alamat baru. */
-const OLD_LINKS = { tagihan: '/tabs/menu/tagihan', duit: '/tabs/uang', todo: '/tabs/agenda', 'menu/agenda': '/tabs/agenda' }
+const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo: '/tabs/agenda', 'menu/agenda': '/tabs/agenda' }
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
-  const ready = { duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage }
+  const ready = { duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage }
   const moduleRoutes = modules.map((m) => {
     const path = modulePath(m).replace('/tabs/', '')
     if (ready[m.key]) return { path, component: ready[m.key] }
