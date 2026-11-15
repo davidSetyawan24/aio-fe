@@ -107,7 +107,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { actionSheetController } from '@ionic/vue'
 import { PhCaretDown, PhCheck, PhTrash } from '@phosphor-icons/vue'
 import BillReminderPicker from '@/components/BillReminderPicker.vue'
@@ -159,10 +159,13 @@ const error = ref('')
 const shake = ref(false)
 const sheetOpen = ref(false)
 
+// Diisi SEKALI dari data yang ada. Daftar dimuat ulang di belakang (abis centang / simpen) → isian yang lagi diketik jangan ketimpa.
+let filled = false
 watch(
   bill,
   (b) => {
-    if (!b) return
+    if (!b || filled) return
+    filled = true
     amountText.value = formatAmount(b.amount)
     name.value = b.name
     emoji.value = b.emoji
@@ -238,6 +241,13 @@ watch(
   { immediate: true },
 )
 
+// Esc pas daftar rekening kebuka: tutup daftarnya aja (panel PC nggak ikut ketutup).
+const onKey = (e) => {
+  if (e.key === 'Escape' && sheetOpen.value) sheetOpen.value = false
+}
+document.addEventListener('keydown', onKey)
+onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
+
 onMounted(async () => {
   if (!wallet.loaded) wallet.load().catch(() => {})
   if (isEdit.value && !bill.value) {
@@ -293,6 +303,8 @@ async function save() {
   } catch (err) {
     error.value = apiErrorMessage(err)
     doShake()
+    // Server bilang tanggalnya udah lewat padahal di sini belum (halaman kebuka lewat tengah malem) → muat ulang "hari ini" biar kotak kuningnya muncul.
+    if (err?.fields?.paidCurrent) await store.load(store.month ?? undefined).catch(() => {})
     return
   } finally {
     busy.value = false

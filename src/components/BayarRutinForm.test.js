@@ -143,6 +143,17 @@ describe('BayarRutinForm', () => {
     expect(w.find('[role="alert"]').text()).toBe('Rekeningnya nggak ketemu.')
   })
 
+  it('shows the "udah lunas?" box when the server says the date already passed (the day changed while the page was open)', async () => {
+    const w = await mountForm()
+    await fill(w, { day: 15 })
+    expect(w.find('[data-test="ask"]').exists()).toBe(false)
+    api.post.mockRejectedValueOnce(Object.assign(new Error('Data tidak valid.'), { fields: { paidCurrent: ['Jawab dulu: udah lunas atau belum?'] } }))
+    api.get.mockResolvedValueOnce({ month: '2026-11', today: '2026-11-16', firstMonth: '2026-11', summary: null, rows: [], bySource: [], bills: [motor] })
+    await save(w)
+    expect(w.find('[data-test="ask"]').text()).toContain('Yang 15 Nov udah lunas?')
+    expect(w.find('[data-test="amount"]').element.value).toBe('186.000')
+  })
+
   describe('editing', () => {
     it('fills the form, keeps an archived account and sends only the bill fields', async () => {
       const w = await mountForm({ billId: 2 })
@@ -157,6 +168,17 @@ describe('BayarRutinForm', () => {
       expect(api.patch).toHaveBeenCalledWith('/recurring-bills/2', expect.objectContaining({ amount: 1300000, sourceId: 99 }))
       expect(api.patch.mock.calls[0][1]).not.toHaveProperty('paidCurrent')
       expect(w.emitted('done')[0]).toEqual(['Disimpen.'])
+    })
+
+    it('keeps what was typed when the list reloads in the background', async () => {
+      const w = await mountForm({ billId: 2 })
+      await w.find('[data-test="amount"]').setValue('1300000')
+      await w.find('[data-test="name"]').setValue('Motor baru')
+      api.get.mockResolvedValueOnce({ month: '2026-11', today: '2026-11-15', firstMonth: '2026-11', summary: null, rows: [], bySource: [], bills: [{ ...motor }] })
+      await useBayarRutinStore().load()
+      await flushPromises()
+      expect(w.find('[data-test="amount"]').element.value).toBe('1.300.000')
+      expect(w.find('[data-test="name"]').element.value).toBe('Motor baru')
     })
 
     it('asks again only when the schedule moves to a day that already passed', async () => {

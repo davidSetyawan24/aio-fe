@@ -43,7 +43,8 @@ function requestClose() {
 // Esc nutup panel — kecuali ada konfirmasi Ionic di atasnya (Esc-nya buat batalin itu aja).
 const onKey = (e) => {
   if (e.key !== 'Escape' || !props.open) return
-  if (document.querySelector('ion-action-sheet, ion-alert')) return
+  // Konfirmasi Ionic / daftar "Dibayar dari mana?" di atasnya: Esc-nya buat nutup itu aja.
+  if (document.querySelector('ion-action-sheet, ion-alert, .br-src-sheet.show')) return
   requestClose()
 }
 document.addEventListener('keydown', onKey)

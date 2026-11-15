@@ -177,6 +177,22 @@ describe('BayarRutinPage', () => {
       expect(ionRouter.push).not.toHaveBeenCalled()
     })
 
+    it('closes only the account list on Esc, keeping the panel and what was typed', async () => {
+      const w = await mountPage()
+      await w.find('[data-test="pc-add"]').trigger('click')
+      await w.find('[data-test="amount"]').setValue('50000')
+      await w.find('[data-test="more-src"]').trigger('click')
+      expect(w.find('.br-src-sheet').classes()).toContain('show')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('.br-src-sheet').classes()).not.toContain('show')
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('[data-test="amount"]').element.value).toBe('50.000')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+    })
+
     it('closes the panel and shows a toast once saved', async () => {
       const w = await mountPage()
       await w.findAll('[data-test="master"]')[0].trigger('click')
