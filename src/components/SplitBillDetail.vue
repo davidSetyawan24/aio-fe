@@ -173,7 +173,7 @@ async function confirmDelete() {
 .pa { display: inline-grid; place-items: center; font-weight: 800; color: #141410; flex-shrink: 0; }
 .pa.lg { width: 44px; height: 44px; font-size: 16px; border-radius: 15px; }
 .pa.me { background: #141410; color: var(--lime); }
-:global(.theme-dark) .pa.me { background: #F2F2EE; color: #141410; }
+:root.theme-dark .pa.me { background: #F2F2EE; color: #141410; }
 .nm { font-weight: 700; font-size: 16px; min-width: 0; }
 .nm small { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
 .tot { margin-left: auto; text-align: right; font-size: 22px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
@@ -184,7 +184,7 @@ async function confirmDelete() {
 .ln.sum span { color: var(--text); font-weight: 700; }
 .ln.sum b { font-weight: 800; }
 .lines hr { border: 0; border-top: 1.5px dashed rgba(20, 20, 15, .14); margin: 7px 0; }
-:global(.theme-dark) .lines hr { border-top-color: var(--hair); }
+:root.theme-dark .lines hr { border-top-color: var(--hair); }
 .acts { display: flex; gap: 8px; margin-top: 12px; }
 .act { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text);
   font: 700 13.5px var(--ion-font-family); cursor: pointer; transition: transform .2s var(--spring); }

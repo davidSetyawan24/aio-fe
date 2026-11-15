@@ -389,7 +389,7 @@ async function save() {
 .pa { width: 30px; height: 30px; border-radius: 99px; display: inline-grid; place-items: center; font-size: 12px; font-weight: 800; color: #141410; flex-shrink: 0; }
 .pa.sm { width: 22px; height: 22px; font-size: 10px; }
 .pa.me { background: #141410; color: var(--lime); }
-:global(.theme-dark) .pa.me { background: #F2F2EE; color: #141410; }
+:root.theme-dark .pa.me { background: #F2F2EE; color: #141410; }
 
 .field { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 8px 0 16px; border-radius: 18px; background: var(--soft); color: var(--muted); margin-top: 14px; }
 .field input { flex: 1; min-width: 0; height: 52px; border: 0; outline: 0; background: transparent; color: var(--text); font: 600 16px var(--ion-font-family); }
