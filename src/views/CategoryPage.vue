@@ -35,7 +35,7 @@
               <div>
                 <div class="k">Keluar bulan ini</div>
                 <div class="v lime">{{ rpShort(summary.total) }}</div>
-                <div class="f">{{ summary.usedCount ? `dari ${summary.usedCount} kategori yang kepake` : 'belum ada catatan bulan ini' }}</div>
+                <div class="f">{{ !summary.total ? 'belum ada catatan bulan ini' : summary.usedCount ? `dari ${summary.usedCount} kategori yang kepake` : 'dari kategori yang udah dihapus' }}</div>
               </div>
               <div>
                 <div class="k">Paling gede</div>
@@ -166,8 +166,11 @@ async function onPanelDone(message) {
 watch(wide, (isWide) => {
   if (!isWide) closePanel()
 })
+// Esc nutup panel — kecuali lagi ada konfirmasi Ionic (mis. "Hapus?") di atasnya: Esc-nya buat batalin itu aja.
 const onKey = (e) => {
-  if (e.key === 'Escape' && panelOpen.value) closePanel()
+  if (e.key !== 'Escape' || !panelOpen.value) return
+  if (document.querySelector('ion-action-sheet, ion-alert')) return
+  closePanel()
 }
 document.addEventListener('keydown', onKey)
 onBeforeUnmount(() => document.removeEventListener('keydown', onKey))

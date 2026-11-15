@@ -13,14 +13,14 @@ export const CATEGORY_EMOJIS = [
  * `usage` = { [categoryId]: { count, total } } dari catatan Duit bulan ini.
  */
 export function categoryMonthSummary(categories, usage) {
-  let total = 0
+  // Total = semua catatan bulan ini, termasuk kategori yang udah dihapus (biar sama kayak kartu hitam Duit).
+  const total = Object.values(usage).reduce((sum, u) => sum + u.total, 0)
   let usedCount = 0
   let top = null
   for (const category of categories) {
     const u = usage[category.id]
     if (!u?.count) continue
     usedCount += 1
-    total += u.total
     if (!top || u.total > top.total) top = { category, total: u.total, count: u.count }
   }
   return { total, usedCount, unusedCount: categories.length - usedCount, top }
