@@ -35,11 +35,12 @@ const props = defineProps({
   categories: { type: Array, required: true },
   /** Keluar bulan itu (buat "N% dari total"). */
   total: { type: Number, required: true },
+  month: { type: String, required: true },
 })
 const all = ref(false)
 const shown = computed(() => (all.value ? props.categories : props.categories.slice(0, TOP)))
-// Ganti bulan → balik ringkas.
-watch(() => props.categories, () => (all.value = false))
+// Ganti bulan → balik ringkas (dimuat ulang abis centang nggak ngaruh).
+watch(() => props.month, () => (all.value = false))
 
 const level = (c) => (c.total > c.budget ? 'bad' : c.total >= c.budget * 0.8 ? 'warn' : '')
 </script>

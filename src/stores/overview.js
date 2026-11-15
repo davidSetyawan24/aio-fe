@@ -17,6 +17,7 @@ let latest = 0
  * Item Perlu diurus yang barusan dicentang ditandain di `done` (tetep keliatan hijau, bisa dibatalin) sampai dimuat ulang.
  */
 export const useOverviewStore = defineStore('overview', {
+  /** `wanted` = bulan yang dipilih David (null = "bulan ini", ikut tanggal server — nggak nyangkut abis lewat tengah malam). */
   state: () => ({ data: null, month: null, wanted: null, done: {}, pending: {} }),
 
   getters: {
@@ -40,7 +41,7 @@ export const useOverviewStore = defineStore('overview', {
     /** Dimuat ulang di belakang layar abis nyentang — yang udah sukses jangan keliatan gagal. */
     async refresh() {
       try {
-        await this.load(this.wanted ?? this.month ?? undefined, { keep: true })
+        await this.load(this.wanted ?? undefined, { keep: true })
       } catch {
         // diem aja, angka lama tetep keliatan
       }

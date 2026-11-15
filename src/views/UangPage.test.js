@@ -70,7 +70,8 @@ beforeEach(() => {
 async function mountPage({ current = nov(), past = okt(), wide = false } = {}) {
   if (wide) window.matchMedia = vi.fn((q) => ({ matches: q.includes('min-width'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
   api = {
-    get: vi.fn(async (url) => (url.includes('month=2026-10') ? past : current)),
+    // Tiap jawaban objek baru (kayak server beneran).
+    get: vi.fn(async (url) => structuredClone(url.includes('month=2026-10') ? past : current)),
     put: vi.fn(async () => ({})),
     del: vi.fn(async () => null),
   }
@@ -262,12 +263,47 @@ describe('UangPage', () => {
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/duit')
   })
 
-  it('masuk lagi ke tab → dimuat ulang (bulan yang lagi dilihat)', async () => {
+  it('ganti bulan pas app masih kebuka (lewat tengah malam) → masuk lagi buka bulan yang baru', async () => {
     await mountPage()
+    api.get.mockImplementation(async () => nov({ month: '2026-12', today: '2026-12-01' }))
+    enter.fn()
+    await flushPromises()
+    expect(api.get).toHaveBeenLastCalledWith('/overview')
+  })
+
+  it('balik ke bulan ini lewat › → masuk lagi tetep "bulan ini", bukan bulan yang dikunci', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="prev"]').trigger('click')
+    await flushPromises()
+    await w.find('[data-test="next"]').trigger('click')
+    await flushPromises()
+    expect(api.get).toHaveBeenLastCalledWith('/overview')
+    enter.fn()
+    await flushPromises()
+    expect(api.get).toHaveBeenLastCalledWith('/overview')
+  })
+
+  it('"Lihat semua" tetep kebuka abis centang Lunas? (rangkuman dimuat ulang)', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="cat-all"]').trigger('click')
+    expect(w.findAll('[data-test="cat"]')).toHaveLength(6)
+    await w.findAll('[data-test="todo"]')[0].find('button').trigger('click')
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledTimes(2)
+    expect(w.findAll('[data-test="cat"]')).toHaveLength(6)
+  })
+
+  it('masuk lagi ke tab → dimuat ulang (bulan yang lagi dilihat)', async () => {
+    const w = await mountPage()
     expect(api.get).toHaveBeenCalledTimes(1)
     enter.fn()
     await flushPromises()
     expect(api.get).toHaveBeenCalledTimes(2)
-    expect(api.get).toHaveBeenLastCalledWith('/overview?month=2026-11')
+    expect(api.get).toHaveBeenLastCalledWith('/overview')
+    await w.find('[data-test="prev"]').trigger('click')
+    await flushPromises()
+    enter.fn()
+    await flushPromises()
+    expect(api.get).toHaveBeenLastCalledWith('/overview?month=2026-10')
   })
 })

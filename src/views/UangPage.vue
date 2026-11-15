@@ -19,8 +19,8 @@
         <div v-if="data" class="u-grid" :class="{ past: !data.isCurrent }">
           <section class="a-hero"><UangHero :data="data" /></section>
           <section v-if="data.isCurrent" class="a-todo"><UangAttention :items="data.attention" :days-left="data.todayBudget?.daysLeft ?? daysLeft" /></section>
-          <section class="a-cat"><UangCategories :categories="data.categories" :total="data.total" /></section>
-          <section class="a-chart"><UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" /></section>
+          <section class="a-cat"><UangCategories :categories="data.categories" :total="data.total" :month="data.month" /></section>
+          <section class="a-chart"><UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" :month="data.month" /></section>
           <section class="a-tiles">
             <div class="u-label rise" style="--i: 6">Lainnya</div>
             <div class="u-tiles rise" style="--i: 6">
@@ -94,9 +94,12 @@ async function load(month) {
     error.value = apiErrorMessage(err)
   }
 }
-// Balik ke tab (mis. abis Catat) → muat ulang bulan yang lagi dilihat.
-onIonViewWillEnter(() => load(store.month ?? undefined))
-const shift = (n) => load(addMonth(data.value.month, n))
+// Balik ke tab (mis. abis Catat) → muat ulang bulan yang dipilih; "bulan ini" tetep ikut tanggal server.
+onIonViewWillEnter(() => load(store.wanted ?? undefined))
+function shift(n) {
+  const target = addMonth(data.value.month, n)
+  load(target === data.value.today.slice(0, 7) ? undefined : target)
+}
 
 const go = (path) => ionRouter.push(path)
 // HP: layar Catat. PC: Duit (form Catat udah di kanan layar Duit).

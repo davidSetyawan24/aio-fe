@@ -33,12 +33,14 @@ const props = defineProps({
   avgPerDay: { type: Number, required: true },
   today: { type: String, required: true },
   isCurrent: { type: Boolean, default: false },
+  month: { type: String, required: true },
 })
 const hoverable = useMedia('(hover: hover)')
 const tapped = ref(null)
 const hover = ref(null)
 const picked = computed(() => hover.value ?? tapped.value)
-watch(() => props.daily, () => {
+// Ganti bulan → keterangan batang direset (dimuat ulang abis centang nggak ngaruh).
+watch(() => props.month, () => {
   tapped.value = null
   hover.value = null
 })
