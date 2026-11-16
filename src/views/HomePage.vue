@@ -17,7 +17,9 @@
           <section class="h-today" data-test="slot-today">
             <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
           </section>
-          <section class="h-side" data-test="slot-side" />
+          <section class="h-side" data-test="slot-side">
+            <HomeMoney :money="store.data.money" :owed="store.data.owed" :today="store.data.today" />
+          </section>
         </div>
       </div>
     </ion-content>
@@ -28,6 +30,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter } from '@ionic/vue'
 import HomeAttention from '@/components/HomeAttention.vue'
+import HomeMoney from '@/components/HomeMoney.vue'
 import HomeToday from '@/components/HomeToday.vue'
 import NotifBell from '@/components/NotifBell.vue'
 import { startBellPolling } from '@/lib/bellPolling.js'

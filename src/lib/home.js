@@ -1,7 +1,7 @@
 import { HARI, isRecurring, monthName, weekdayOf } from './agenda.js'
 import { shortDue } from './bayarRutin.js'
 import { attentionKey, pct } from './overview.js'
-import { rp } from './wallet.js'
+import { rp, rpShort } from './wallet.js'
 
 /** Tanggal & menit hari ini di WIB (UTC+7), apa pun zona jam HP-nya. */
 export function wibNow(now = new Date()) {
@@ -143,3 +143,38 @@ export function footerText(hiddenEvents, hiddenTodos) {
   const parts = [hiddenEvents ? `${hiddenEvents} acara` : '', hiddenTodos ? `${hiddenTodos} to-do` : ''].filter(Boolean)
   return parts.length ? `${parts.join(' · ')} lagi di Agenda` : 'Buka Agenda'
 }
+
+/** Kartu hitam Duit hari ini. */
+export function moneyView(money) {
+  const tb = money.todayBudget
+  const hasBudget = Boolean(money.budget && tb)
+  const base = { spent: rp(money.total), budgetTotal: hasBudget ? rp(money.budget.total) : null, hasBudget }
+  if (!hasBudget) return { ...base, label: 'Keluar hari ini', value: rp(money.todaySpent), over: false, bar: null, barOver: false }
+  const over = tb.left < 0
+  return {
+    ...base,
+    label: over ? 'Jatah hari ini kelewat' : 'Sisa jatah hari ini',
+    value: over ? `−${rp(-tb.left)}` : rp(tb.left),
+    over,
+    bar: money.budget.total ? Math.min(100, (money.total / money.budget.total) * 100) : money.total ? 100 : 0,
+    barOver: money.total > money.budget.total,
+  }
+}
+
+export function owedInvoiceView(inv) {
+  if (!inv.count) return { value: 'Rp0', sub: 'Udah masuk semua', tone: 'muted' }
+  const value = rpShort(inv.total)
+  if (inv.lateCount > 0) return { value, sub: `${inv.count} invoice · ${inv.lateCount} telat`, tone: 'red' }
+  return { value, sub: `${inv.count} invoice${inv.nearestDue ? ` · terdekat ${shortDue(inv.nearestDue)}` : ''}`, tone: 'muted' }
+}
+
+export function owedSplitView(split) {
+  if (!split.total) return { value: 'Rp0', sub: 'Udah balik semua' }
+  return { value: rpShort(split.total), sub: `${split.people} orang` }
+}
+
+/** Layar lebar: daftar Duit (form di kanan); HP: layar Catat. */
+export const catatPath = (wide) => (wide ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
+
+/** ≥768px: dialog To-do di Agenda; HP: halaman form. */
+export const todoPath = (dialog, today) => (dialog ? '/tabs/agenda?tambah=todo' : `/tabs/agenda/baru?tanggal=${today}`)

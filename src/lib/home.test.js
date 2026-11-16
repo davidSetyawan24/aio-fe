@@ -1,4 +1,4 @@
-import { attentionView, dateLine, doneToast, durationText, eventFinished, eventSub, eventTime, firstName, footerText, greeting, homeKey, nextChip, splitToday, todayTodoItem, wibNow } from './home.js'
+import { attentionView, dateLine, doneToast, durationText, eventFinished, eventSub, eventTime, firstName, footerText, greeting, homeKey, moneyView, nextChip, owedInvoiceView, owedSplitView, catatPath, todoPath, splitToday, todayTodoItem, wibNow } from './home.js'
 
 describe('lib/home', () => {
   it('wibNow pakai WIB, bukan jam HP', () => {
@@ -145,5 +145,28 @@ describe('Hari ini', () => {
     expect(footerText(0, 2)).toBe('2 to-do lagi di Agenda')
     expect(footerText(1, 0)).toBe('1 acara lagi di Agenda')
     expect(footerText(0, 0)).toBe('Buka Agenda')
+  })
+
+  it('kartu hitam', () => {
+    const m = { month: '2026-11', total: 2_140_000, todaySpent: 35_000, budget: { total: 4_000_000, left: 1_860_000 }, todayBudget: { jatah: 177_500, spent: 35_000, left: 142_500, monthLeft: 1_860_000, daysLeft: 15 } }
+    expect(moneyView(m)).toMatchObject({ label: 'Sisa jatah hari ini', value: 'Rp142.500', over: false, hasBudget: true, spent: 'Rp2.140.000', budgetTotal: 'Rp4.000.000', bar: 53.5, barOver: false })
+    expect(moneyView({ ...m, todayBudget: { ...m.todayBudget, left: -12_000 } })).toMatchObject({ label: 'Jatah hari ini kelewat', value: '−Rp12.000', over: true })
+    expect(moneyView({ ...m, total: 4_500_000 })).toMatchObject({ bar: 100, barOver: true })
+    expect(moneyView({ ...m, budget: null, todayBudget: null })).toMatchObject({ label: 'Keluar hari ini', value: 'Rp35.000', hasBudget: false, bar: null, over: false })
+  })
+
+  it('belum balik', () => {
+    expect(owedInvoiceView({ total: 31_692_000, count: 2, lateCount: 1, nearestDue: '2026-11-18' })).toEqual({ value: 'Rp31,7jt', sub: '2 invoice · 1 telat', tone: 'red' })
+    expect(owedInvoiceView({ total: 31_692_000, count: 2, lateCount: 0, nearestDue: '2026-11-18' })).toEqual({ value: 'Rp31,7jt', sub: '2 invoice · terdekat 18 Nov', tone: 'muted' })
+    expect(owedInvoiceView({ total: 0, count: 0, lateCount: 0, nearestDue: null })).toEqual({ value: 'Rp0', sub: 'Udah masuk semua', tone: 'muted' })
+    expect(owedSplitView({ total: 185_000, people: 3 })).toEqual({ value: 'Rp185rb', sub: '3 orang' })
+    expect(owedSplitView({ total: 0, people: 0 })).toEqual({ value: 'Rp0', sub: 'Udah balik semua' })
+  })
+
+  it('tujuan Catat & To-do', () => {
+    expect(catatPath(false)).toBe('/tabs/menu/duit/catat')
+    expect(catatPath(true)).toBe('/tabs/menu/duit')
+    expect(todoPath(false, '2026-11-16')).toBe('/tabs/agenda/baru?tanggal=2026-11-16')
+    expect(todoPath(true, '2026-11-16')).toBe('/tabs/agenda?tambah=todo')
   })
 })

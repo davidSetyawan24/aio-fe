@@ -46,6 +46,25 @@ describe('HomePage', () => {
     expect(w.find('.h-error').exists()).toBe(false)
   })
 
+  it('semua bagian tampil dari GET /home', async () => {
+    vi.setSystemTime(new Date('2026-11-16T01:12:00Z'))
+    const w = await mountPage(async () => ({
+      today: '2026-11-16',
+      attention: [{ kind: 'todo', group: 'late', todoId: 1, title: 'Bayar pajak', occurrence: '2026-11-15', recurring: false, lateDays: 1 }],
+      agenda: { events: [{ id: 5, title: 'Rapat tim', allDay: true, startDate: '2026-11-16', endDate: '2026-11-16', startTime: null, endTime: null, location: null, occurrence: '2026-11-16', dayIndex: 1, dayCount: 1 }], todos: [] },
+      money: { month: '2026-11', total: 2_140_000, todaySpent: 35_000, budget: { total: 4_000_000, left: 1_860_000 }, todayBudget: { jatah: 177_500, spent: 35_000, left: 142_500, monthLeft: 1_860_000, daysLeft: 15 } },
+      owed: { invoices: { total: 31_692_000, count: 2, lateCount: 1, nearestDue: '2026-11-18' }, split: { total: 185_000, people: 3 } },
+    }))
+    expect(w.find('h1').text()).toContain('Pagi, David 👋')
+    expect(w.find('[data-test="attention"]').text()).toContain('Bayar pajak')
+    expect(w.find('[data-test="attn-count"]').text()).toBe('1')
+    expect(w.find('[data-test="today"]').text()).toContain('Rapat tim')
+    expect(w.find('[data-test="hero-value"]').text()).toBe('Rp142.500')
+    expect(w.find('[data-test="owed-invoice"]').text()).toContain('Rp31,7jt')
+    expect(w.find('[data-test="owed-split"]').text()).toContain('Rp185rb')
+    expect(w.findAll('.h-qb')).toHaveLength(4)
+  })
+
   it('gagal muat pertama → pesan + Coba lagi', async () => {
     vi.setSystemTime(new Date('2026-11-16T01:12:00Z'))
     let fail = true
