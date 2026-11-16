@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage }
   const moduleRoutes = modules.map((m) => {
@@ -32,8 +32,9 @@ export function buildTabRoutes(pages) {
     { path: 'menu/split-bill/:id/ubah', component: SplitBillFormPage },
     { path: 'menu/bayar-rutin/baru', component: BayarRutinFormPage },
     { path: 'menu/bayar-rutin/:id/ubah', component: BayarRutinFormPage },
-    // Halaman Invoice lainnya menyusul (Bikin/Ubah, Atur, Detail); sementara "Segera". atur/baru sebelum :id.
-    ...['menu/invoice/atur', 'menu/invoice/baru', 'menu/invoice/:id', 'menu/invoice/:id/ubah'].map((path) => ({ path, component: ComingSoon, props: { title: 'Invoice', emoji: '📄', backTo: '/tabs/menu/invoice' } })),
+    // Halaman Invoice lainnya menyusul (Bikin/Ubah, Atur); sementara "Segera". atur/baru sebelum :id.
+    { path: 'menu/invoice/:id', component: InvoiceDetailPage },
+    ...['menu/invoice/atur', 'menu/invoice/baru', 'menu/invoice/:id/ubah'].map((path) => ({ path, component: ComingSoon, props: { title: 'Invoice', emoji: '📄', backTo: '/tabs/menu/invoice' } })),
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },
