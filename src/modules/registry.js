@@ -20,7 +20,7 @@ export const modules = [
   { key: 'kategori', label: 'Kategori', emoji: '🏷️', tint: '#FFF3B8', category: 'keuangan', status: 'ready' },
   // 15/11: "Tagihan" diganti Bayar Rutin (biaya tetap bulanan/tahunan + pengingat).
   { key: 'bayar-rutin', label: 'Bayar Rutin', emoji: '🔁', tint: '#E4F7C4', category: 'keuangan', status: 'ready' },
-  { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'soon' },
+  { key: 'invoice', label: 'Invoice', emoji: '📄', tint: '#DCEBFF', category: 'keuangan', status: 'ready' },
   // Split bill — foto struk, dibaca Mistral OCR, dibagi ke temen-temen.
   { key: 'split-bill', label: 'Split bill', emoji: '🍕', tint: '#FFE0E6', category: 'keuangan', status: 'ready' },
   // 15/11: tab "To-do" diganti "Agenda"; to-do nanti tinggal di dalem Agenda (bukan modul sendiri).

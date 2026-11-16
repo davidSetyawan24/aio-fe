@@ -7,6 +7,7 @@ import BayarRutinPage from '@/views/BayarRutinPage.vue'
 import { useAuthStore } from '@/stores/auth.js'
 import BudgetPage from '@/views/BudgetPage.vue'
 import CategoryFormPage from '@/views/CategoryFormPage.vue'
+import InvoicePage from '@/views/InvoicePage.vue'
 import SplitBillDetailPage from '@/views/SplitBillDetailPage.vue'
 import SplitBillFormPage from '@/views/SplitBillFormPage.vue'
 import SplitBillPage from '@/views/SplitBillPage.vue'
@@ -35,7 +36,7 @@ const routes = [
     component: TabsLayout,
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
-      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage,
+      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },
