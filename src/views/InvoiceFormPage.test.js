@@ -56,6 +56,8 @@ const t = (w, id) => w.find(`[data-test="${id}"]`)
 
 beforeEach(() => {
   ionRouter.navigate.mockClear()
+  ionRouter.back.mockClear()
+  ionRouter.canGoBack = () => true
   toast.mockClear()
 })
 
@@ -90,9 +92,15 @@ describe('InvoiceFormPage', () => {
     const w = await mountAt('/tabs/menu/invoice/baru?dari=7')
     expect(t(w, 'client-name').element.value).toBe('PT Lama')
     expect(t(w, 'issued-date').element.value).toBe('2026-11-16')
+    expect(toast).toHaveBeenCalledWith('Diduplikat. Tinggal ganti yang beda')
   })
 
-  it('Ubah (/:id/ubah): judul nomor asli, Simpan → update → detail', async () => {
+  it('bikin baru biasa nggak munculin toast Duplikat', async () => {
+    await mountAt('/tabs/menu/invoice/baru')
+    expect(toast).not.toHaveBeenCalled()
+  })
+
+  it('Ubah (/:id/ubah): judul nomor asli, Simpan → update → balik ke Detail yang lama (nggak numpuk Detail baru)', async () => {
     const w = await mountAt('/tabs/menu/invoice/7/ubah')
     expect(w.text()).toContain('Ubah invoice')
     expect(w.text()).toContain('INV/DS/2026/11/007')
@@ -100,8 +108,18 @@ describe('InvoiceFormPage', () => {
     await t(w, 'save').trigger('click')
     await flushPromises()
     expect(api.put).toHaveBeenCalledWith('/invoices/7', expect.any(Object))
-    expect(ionRouter.navigate).toHaveBeenCalledWith('/tabs/menu/invoice/7', 'forward', 'replace')
+    expect(ionRouter.back).toHaveBeenCalledTimes(1)
+    expect(ionRouter.navigate).not.toHaveBeenCalled()
     expect(toast).toHaveBeenCalledWith('Kesimpen, PDF-nya udah ikut baru ✓')
+  })
+
+  it('Ubah dibuka langsung (nggak ada riwayat) → Simpan → ganti ke Detail', async () => {
+    ionRouter.canGoBack = () => false
+    const w = await mountAt('/tabs/menu/invoice/7/ubah')
+    await t(w, 'save').trigger('click')
+    await flushPromises()
+    expect(ionRouter.back).not.toHaveBeenCalled()
+    expect(ionRouter.navigate).toHaveBeenCalledWith('/tabs/menu/invoice/7', 'back', 'replace')
   })
 
   it('Ubah invoice yang nggak ada → pesan nggak ketemu', async () => {

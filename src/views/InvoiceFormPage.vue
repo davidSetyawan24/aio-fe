@@ -78,14 +78,21 @@ onIonViewWillEnter(async () => {
     }
   } else if (fromId) {
     source.value = store.byId(fromId) ?? null
+    if (source.value) showToast('Diduplikat. Tinggal ganti yang beda')
   }
   ready.value = true
 })
 
-async function onSaved(saved) {
-  const message = isEdit ? 'Kesimpen, PDF-nya udah ikut baru ✓' : 'Invoice jadi ✓'
-  ionRouter.navigate(`${BASE}/${saved.id}`, 'forward', 'replace')
-  showToast(message)
+function onSaved(saved) {
+  if (!isEdit) {
+    // Baru → langsung ke hasilnya (halaman form diganti, jadi "back" dari Detail balik ke daftar).
+    ionRouter.navigate(`${BASE}/${saved.id}`, 'forward', 'replace')
+    return showToast('Invoice jadi ✓')
+  }
+  // Ubah → balik ke Detail yang di bawahnya (datanya udah ikut baru di store), jangan numpuk Detail kedua.
+  if (ionRouter.canGoBack()) ionRouter.back()
+  else ionRouter.navigate(`${BASE}/${saved.id}`, 'back', 'replace')
+  showToast('Kesimpen, PDF-nya udah ikut baru ✓')
 }
 </script>
 
