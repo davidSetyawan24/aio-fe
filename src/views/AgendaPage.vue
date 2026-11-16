@@ -102,7 +102,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
 import AgendaBillSection from '@/components/AgendaBillSection.vue'
@@ -127,6 +127,7 @@ const VIEW_NAMES = { day: 'Hari', week: 'Minggu', month: 'Bulan' }
 const SHEET_LABELS = { drawer: 'Kapan-kapan', event: 'Detail acara', form: 'Tambah / ubah', '': '' }
 
 const route = useRoute()
+const router = useRouter()
 const ionRouter = useIonRouter()
 const store = useAgendaStore()
 /** iPad landscape / Mac: tampilan full. iPad tegak ke atas: sheet jadi dialog. */
@@ -229,7 +230,23 @@ onIonViewWillEnter(async () => {
     sel.value = store.today
     centerOn(store.today)
   }
+  openFromLink()
 })
+/** Link dari Beranda: ?tambah=todo (cuma iPad/PC, HP diabaikan) & ?acara=<id> (detail acara di tanggal yang lagi kebuka). Abis dipakai dibuang dari alamat. */
+function openFromLink() {
+  const { tambah, acara, ...rest } = route.query
+  if (tambah === undefined && acara === undefined) return
+  if (tambah === 'todo') {
+    sel.value = today.value
+    view.value = 'day'
+    if (dialog.value) openForm('todo', null, null)
+  }
+  if (typeof acara === 'string' && /^\d+$/.test(acara) && sel.value) {
+    const e = store.day(sel.value).events.find((x) => x.id === Number(acara))
+    if (e) openEvent(e)
+  }
+  router.replace({ path: '/tabs/agenda', query: rest })
+}
 function onVisible() {
   if (document.visibilityState === 'visible') store.refresh()
 }

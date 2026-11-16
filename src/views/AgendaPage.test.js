@@ -56,6 +56,7 @@ const undated = [
 ]
 
 let api
+let testRouter
 function agendaFor(url) {
   const [, from, to] = url.match(/from=([\d-]+)&to=([\d-]+)/)
   const days = {}
@@ -73,8 +74,10 @@ async function mountPage(path = '/tabs/agenda') {
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/agenda', component: AgendaPage }] })
+  testRouter = router
   router.push(path)
   await router.isReady()
+  vi.spyOn(router, 'replace')
   const w = mount(AgendaPage, { global: { plugins: [pinia, router], stubs: { teleport: true } } })
   await flushPromises()
   return w
@@ -219,6 +222,24 @@ describe('AgendaPage', () => {
     expect(w.find('h1').text()).toContain('Senin, 16 Nov')
   })
 
+  it('?acara= opens that event on its date and drops the query', async () => {
+    const w = await mountPage('/tabs/agenda?tanggal=2026-11-21&acara=5')
+    expect(w.find('[data-test="event-detail"]').text()).toContain('Futsal')
+    expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: { tanggal: '2026-11-21' } })
+  })
+
+  it('?acara= that is not found stays quiet', async () => {
+    const w = await mountPage('/tabs/agenda?acara=999')
+    expect(w.find('[data-test="event-detail"]').exists()).toBe(false)
+    expect(w.find('[data-test="form-dialog"]').exists()).toBe(false)
+  })
+
+  it('HP: ?tambah=todo is ignored', async () => {
+    const w = await mountPage('/tabs/agenda?tambah=todo')
+    expect(w.find('[data-test="form-dialog"]').exists()).toBe(false)
+    expect(ionRouter.push).not.toHaveBeenCalled()
+  })
+
   it('shows the week as day cards and the month as a calendar', async () => {
     const w = await mountPage()
     await w.find('[data-view="week"]').trigger('click')
@@ -345,6 +366,13 @@ describe('AgendaPage', () => {
       await w.findAll('[data-test="aside"] [data-day]').find((d) => d.attributes('data-day') === '2026-11-16').trigger('click')
       await flushPromises()
       expect(w.find('[data-test="now-line"]').exists()).toBe(false)
+    })
+
+    it('?tambah=todo opens the To-do dialog on today and drops the query', async () => {
+      const w = await mountPage('/tabs/agenda?tanggal=2026-11-21&tambah=todo')
+      expect(w.find('[data-test="form-dialog"] [data-kind="todo"].on').exists()).toBe(true)
+      expect(w.find('h1').text()).toContain('Minggu, 15 Nov')
+      expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: { tanggal: '2026-11-21' } })
     })
 
     it('adds and edits in a dialog instead of a new page', async () => {
