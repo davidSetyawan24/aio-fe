@@ -93,3 +93,6 @@ ion-modal.sheet::part(handle) { background: var(--hair); width: 44px; }
 /* toast (notif kecil, mis. "Password udah diganti") */
 ion-toast.aio-toast { --background: var(--ink); --color: var(--on-ink); --border-radius: 18px; --box-shadow: 0 18px 40px -16px rgba(0,0,0,.35);
   --max-width: 420px; font: 600 14px var(--ion-font-family); letter-spacing: -0.01em; }
+
+/* Halaman yang punya bar sendiri di bawah (mis. form Invoice): tab bar HP disembunyiin. */
+body.aio-no-tabbar ion-tab-bar { display: none; }

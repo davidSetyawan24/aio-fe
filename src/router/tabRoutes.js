@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage }
   const moduleRoutes = modules.map((m) => {
@@ -32,10 +32,11 @@ export function buildTabRoutes(pages) {
     { path: 'menu/split-bill/:id/ubah', component: SplitBillFormPage },
     { path: 'menu/bayar-rutin/baru', component: BayarRutinFormPage },
     { path: 'menu/bayar-rutin/:id/ubah', component: BayarRutinFormPage },
-    // Halaman Invoice lainnya menyusul (Bikin/Ubah); sementara "Segera". atur/baru sebelum :id.
+    // atur/baru sebelum :id.
     { path: 'menu/invoice/atur', component: InvoiceSettingsPage },
     { path: 'menu/invoice/:id', component: InvoiceDetailPage },
-    ...['menu/invoice/baru', 'menu/invoice/:id/ubah'].map((path) => ({ path, component: ComingSoon, props: { title: 'Invoice', emoji: '📄', backTo: '/tabs/menu/invoice' } })),
+    { path: 'menu/invoice/baru', component: InvoiceFormPage },
+    { path: 'menu/invoice/:id/ubah', component: InvoiceFormPage },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },
