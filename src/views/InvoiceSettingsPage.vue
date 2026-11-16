@@ -21,7 +21,9 @@
               <label class="fld"><span>Nama</span><input v-model="form.name" class="in" data-f="name" data-nav placeholder="Nama lo" autocomplete="name" enterkeyhint="next" @keydown.enter.prevent="onEnter($event)" /></label>
               <p v-if="errors.name" class="err" data-err="name">{{ errors.name }}</p>
               <label class="fld"><span>Telp / WA</span><input v-model="form.phone" class="in" data-f="phone" data-nav placeholder="08…" inputmode="tel" enterkeyhint="next" @keydown.enter.prevent="onEnter($event)" /></label>
+              <p v-if="errors.phone" class="err" data-err="phone">{{ errors.phone }}</p>
               <label class="fld"><span>Email</span><input v-model="form.email" class="in" data-f="email" data-nav placeholder="email@lo.com" inputmode="email" autocapitalize="off" enterkeyhint="next" @keydown.enter.prevent="onEnter($event)" /></label>
+              <p v-if="errors.email" class="err" data-err="email">{{ errors.email }}</p>
             </div></div>
 
             <div class="label">Rekening tujuan</div>
@@ -88,6 +90,7 @@
             </div></div>
             <button v-if="form.defaultNotes.length < MAX_NOTES" type="button" class="addline" data-test="add-note" @click="form.defaultNotes.push('')"><PhPlus :size="17" weight="bold" />Tambah catatan</button>
 
+            <p v-for="[k, msg] in orphanErrors" :key="k" class="err" role="alert" data-test="orphan-error" :data-err="k">{{ msg }}</p>
             <p v-if="error" class="err" role="alert" data-test="error">{{ error }}</p>
 
             <div class="totbar">
@@ -154,6 +157,9 @@ const loaded = ref(false)
 const loadError = ref('')
 const errors = ref({})
 const error = ref('')
+// Kolom yang punya tempat pesan sendiri; error 422 di luar ini tetep harus keliatan (jangan gagal diem-diem).
+const SLOTS = ['initial', 'name', 'phone', 'email', 'bank', 'accountNo', 'accountName', 'signature', 'prefix', 'lastNumberThisMonth', 'dueDays', 'opening', 'closing', 'defaultNotes']
+const orphanErrors = computed(() => Object.entries(errors.value).filter(([k, v]) => v && !SLOTS.includes(k)))
 const saving = ref(false)
 const reading = ref(false)
 const padOpen = ref(false)

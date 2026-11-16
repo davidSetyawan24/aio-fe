@@ -109,6 +109,23 @@ describe('InvoiceSettingsPage', () => {
     expect(ionRouter.navigate).not.toHaveBeenCalled()
   })
 
+  it('error 422 di Telp / Email tampil di bawah kolomnya', async () => {
+    const { ApiError } = await import('@/lib/api.js')
+    const w = await mountPage({ putError: new ApiError('x', 422, { email: 'Emailnya nggak valid.', phone: 'Nomornya nggak valid.' }) })
+    await w.find('[data-test="save"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-err="email"]').text()).toBe('Emailnya nggak valid.')
+    expect(w.find('[data-err="phone"]').text()).toBe('Nomornya nggak valid.')
+  })
+
+  it('error 422 di kolom tak dikenal tetep keliatan', async () => {
+    const { ApiError } = await import('@/lib/api.js')
+    const w = await mountPage({ putError: new ApiError('x', 422, { cobaan: ['Ada yang nggak beres.'] }) })
+    await w.find('[data-test="save"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-test="orphan-error"]').text()).toBe('Ada yang nggak beres.')
+  })
+
   it('nomor terakhir bulan ini: hint + contoh nomor berikutnya live', async () => {
     const w = await mountPage()
     expect(w.text()).toContain('Udah ngirim invoice di luar app bulan ini? Isi nomor terakhirnya biar nggak dobel.')
