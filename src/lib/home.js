@@ -83,3 +83,63 @@ export function doneToast(item, done) {
   const name = item.kind === 'todo' ? item.title : item.name
   return `${name} · ${word} ✓`
 }
+
+/** 60 → '1 jam', 30 → '30 mnt', 90 → '1 jam 30 mnt' */
+export function durationText(minutes) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return [h ? `${h} jam` : '', m ? `${m} mnt` : ''].filter(Boolean).join(' ')
+}
+
+const toMinutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+const span = (e) => ({ index: e.dayIndex ?? 1, count: e.dayCount ?? 1 })
+
+/** Kolom jam acara (sama kayak AgendaDayList). */
+export function eventTime(e) {
+  const { index, count } = span(e)
+  const days = count > 1 ? `hari ${index}/${count}` : ''
+  if (e.allDay) return { main: 'Seharian', sub: days }
+  if (count > 1) return { main: index === 1 ? e.startTime : index === count ? `s.d. ${e.endTime}` : 'Seharian', sub: days }
+  return { main: e.startTime, sub: e.endTime }
+}
+
+/** Lokasi dan/atau durasi; seharian & berhari-hari cuma lokasi. */
+export function eventSub(e) {
+  const { count } = span(e)
+  const parts = [e.location]
+  if (!e.allDay && count === 1) parts.push(durationText(toMinutes(e.endTime) - toMinutes(e.startTime)))
+  return parts.filter(Boolean).join(' · ')
+}
+
+/** Jendela menit acara berjam di hari ini. */
+export function eventWindow(e) {
+  const { index, count } = span(e)
+  return { start: index === 1 ? toMinutes(e.startTime) : 0, end: index === count ? toMinutes(e.endTime) : 1440 }
+}
+
+export function eventFinished(e, minutes) {
+  const { index, count } = span(e)
+  return !e.allDay && index === count && eventWindow(e).end <= minutes
+}
+
+/** Chip di acara berjam pertama yang belum selesai. */
+export function nextChip(events, minutes) {
+  const e = events.find((x) => !x.allDay && !eventFinished(x, minutes))
+  if (!e) return null
+  const key = `${e.id}:${e.occurrence}`
+  const left = eventWindow(e).start - minutes
+  if (left <= 0) return { key, text: 'Lagi jalan' }
+  return { key, text: left < 60 ? `${left} mnt lagi` : `${Math.floor(left / 60)} jam lagi` }
+}
+
+/** Maks 4 baris: acara = min(nE, max(2, 4 − nT)), sisanya to-do. */
+export function splitToday(events, todos) {
+  const nE = Math.min(events.length, Math.max(2, 4 - todos.length))
+  const nT = Math.min(todos.length, 4 - nE)
+  return { events: events.slice(0, nE), todos: todos.slice(0, nT), hiddenEvents: events.length - nE, hiddenTodos: todos.length - nT }
+}
+
+export function footerText(hiddenEvents, hiddenTodos) {
+  const parts = [hiddenEvents ? `${hiddenEvents} acara` : '', hiddenTodos ? `${hiddenTodos} to-do` : ''].filter(Boolean)
+  return parts.length ? `${parts.join(' · ')} lagi di Agenda` : 'Buka Agenda'
+}

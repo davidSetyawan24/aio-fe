@@ -14,7 +14,9 @@
 
         <div v-if="store.data" class="h-grid">
           <section class="h-attn" data-test="slot-attn"><HomeAttention :items="store.data.attention" /></section>
-          <section class="h-today" data-test="slot-today" />
+          <section class="h-today" data-test="slot-today">
+            <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
+          </section>
           <section class="h-side" data-test="slot-side" />
         </div>
       </div>
@@ -26,6 +28,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter } from '@ionic/vue'
 import HomeAttention from '@/components/HomeAttention.vue'
+import HomeToday from '@/components/HomeToday.vue'
 import NotifBell from '@/components/NotifBell.vue'
 import { startBellPolling } from '@/lib/bellPolling.js'
 import { dateLine, greeting, wibNow } from '@/lib/home.js'

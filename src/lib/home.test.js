@@ -1,4 +1,4 @@
-import { attentionView, dateLine, doneToast, firstName, greeting, homeKey, todayTodoItem, wibNow } from './home.js'
+import { attentionView, dateLine, doneToast, durationText, eventFinished, eventSub, eventTime, firstName, footerText, greeting, homeKey, nextChip, splitToday, todayTodoItem, wibNow } from './home.js'
 
 describe('lib/home', () => {
   it('wibNow pakai WIB, bukan jam HP', () => {
@@ -78,5 +78,72 @@ describe('Perlu diurus', () => {
     expect(doneToast(card, true)).toBe('CC BCA Everyday · udah bayar ✓')
     expect(doneToast(todo, true)).toBe('Kirim revisi desain APS · beres ✓')
     expect(doneToast(bill, false)).toBe('Dibatalin')
+  })
+})
+
+describe('Hari ini', () => {
+  const ev = (o) => ({ id: 1, title: 'A', allDay: false, startTime: '10:00', endTime: '11:00', location: null, occurrence: '2026-11-16', dayIndex: 1, dayCount: 1, ...o })
+
+  it('durasi', () => {
+    expect(durationText(60)).toBe('1 jam')
+    expect(durationText(30)).toBe('30 mnt')
+    expect(durationText(90)).toBe('1 jam 30 mnt')
+  })
+
+  it('jam & keterangan acara kayak Agenda', () => {
+    const e = ev({ endTime: '11:30', location: 'Kantor APS' })
+    expect(eventTime(e)).toEqual({ main: '10:00', sub: '11:30' })
+    expect(eventSub(e)).toBe('Kantor APS · 1 jam 30 mnt')
+    expect(eventSub(ev({ endTime: '10:30' }))).toBe('30 mnt')
+    const all = ev({ allDay: true, dayIndex: 2, dayCount: 3, location: 'Bali' })
+    expect(eventTime(all)).toEqual({ main: 'Seharian', sub: 'hari 2/3' })
+    expect(eventSub(all)).toBe('Bali')
+    expect(eventTime(ev({ allDay: true }))).toEqual({ main: 'Seharian', sub: '' })
+    expect(eventTime(ev({ startTime: '19:00', dayCount: 3 }))).toEqual({ main: '19:00', sub: 'hari 1/3' })
+    expect(eventTime(ev({ endTime: '10:00', dayIndex: 3, dayCount: 3 }))).toEqual({ main: 's.d. 10:00', sub: 'hari 3/3' })
+    expect(eventTime(ev({ dayIndex: 2, dayCount: 3 }))).toEqual({ main: 'Seharian', sub: 'hari 2/3' })
+    expect(eventSub(ev({ dayCount: 3, location: 'Bali' }))).toBe('Bali')
+    expect(eventSub(ev({ dayCount: 3 }))).toBe('')
+  })
+
+  it('acara selesai', () => {
+    expect(eventFinished(ev(), 659)).toBe(false)
+    expect(eventFinished(ev(), 660)).toBe(true)
+    expect(eventFinished(ev({ allDay: true }), 1400)).toBe(false)
+    expect(eventFinished(ev({ dayIndex: 2, dayCount: 3 }), 1400)).toBe(false)
+    expect(eventFinished(ev({ endTime: '10:00', dayIndex: 3, dayCount: 3 }), 600)).toBe(true)
+    expect(eventFinished(ev({ endTime: '10:00', dayIndex: 3, dayCount: 3 }), 599)).toBe(false)
+  })
+
+  it('chip acara terdekat', () => {
+    const all = ev({ id: 9, allDay: true })
+    const a = ev({ id: 1 })
+    expect(nextChip([all, a], 492)).toEqual({ key: '1:2026-11-16', text: '1 jam lagi' })
+    expect(nextChip([all, ev({ id: 2, startTime: '10:30', endTime: '11:30' })], 492).text).toBe('2 jam lagi')
+    expect(nextChip([all, a], 555).text).toBe('45 mnt lagi')
+    expect(nextChip([all, a], 620).text).toBe('Lagi jalan')
+    const b = ev({ id: 2, startTime: '13:00', endTime: '14:00' })
+    expect(nextChip([a, b], 700)).toEqual({ key: '2:2026-11-16', text: '1 jam lagi' })
+    expect(nextChip([all], 100)).toBeNull()
+    expect(nextChip([], 100)).toBeNull()
+  })
+
+  it('bagi 4 baris', () => {
+    const n = (c) => Array.from({ length: c }, (_, i) => i)
+    const r = (nE, nT) => {
+      const s = splitToday(n(nE), n(nT))
+      return [s.events.length, s.todos.length, s.hiddenEvents, s.hiddenTodos]
+    }
+    expect(r(3, 3)).toEqual([2, 2, 1, 1])
+    expect(r(1, 5)).toEqual([1, 3, 0, 2])
+    expect(r(5, 0)).toEqual([4, 0, 1, 0])
+    expect(r(3, 1)).toEqual([3, 1, 0, 0])
+  })
+
+  it('footer', () => {
+    expect(footerText(1, 2)).toBe('1 acara · 2 to-do lagi di Agenda')
+    expect(footerText(0, 2)).toBe('2 to-do lagi di Agenda')
+    expect(footerText(1, 0)).toBe('1 acara lagi di Agenda')
+    expect(footerText(0, 0)).toBe('Buka Agenda')
   })
 })
