@@ -67,6 +67,18 @@ describe('stores/home', () => {
     expect(api.patch).toHaveBeenCalledWith('/agenda/todos/7/check', { done: true, occurrence: null })
   })
 
+  it('invoice & budget nggak bisa dicentang: error, nggak ada permintaan, nggak ketandain', async () => {
+    await store.load()
+    for (const item of [{ kind: 'invoice', invoiceId: 7 }, { kind: 'budget', categoryId: 2 }]) {
+      await expect(store.toggle(item)).rejects.toThrow('nggak bisa dicentang')
+      expect(store.isDone(item)).toBe(false)
+      expect(store.isPending(item)).toBe(false)
+    }
+    expect(api.put).not.toHaveBeenCalled()
+    expect(api.del).not.toHaveBeenCalled()
+    expect(api.patch).not.toHaveBeenCalled()
+  })
+
   it('tap dobel cuma 1 permintaan (hasil kedua null)', async () => {
     await store.load()
     const [a, b] = await Promise.all([store.toggle(bill), store.toggle(bill)])

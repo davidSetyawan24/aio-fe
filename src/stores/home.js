@@ -12,6 +12,9 @@ export function setHomeApi(apiLike) {
 /** Nomor permintaan terakhir: jawaban lama nggak boleh nimpa yang baru. */
 let latest = 0
 
+/** Jenis yang bisa dicentang dari Beranda. Invoice & budget cuma bisa di-tap (buka halamannya). */
+const CHECKABLE = new Set(['bill', 'card', 'todo'])
+
 /** URL + cara centang per jenis item Perlu diurus / to-do hari ini. */
 function toggleCall(item, done) {
   if (item.kind === 'bill') {
@@ -22,7 +25,8 @@ function toggleCall(item, done) {
     const url = `/payment-sources/${item.sourceId}/bill-paid/${item.dueOn}`
     return done ? homeApi.put(url, {}) : homeApi.del(url)
   }
-  return homeApi.patch(`/agenda/todos/${item.todoId}/check`, { done, occurrence: item.recurring ? item.occurrence : null })
+  if (item.kind === 'todo') return homeApi.patch(`/agenda/todos/${item.todoId}/check`, { done, occurrence: item.recurring ? item.occurrence : null })
+  throw new Error('Yang ini nggak bisa dicentang dari Beranda')
 }
 
 /**
@@ -61,6 +65,7 @@ export const useHomeStore = defineStore('home', {
 
     /** Hasil: true = dicentang, false = dibatalin, null = diabaikan (lagi nyimpen). */
     async toggle(item) {
+      if (!CHECKABLE.has(item.kind)) throw new Error('Yang ini nggak bisa dicentang dari Beranda')
       const key = homeKey(item)
       if (this.pending[key]) return null
       const done = !this.done[key]
