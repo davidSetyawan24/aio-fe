@@ -3,7 +3,7 @@
     <ion-content :fullscreen="true">
       <div class="page det-page" :class="{ wide }">
         <PageHeader back-to="/tabs/menu/invoice" back-label="Invoice" :eyebrow="inv?.number ?? 'Invoice'">
-          <template v-if="inv">{{ rp(inv.totals.total) }}<span>{{ inv.client.name }}</span></template>
+          <template v-if="inv">{{ rp(inv.totals.total) }}<br /><span>{{ inv.client.name }}</span></template>
         </PageHeader>
 
         <p v-if="error" class="det-error">{{ error }}</p>
@@ -309,7 +309,8 @@ async function confirmDelete() {
 @media (min-width: 1100px) {
   .det-page { padding-bottom: 48px; }
   .detgrid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px; align-items: start; margin-top: 16px; }
-  .dpaper { margin-top: 0; --paper-h: calc(100vh - 230px); }
+  /* Judul 2 baris (total + klien) + baris status di atasnya: kertas muat penuh dari awal buka. */
+  .dpaper { margin-top: 0; --paper-h: calc(100vh - 304px); }
   .desk-wrap { min-height: 520px; display: flex; }
   .desk-wrap > :deep(.paper) { height: max(520px, var(--paper-h)); }
   .dside { position: sticky; top: 24px; }

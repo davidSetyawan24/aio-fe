@@ -1,9 +1,9 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" class="savebar-host">
       <div class="page form-page" :class="{ wide }">
         <PageHeader :back-to="backTo" :back-label="isEdit ? 'Batal' : 'Invoice'" :eyebrow="isEdit ? 'Ubah invoice' : 'Invoice baru'">
-          {{ number || 'Invoice' }}<span>{{ isEdit ? 'abis disimpen, PDF-nya ikut baru' : 'nomornya jalan sendiri' }}</span>
+          {{ number || 'Invoice' }}<br /><span>{{ isEdit ? 'abis disimpen, PDF-nya ikut baru' : 'nomornya jalan sendiri' }}</span>
         </PageHeader>
 
         <p v-if="loadError" class="err" role="alert" data-test="load-error">{{ loadError }}</p>
@@ -92,6 +92,8 @@ async function onSaved(saved) {
 <style scoped>
 .form-page { padding-bottom: 210px; }
 .form-page:not(.wide) { max-width: 620px; }
+/* nomor invoice panjang tanpa spasi: boleh patah biar nggak keluar layar HP */
+.form-page :deep(.h1) { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .err { color: var(--red); font-size: 12.5px; font-weight: 600; margin: 6px 6px 0; }
 .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px 18px; text-align: center; }
 .big { font-size: 38px; }
@@ -100,5 +102,7 @@ async function onSaved(saved) {
 }
 @media (min-width: 1100px) {
   .form-page { padding-bottom: 48px; }
+  /* Bar Simpan sticky ngukur dari dalem padding area gulung → padding-nya pindah ke halaman, biar bar nempel 16px dari dasar layar. */
+  ion-content.savebar-host::part(scroll) { padding-bottom: 0; }
 }
 </style>

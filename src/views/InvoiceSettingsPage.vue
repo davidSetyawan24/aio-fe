@@ -1,8 +1,8 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" class="savebar-host">
       <div class="page set-page" :class="{ wide }">
-        <PageHeader back-to="/tabs/menu/invoice" back-label="Invoice" eyebrow="Atur invoice">Isi sekali<span>kepake di semua invoice</span></PageHeader>
+        <PageHeader back-to="/tabs/menu/invoice" back-label="Invoice" eyebrow="Atur invoice">Isi sekali<br /><span>kepake di semua invoice</span></PageHeader>
 
         <p v-if="first" class="firsthint" data-test="first-hint">Isi sekali dulu ya, abis itu langsung bisa bikin invoice.</p>
         <p v-if="loadError" class="err" role="alert">{{ loadError }}</p>
@@ -93,13 +93,7 @@
             <p v-for="[k, msg] in orphanErrors" :key="k" class="err" role="alert" data-test="orphan-error" :data-err="k">{{ msg }}</p>
             <p v-if="error" class="err" role="alert" data-test="error">{{ error }}</p>
 
-            <div class="totbar">
-              <div class="grow"><div class="v">Kepake di semua invoice</div></div>
-              <button type="button" class="pill save" data-test="save" :disabled="saving" @click="save">
-                Simpan
-                <span class="ic"><span v-if="saving" class="spin" /><PhCheck v-else :size="16" weight="bold" /></span>
-              </button>
-            </div>
+            <InvoiceSaveBar :saving="saving" @save="save"><div class="v sm">Kepake di semua invoice</div></InvoiceSaveBar>
           </div>
 
           <div v-if="wide" class="pstick" data-test="preview">
@@ -127,8 +121,9 @@
 import { computed, nextTick, reactive, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
-import { PhCheck, PhImage, PhPenNib, PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhImage, PhPenNib, PhPlus, PhX } from '@phosphor-icons/vue'
 import InvoicePaper from '@/components/InvoicePaper.vue'
+import InvoiceSaveBar from '@/components/InvoiceSaveBar.vue'
 import LaptopNote from '@/components/LaptopNote.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SignaturePad from '@/components/SignaturePad.vue'
@@ -273,8 +268,10 @@ async function save() {
 </script>
 
 <style scoped>
-.set-page { padding-bottom: 130px; }
+/* HP: bar Simpan ngambang di atas tab bar → ruang bawah cukup biar kolom terakhir nggak ketutup (sama kayak form Bikin). */
+.set-page { padding-bottom: 210px; }
 .set-page:not(.wide) { max-width: 620px; }
+@media (min-width: 768px) { .set-page { padding-bottom: 130px; } }
 .firsthint { margin: -4px 6px 12px; font-size: 13.5px; font-weight: 600; color: var(--muted); line-height: 1.45; }
 .err { color: var(--red); font-size: 12.5px; font-weight: 600; margin: 6px 6px 0; }
 .fcard { padding: 14px; }
@@ -313,12 +310,6 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; font-size: 14px
 .note .in { flex: 1; min-width: 0; }
 .note .del { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 12px 4px 4px; }
 .addline { width: 100%; height: 50px; border: 1.5px dashed rgba(138, 138, 130, .45); border-radius: 20px; background: transparent; font: 700 14px var(--ion-font-family); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
-.totbar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 20px; border-radius: 99px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); box-shadow: 0 0 0 1px var(--hair), 0 18px 40px -16px rgba(0, 0, 0, .3); }
-.totbar .v { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.save { height: 46px; padding-left: 22px; }
-.save:disabled { opacity: .7; }
-.spin { width: 14px; height: 14px; border-radius: 99px; border: 2px solid currentColor; border-top-color: transparent; animation: setspin .7s linear infinite; }
-@keyframes setspin { to { transform: rotate(360deg); } }
 @media (hover: hover) {
   .ghostbtn:hover, .dchip:not(.on):hover { box-shadow: 0 0 0 1.5px var(--text); }
 }
@@ -336,13 +327,14 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; font-size: 14px
 
 @media (min-width: 1100px) {
   .set-page { padding-bottom: 48px; }
+  /* Bar Simpan sticky ngukur dari dalem padding area gulung → padding-nya pindah ke halaman, biar bar nempel 16px dari dasar layar. */
+  ion-content.savebar-host::part(scroll) { padding-bottom: 0; }
   .fgrid { display: grid; grid-template-columns: minmax(440px, 560px) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 10px; }
   .pstick { position: sticky; top: 24px; }
   .plabel { display: flex; align-items: baseline; gap: 8px; margin: 0 8px 10px; font-size: 13px; }
   .plabel span { color: var(--muted); font-weight: 600; font-size: 12.5px; }
-  .pdesk { background: var(--shell); box-shadow: 0 0 0 1px var(--hair); border-radius: 30px; padding: 24px; display: flex; justify-content: center; align-items: flex-start; height: calc(100vh - 150px); --paper-h: calc(100vh - 198px); }
-  .pdesk > :deep(.paper) { width: 100%; height: var(--paper-h); }
-  .totbar { position: sticky; left: auto; right: auto; bottom: 16px; margin-top: 22px; max-width: none; }
+  /* Meja = InvoicePaper fit="desk" (satu lapis). Tingginya pas sisa layar di bawah judul, jadi kertas muat penuh dari awal buka. */
+  .pdesk { --paper-h: max(480px, calc(100vh - 316px)); }
 }
 @media (min-width: 1600px) {
   .fgrid { grid-template-columns: minmax(520px, 640px) minmax(0, 1fr); }

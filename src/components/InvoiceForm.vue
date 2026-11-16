@@ -83,14 +83,10 @@
       <p v-for="[k, msg] in orphanErrors" :key="k" class="err" role="alert" data-test="orphan-error" :data-err="k">{{ msg }}</p>
       <p v-if="error" class="err" role="alert" data-test="error">{{ error }}</p>
 
-      <div class="totbar">
-        <div class="grow"><div class="k">Total</div><div class="v" data-test="total">{{ rp(sums.total) }}</div></div>
-        <button v-if="!wide" type="button" class="ghostbtn" data-test="pdf" @click="pvOpen = true"><PhFilePdf :size="18" />PDF</button>
-        <button type="button" class="pill save" data-test="save" :disabled="saving" @click="save">
-          Simpan
-          <span class="ic"><span v-if="saving" class="spin" /><PhCheck v-else :size="16" weight="bold" /></span>
-        </button>
-      </div>
+      <InvoiceSaveBar :saving="saving" @save="save">
+        <div class="k">Total</div><div class="v" data-test="total">{{ rp(sums.total) }}</div>
+        <template v-if="!wide" #actions><button type="button" class="ghostbtn" data-test="pdf" @click="pvOpen = true"><PhFilePdf :size="18" />PDF</button></template>
+      </InvoiceSaveBar>
     </div>
 
     <div v-if="wide" class="pstick" data-test="preview">
@@ -114,9 +110,10 @@
 
 <script setup>
 import { computed, nextTick, reactive, ref, watch } from 'vue'
-import { PhCalendarBlank, PhCheck, PhFilePdf, PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhCalendarBlank, PhFilePdf, PhPlus, PhX } from '@phosphor-icons/vue'
 import InvoiceItemEditor from '@/components/InvoiceItemEditor.vue'
 import InvoicePaper from '@/components/InvoicePaper.vue'
+import InvoiceSaveBar from '@/components/InvoiceSaveBar.vue'
 import SuggestBox from '@/components/SuggestBox.vue'
 import { formatAmount } from '@/lib/duit.js'
 import { addDays } from '@/lib/agenda.js'
@@ -361,14 +358,7 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; }
 .note .nn { width: 20px; text-align: center; font-weight: 800; color: var(--muted); font-size: 13px; padding-top: 13px; flex: none; }
 .note .in { flex: 1; min-width: 0; }
 .del { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 12px 4px 4px; }
-.totbar { position: fixed; left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 20px; border-radius: 99px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); box-shadow: 0 0 0 1px var(--hair), 0 18px 40px -16px rgba(0, 0, 0, .3); }
-.totbar .k { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }
-.totbar .v { font-size: 19px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ghostbtn { height: 46px; padding: 0 16px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 14px var(--ion-font-family); display: flex; align-items: center; gap: 7px; cursor: pointer; }
-.save { height: 46px; padding-left: 22px; }
-.save:disabled { opacity: .7; }
-.spin { width: 14px; height: 14px; border-radius: 99px; border: 2px solid currentColor; border-top-color: transparent; animation: invspin .7s linear infinite; }
-@keyframes invspin { to { transform: rotate(360deg); } }
+.ghostbtn { height: 46px; padding: 0 16px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 14px var(--ion-font-family); display: flex; align-items: center; gap: 7px; cursor: pointer; flex: none; }
 @media (hover: hover) { .dchip:not(.on):hover, .ghostbtn:hover { box-shadow: 0 0 0 1.5px var(--text); } }
 
 /* pratinjau layar penuh (HP) */
@@ -378,15 +368,13 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; }
 .iconbtn { width: 42px; height: 42px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); display: grid; place-items: center; cursor: pointer; }
 .iconbtn.ghost { background: transparent; }
 
-@media (min-width: 768px) { .totbar { bottom: calc(12px + env(safe-area-inset-bottom)); } }
 @media (min-width: 1100px) {
   .fgrid { display: grid; grid-template-columns: minmax(440px, 560px) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 10px; }
   .pstick { position: sticky; top: 24px; }
   .plabel { display: flex; align-items: baseline; gap: 8px; margin: 0 8px 10px; font-size: 13px; }
   .plabel span { color: var(--muted); font-weight: 600; font-size: 12.5px; }
-  .pdesk { background: var(--shell); box-shadow: 0 0 0 1px var(--hair); border-radius: 30px; padding: 24px; display: flex; justify-content: center; align-items: flex-start; height: calc(100vh - 150px); --paper-h: calc(100vh - 198px); }
-  .pdesk > :deep(.paper) { width: 100%; height: var(--paper-h); }
-  .totbar { position: sticky; left: auto; right: auto; bottom: 16px; margin-top: 22px; max-width: none; }
+  /* Meja = InvoicePaper fit="desk" (satu lapis). Tingginya pas sisa layar di bawah judul, jadi kertas muat penuh dari awal buka. */
+  .pdesk { --paper-h: max(480px, calc(100vh - 316px)); }
 }
 @media (min-width: 1600px) {
   .fgrid { grid-template-columns: minmax(520px, 640px) minmax(0, 1fr); }

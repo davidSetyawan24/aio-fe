@@ -67,6 +67,11 @@ describe('InvoiceSettingsPage', () => {
     expect(w.findAll('[data-test="note"]')).toHaveLength(2)
   })
 
+  it('judul dua baris: "Isi sekali" lalu "kepake di semua invoice" di baris sendiri', async () => {
+    const w = await mountPage()
+    expect(w.find('h1 br + span').text()).toBe('kepake di semua invoice')
+  })
+
   it('monogram ikut inisial', async () => {
     const w = await mountPage()
     expect(w.find('[data-test="mark"]').text()).toBe('ds')

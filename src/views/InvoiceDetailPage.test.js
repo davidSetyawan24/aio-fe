@@ -74,6 +74,8 @@ describe('InvoiceDetailPage', () => {
   it('judul total + klien, chip dan jatuh tempo', async () => {
     const w = await mountPage()
     expect(w.find('h1').text()).toBe('Rp27.192.000PT Maju')
+    // nama klien di baris kedua, bukan nempel ke angkanya
+    expect(w.find('h1 br + span').text()).toBe('PT Maju')
     expect(w.text()).toContain('INV/DS/2026/11/002')
     expect(w.find('[data-test="stline"]').text()).toContain('Tempo 20 Nov')
     expect(w.find('[data-test="stline"]').text()).toContain('Jatuh tempo 20 November 2026')

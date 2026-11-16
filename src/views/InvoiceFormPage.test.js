@@ -71,6 +71,7 @@ describe('InvoiceFormPage', () => {
     expect(t(w, 'client-name').exists()).toBe(true)
     expect(w.text()).toContain('INV/DS/2026/11/002')
     expect(w.text()).toContain('Invoice baru')
+    expect(w.find('h1 br + span').text()).toBe('nomornya jalan sendiri')
     expect(document.body.className).toBe('')
   })
 
@@ -95,6 +96,7 @@ describe('InvoiceFormPage', () => {
     const w = await mountAt('/tabs/menu/invoice/7/ubah')
     expect(w.text()).toContain('Ubah invoice')
     expect(w.text()).toContain('INV/DS/2026/11/007')
+    expect(w.find('h1 br + span').text()).toBe('abis disimpen, PDF-nya ikut baru')
     await t(w, 'save').trigger('click')
     await flushPromises()
     expect(api.put).toHaveBeenCalledWith('/invoices/7', expect.any(Object))

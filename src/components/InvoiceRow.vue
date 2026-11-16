@@ -45,6 +45,8 @@ const initial = computed(() => initialsOf(props.invoice.client.name).toUpperCase
   .cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(90px, .6fr) minmax(130px, .8fr); gap: 16px; flex: 2; min-width: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
   .cols span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .t { flex: 1.1; }
+  /* sama kayak kolom "Total" di header tabel (InvoicePage .inv-thead .e) biar angkanya lurus */
+  .end { min-width: 110px; }
 }
 @media (hover: hover) { .inv:hover .t > span { text-decoration: underline; } }
 </style>
