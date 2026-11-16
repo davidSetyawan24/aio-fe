@@ -125,7 +125,7 @@ describe('InvoiceDetailPage', () => {
     await w.find('[data-test="delete"]').trigger('click')
     await flushPromises()
     expect(sheetChoice.opts.header).toBe('Hapus invoice ini?')
-    expect(sheetChoice.opts.subHeader).toBe('Nomornya nggak dipakai ulang.')
+    expect(sheetChoice.opts.subHeader).toBe('INV/DS/2026/11/002 bakal ilang permanen. Nomornya nggak dipakai ulang.')
     expect(api.del).toHaveBeenCalledWith('/invoices/7')
     expect(ionRouter.back).toHaveBeenCalled()
   })
@@ -265,5 +265,34 @@ describe('InvoiceDetailPage', () => {
     expect(w.text()).toContain('Invoice-nya nggak ketemu.')
     await w.find('[data-test="notfound-back"]').trigger('click')
     expect(ionRouter.back).toHaveBeenCalled()
+  })
+
+  it('gagal muat (jaringan): pesan error + Coba lagi, BUKAN "nggak ketemu"; Coba lagi sukses → invoice tampil', async () => {
+    let fail = true
+    const w = await (async () => {
+      const a = {
+        get: vi.fn(async () => {
+          if (fail) throw new Error('Failed to fetch')
+          return data([inv()])
+        }),
+      }
+      setInvoicesApi(a)
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/invoice/:id', component: InvoiceDetailPage }] })
+      router.push('/tabs/menu/invoice/7')
+      await router.isReady()
+      const m = mount(InvoiceDetailPage, { global: { plugins: [pinia, router], stubs: { teleport: true } } })
+      await flushPromises()
+      return m
+    })()
+    expect(w.find('[data-test="notfound"]').exists()).toBe(false)
+    expect(w.find('[data-test="load-failed"]').exists()).toBe(true)
+    expect(w.find('[data-test="load-failed"]').text()).not.toBe('')
+    fail = false
+    await w.find('[data-test="retry"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-test="load-failed"]').exists()).toBe(false)
+    expect(w.find('h1').text()).toContain('PT Maju')
   })
 })

@@ -8,7 +8,15 @@
 
         <p v-if="error" class="det-error">{{ error }}</p>
 
-        <div v-if="!inv && loaded" class="shell rise" data-test="notfound">
+        <div v-if="!inv && loadError" class="shell rise" data-test="load-failed">
+          <div class="core det-empty">
+            <div class="big">📡</div>
+            <b>{{ loadError }}</b>
+            <button class="pill" data-test="retry" :disabled="reloading" @click="reload">Coba lagi</button>
+          </div>
+        </div>
+
+        <div v-else-if="!inv && loaded" class="shell rise" data-test="notfound">
           <div class="core det-empty">
             <div class="big">📄</div>
             <b>Invoice-nya nggak ketemu.</b>
@@ -112,6 +120,9 @@ const sheetWide = useMedia('(min-width: 768px)')
 const pageId = route.params.id
 const loaded = ref(false)
 const error = ref('')
+// Gagal muat (mis. jaringan) & invoice-nya belum pernah kebaca → bukan "nggak ketemu", tapi tawarin coba lagi.
+const loadError = ref('')
+const reloading = ref(false)
 const busy = ref(false)
 const paidOpen = ref(false)
 const preview = ref(false)
@@ -183,16 +194,22 @@ const localToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jaka
 
 const showToast = async (message) => (await toastController.create({ message, duration: 2200, position: 'top', cssClass: 'aio-toast' })).present()
 
-onIonViewWillEnter(async () => {
-  if (leaving) return
+async function reload() {
+  if (reloading.value) return
+  reloading.value = true
   try {
     await store.load()
-    error.value = ''
+    loadError.value = ''
   } catch (err) {
-    if (!store.byId(pageId)) error.value = apiErrorMessage(err)
+    if (!store.byId(pageId)) loadError.value = apiErrorMessage(err)
   } finally {
     loaded.value = true
+    reloading.value = false
   }
+}
+
+onIonViewWillEnter(() => {
+  if (!leaving) reload()
 })
 
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate(BASE, 'back', 'replace'))
@@ -235,7 +252,7 @@ async function confirmDelete() {
   busy.value = true
   const sheet = await actionSheetController.create({
     header: 'Hapus invoice ini?',
-    subHeader: 'Nomornya nggak dipakai ulang.',
+    subHeader: `${inv.value.number} bakal ilang permanen. Nomornya nggak dipakai ulang.`,
     buttons: [
       { text: 'Hapus', role: 'destructive', data: 'delete' },
       { text: 'Batal', role: 'cancel' },
