@@ -36,7 +36,7 @@ const cats = [
   { id: 6, name: 'Pulsa', emoji: '📱', tint: '#E4F7C4', archived: true, total: 0, budget: 100_000 },
 ]
 const bill = { kind: 'bill', billId: 2, period: '2026-11', name: 'Cicilan motor', emoji: '🛵', tint: '#DCEBFF', amount: 1_250_000, dueOn: '2026-11-12', status: 'late', lateDays: 3, daysLeft: 0 }
-const card = { kind: 'card', sourceId: 10, name: 'CC BCA', bank: 'BCA', dueOn: '2026-11-17', daysLeft: 2 }
+const card = { kind: 'card', sourceId: 10, name: 'CC BCA', bank: 'BCA', dueOn: '2026-11-17', daysLeft: 2, lateDays: 0 }
 const budgetItem = { kind: 'budget', categoryId: 2, name: 'Ngopi', emoji: '☕', tint: '#FFF3B8', spent: 312_000, budget: 350_000, level: 'warn' }
 const nov = (over = {}) => ({
   month: '2026-11', today: '2026-11-15', isCurrent: true, firstMonth: '2026-09',
@@ -193,6 +193,17 @@ describe('UangPage', () => {
     expect(api.put).toHaveBeenCalledWith('/payment-sources/10/bill-paid/2026-11-17', {})
     expect(toastCreate).toHaveBeenLastCalledWith(expect.objectContaining({ message: 'CC BCA udah dibayar ✓' }))
     expect(w.findAll('[data-test="todo"]')[1].find('button').text()).toBe('Udah dibayar')
+  })
+
+  it('Perlu diurus: CC telat merah, Udah bayar? pakai jatuh tempo yang lewat', async () => {
+    const late = { ...card, dueOn: '2026-11-14', daysLeft: 0, lateDays: 1 }
+    const w = await mountPage({ current: nov({ attention: [late] }) })
+    const row = w.findAll('[data-test="todo"]')[0]
+    expect(row.text()).toContain('Kartu kredit · telat 1 hari')
+    expect(row.find('small').classes()).toContain('red')
+    await row.find('button').trigger('click')
+    await flushPromises()
+    expect(api.put).toHaveBeenCalledWith('/payment-sources/10/bill-paid/2026-11-14', {})
   })
 
   it('budget mepet › ke Atur budget; kosong → Semua aman', async () => {

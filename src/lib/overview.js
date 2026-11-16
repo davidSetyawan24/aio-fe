@@ -22,6 +22,7 @@ export function attentionText(item, daysLeft) {
     return { title: item.name, sub: `Bayar rutin · ${when} · ${rp(item.amount)}`, tone: item.status === 'late' ? 'red' : 'amber' }
   }
   if (item.kind === 'card') {
+    if (item.lateDays > 0) return { title: `Tagihan ${item.name}`, sub: `Kartu kredit · telat ${item.lateDays} hari`, tone: 'red' }
     return { title: `Tagihan ${item.name}`, sub: `Kartu kredit · jatuh tempo ${whenText(item.daysLeft)}`, tone: 'amber' }
   }
   if (item.level === 'over') {

@@ -1,10 +1,15 @@
 import { attentionKey, attentionText, changeLabel, dayCaption, pct } from './overview.js'
 
 const bill = { kind: 'bill', billId: 2, period: '2026-11', name: 'Cicilan motor', emoji: '🛵', tint: '#DCEBFF', amount: 1_250_000, dueOn: '2026-11-12', status: 'late', lateDays: 3, daysLeft: 0 }
-const card = { kind: 'card', sourceId: 10, name: 'CC BCA', bank: 'BCA', dueOn: '2026-11-17', daysLeft: 2 }
+const card = { kind: 'card', sourceId: 10, name: 'CC BCA', bank: 'BCA', dueOn: '2026-11-17', daysLeft: 2, lateDays: 0 }
 const budget = { kind: 'budget', categoryId: 3, name: 'Ngopi', emoji: '☕', tint: '#FFF3B8', spent: 312_000, budget: 350_000, level: 'warn' }
 
 describe('attentionText', () => {
+  it('kartu kredit telat merah', () => {
+    const late = { kind: 'card', sourceId: 2, name: 'BCA', dueOn: '2026-11-14', daysLeft: 0, lateDays: 2 }
+    expect(attentionText(late)).toEqual({ title: 'Tagihan BCA', sub: 'Kartu kredit · telat 2 hari', tone: 'red' })
+  })
+
   it('Bayar Rutin telat merah, mau jatuh tempo kuning', () => {
     expect(attentionText(bill)).toEqual({ title: 'Cicilan motor', sub: 'Bayar rutin · telat 3 hari · Rp1.250.000', tone: 'red' })
     const soon = { ...bill, name: 'iCloud 200GB', amount: 15_000, status: 'open', lateDays: 0, daysLeft: 3 }
