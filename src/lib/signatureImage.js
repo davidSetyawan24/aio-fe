@@ -1,10 +1,10 @@
 /**
- * Tanda tangan: coretan / foto → PNG transparan yang dipotong ke area tinta (maks 600×200, ≤ 90.000 karakter).
+ * Tanda tangan: coretan / foto → PNG transparan yang dipotong ke area tinta (maks 600×200, ≤ 60.000 karakter, sama kayak batas BE).
  * Logika piksel murni (ImageData-like `{ data, width, height }`) dipisah dari sentuhan DOM (canvas).
  */
 export const SIGNATURE_MAX_W = 600
 export const SIGNATURE_MAX_H = 200
-export const SIGNATURE_MAX_CHARS = 90000
+export const SIGNATURE_MAX_CHARS = 60000
 const LIGHT = 200
 
 /** Kecilin biar muat kotak max (rasio tetap); yang udah kecil nggak dibesarin. */

@@ -80,7 +80,7 @@ describe('processPhotoPixels', () => {
 describe('shrinkToLimit', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('PNG kegedean → dikecilin lagi sampai ≤ 90.000 karakter', () => {
+  it('PNG kegedean → dikecilin lagi sampai ≤ 60.000 karakter', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: vi.fn() })
     // Ukuran "PNG" palsu: sebanding luas.
     vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(function () {
@@ -90,7 +90,8 @@ describe('shrinkToLimit', () => {
     source.width = 600
     source.height = 200
     const url = shrinkToLimit(source)
-    expect(url.length).toBeLessThanOrEqual(SIGNATURE_MAX_CHARS)
+    expect(SIGNATURE_MAX_CHARS).toBe(60000)
+    expect(url.length).toBeLessThanOrEqual(60000)
     expect(url.startsWith('data:image/png')).toBe(true)
   })
 
