@@ -27,13 +27,16 @@ const summary = {
 const bill = { id: 7, place: 'Sushi Tei', emoji: '🍣', spentOn: '2026-11-14', total: 316865, outstanding: 96210, discount: 0, service: 0, tax: 0, other: 0, people: [], items: [], shares: [] }
 
 let api
-async function mountPage(data = summary) {
+let testRouter
+async function mountPage(data = summary, path = '/tabs/menu/split-bill') {
   api = { get: vi.fn(async (url) => (url === '/split-bills' ? data : { bill })), del: vi.fn(async () => null) }
   setSplitBillsApi(api)
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/split-bill', component: SplitBillPage }] })
-  router.push('/tabs/menu/split-bill')
+  testRouter = router
+  vi.spyOn(router, 'replace')
+  router.push(path)
   await router.isReady()
   const w = mount(SplitBillPage, { global: { plugins: [pinia, router], stubs: { teleport: true } } })
   await flushPromises()
@@ -61,6 +64,13 @@ describe('SplitBillPage', () => {
     const w = await mountPage({ outstanding: 0, waitingCount: 0, unpaidPeople: [], bills: [] })
     expect(w.find('[data-test="owed"]').text()).toBe('Aman 🎉')
     expect(w.find('[data-test="empty"]').text()).toContain('Belum ada split bill')
+  })
+
+  it('HP: ?baru=1 is ignored and dropped from the address', async () => {
+    const w = await mountPage(summary, '/tabs/menu/split-bill?baru=1')
+    expect(w.findComponent(SplitBillWizard).exists()).toBe(false)
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/menu/split-bill', query: {} })
   })
 
   it('opens a bill and the new split bill flow on the phone', async () => {
@@ -99,6 +109,21 @@ describe('SplitBillPage', () => {
       expect(api.del).toHaveBeenCalledWith('/split-bills/7')
       expect(w.find('[data-test="bill"].picked').exists()).toBe(false)
       expect(w.find('[data-test="panel"]').text()).toContain('Abis makan bareng?')
+    })
+
+    it('?baru=1 (from Beranda) opens the new split bill in the panel and drops the query', async () => {
+      const w = await mountPage(summary, '/tabs/menu/split-bill?baru=1')
+      const wizard = w.findComponent(SplitBillWizard)
+      expect(wizard.exists()).toBe(true)
+      expect(wizard.props('wide')).toBe(true)
+      expect(wizard.props('bill')).toBeNull()
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/menu/split-bill', query: {} })
+    })
+
+    it('without ?baru=1 the address is left alone', async () => {
+      await mountPage()
+      expect(testRouter.replace).not.toHaveBeenCalled()
     })
 
     it('makes a new split bill right in the panel, then shows it', async () => {

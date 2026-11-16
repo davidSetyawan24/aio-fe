@@ -12,10 +12,11 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { IonContent, IonPage, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import SplitBillWizard from '@/components/SplitBillWizard.vue'
+import { useMedia } from '@/lib/media.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { useSplitBillsStore } from '@/stores/splitBills.js'
 
@@ -27,6 +28,12 @@ const store = useSplitBillsStore()
 const pageId = route.params.id
 const bill = ref(pageId ? (store.byId(pageId) ?? null) : null)
 const error = ref('')
+const wide = useMedia('(min-width: 1100px)')
+
+// Layar lebar: Split bill baru ada di panel kanan halaman daftar.
+onIonViewWillEnter(() => {
+  if (wide.value && !pageId) ionRouter.navigate('/tabs/menu/split-bill?baru=1', 'back', 'replace')
+})
 
 onMounted(async () => {
   if (!pageId) return

@@ -73,6 +73,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
+import { useRoute, useRouter } from 'vue-router'
 import { PhCaretRight, PhCheck, PhPlus } from '@phosphor-icons/vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SplitBillDetail from '@/components/SplitBillDetail.vue'
@@ -83,6 +84,8 @@ import { initial, tintOf } from '@/lib/splitBill.js'
 import { rp } from '@/lib/wallet.js'
 import { useSplitBillsStore } from '@/stores/splitBills.js'
 
+const route = useRoute()
+const router = useRouter()
 const ionRouter = useIonRouter()
 const store = useSplitBillsStore()
 const error = ref('')
@@ -110,7 +113,15 @@ async function refresh() {
 onIonViewWillEnter(() => {
   refresh()
   if (selected.value) store.loadOne(selected.value).catch(() => {})
+  openFromLink()
 })
+/** Link dari Beranda: ?baru=1 → layar lebar langsung buka Split bill baru di panel kanan (HP diabaikan). Abis dipakai dibuang dari alamat. */
+function openFromLink() {
+  const { baru, ...rest } = route.query
+  if (baru === undefined) return
+  if (wide.value) panel.value = 'new'
+  router.replace({ path: '/tabs/menu/split-bill', query: rest })
+}
 function onVisible() {
   if (document.visibilityState === 'visible') refresh()
 }
