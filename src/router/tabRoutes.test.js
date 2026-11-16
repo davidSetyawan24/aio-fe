@@ -25,13 +25,14 @@ const invoiceStub = { render: () => null }
 const invoiceDetailStub = { render: () => null }
 const invoiceSettingsStub = { render: () => null }
 const invoiceFormStub = { render: () => null }
+const homeStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
-  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -45,6 +46,11 @@ describe('buildTabRoutes', () => {
     expect(catatan.component).toBe(stub)
     expect(catatan.props).toMatchObject({ title: 'Catatan', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
+  })
+
+  it('opens the Beranda tab on its own page', () => {
+    expect(find('home').component).toBe(homeStub)
+    expect(find('home').props).toBeUndefined()
   })
 
   it('opens the Uang tab on its own page', () => {
@@ -131,8 +137,7 @@ describe('buildTabRoutes', () => {
     expect(find('notifikasi/atur').component).toBe(notifSettingsStub)
   })
 
-  it('gives tab root pages the bell, detail module pages not', () => {
-    expect(find('home').props.bell).toBe(true)
+  it('gives detail module pages no bell', () => {
     expect(find('menu/catatan').props.bell).toBeFalsy()
   })
 
