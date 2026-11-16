@@ -27,7 +27,7 @@ function mountIt(items, put = () => Promise.resolve({})) {
   setActivePinia(pinia)
   const store = useHomeStore()
   store.refresh = vi.fn()
-  const w = mount(HomeAttention, { props: { items }, global: { plugins: [pinia] } })
+  const w = mount(HomeAttention, { props: { items, today: '2026-11-16' }, global: { plugins: [pinia] } })
   mounted.push(w)
   return w
 }
@@ -49,6 +49,13 @@ describe('HomeAttention', () => {
     expect(rows[3].find('button').text()).toBe('Beres?')
     expect(rows[4].find('button').exists()).toBe(false)
     expect(rows[4].find('.h-go').exists()).toBe(true)
+  })
+
+  it('keterangan cuma boleh pindah baris di " · " (HP: tombol lebar nggak motong kalimat)', () => {
+    const w = mountIt([card])
+    const segs = w.find('[data-test="attn-row"] small').findAll('.seg').map((s) => s.text())
+    expect(segs).toEqual(['Telat 2 hari ·', 'jatuh tempo 14 Nov'])
+    expect(w.find('[data-test="attn-row"] small').text()).toBe('Telat 2 hari · jatuh tempo 14 Nov')
   })
 
   it('badge = yang belum dicentang, 0 → ilang', async () => {
@@ -118,7 +125,7 @@ describe('HomeAttention', () => {
   it('tap baris → tujuan per jenis; tap tombol nggak pindah halaman', async () => {
     const w = mountIt([bill, card, invoice, todo, budget])
     const rows = w.findAll('[data-test="attn-row"]')
-    const targets = ['/tabs/menu/bayar-rutin', '/tabs/uang', '/tabs/menu/invoice/7', '/tabs/agenda', '/tabs/menu/budget']
+    const targets = ['/tabs/menu/bayar-rutin', '/tabs/uang', '/tabs/menu/invoice/7', '/tabs/agenda?tanggal=2026-11-16', '/tabs/menu/budget']
     for (const [i, to] of targets.entries()) {
       await rows[i].trigger('click')
       expect(ionRouter.push).toHaveBeenLastCalledWith(to)

@@ -33,8 +33,11 @@ export const todayTodoItem = (row) => ({ kind: 'todo', todoId: row.id, title: ro
 
 const whenText = (daysLeft) => (daysLeft === 0 ? 'hari ini' : daysLeft === 1 ? 'besok' : `${daysLeft} hari lagi`)
 
-/** Tampilan satu baris Perlu diurus: ikon, teks berwarna, tombol centang (`ask`) & tujuan tap. */
-export function attentionView(item) {
+/** Agenda kebuka di tanggal itu (Hari). */
+export const agendaDayPath = (date) => `/tabs/agenda?tanggal=${date}`
+
+/** Tampilan satu baris Perlu diurus: ikon, teks berwarna, tombol centang (`ask`) & tujuan tap. `today` = tujuan to-do telat (Agenda hari ini). */
+export function attentionView(item, today) {
   const key = homeKey(item)
   if (item.kind === 'bill') {
     const late = item.status === 'late'
@@ -56,7 +59,7 @@ export function attentionView(item) {
     return {
       key, emoji: '✅', tint: '#E4F7C4', title: item.title,
       sub: item.lateDays === 1 ? 'to-do telat dari kemarin' : `to-do telat ${item.lateDays} hari`,
-      tone: 'red', ask: 'Beres?', doneLabel: 'Beres', to: '/tabs/agenda',
+      tone: 'red', ask: 'Beres?', doneLabel: 'Beres', to: agendaDayPath(today),
     }
   }
   if (item.kind === 'card') {
@@ -175,6 +178,9 @@ export function owedSplitView(split) {
 
 /** Layar lebar: daftar Duit (form di kanan); HP: layar Catat. */
 export const catatPath = (wide) => (wide ? '/tabs/menu/duit' : '/tabs/menu/duit/catat')
+
+/** Layar lebar: panel kanan daftar Split bill; HP: halaman bikin. */
+export const splitPath = (wide) => (wide ? '/tabs/menu/split-bill?baru=1' : '/tabs/menu/split-bill/baru')
 
 /** ≥768px: dialog To-do di Agenda; HP: halaman form. */
 export const todoPath = (dialog, today) => (dialog ? '/tabs/agenda?tambah=todo' : `/tabs/agenda/baru?tanggal=${today}`)

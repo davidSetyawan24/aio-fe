@@ -13,7 +13,7 @@
         </div>
 
         <div v-if="store.data" class="h-grid">
-          <section class="h-attn" data-test="slot-attn"><HomeAttention :items="store.data.attention" /></section>
+          <section class="h-attn" data-test="slot-attn"><HomeAttention :items="store.data.attention" :today="store.data.today" /></section>
           <section class="h-today" data-test="slot-today">
             <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
           </section>
@@ -28,7 +28,7 @@
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, onIonViewWillEnter } from '@ionic/vue'
 import HomeAttention from '@/components/HomeAttention.vue'
 import HomeMoney from '@/components/HomeMoney.vue'
 import HomeToday from '@/components/HomeToday.vue'
@@ -58,8 +58,13 @@ async function load() {
   }
 }
 
+/** Beranda lagi kebuka (bukan ketumpuk di belakang tab lain) — balik dari background cuma muat ulang kalau lagi kebuka; tab lain → dimuat pas dibuka lagi. */
+let active = false
+onIonViewDidEnter(() => (active = true))
+onIonViewDidLeave(() => (active = false))
+
 function onVisible() {
-  if (document.visibilityState === 'visible') {
+  if (active && document.visibilityState === 'visible') {
     now.value = wibNow()
     load()
   }

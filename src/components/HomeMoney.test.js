@@ -56,7 +56,7 @@ describe('HomeMoney', () => {
     expect(ionRouter.push.mock.calls.map((c) => c[0])).toEqual(['/tabs/menu/invoice', '/tabs/menu/split-bill'])
   })
 
-  it('Cepet & Catat: HP ke layar Catat & form To-do, iPad ke dialog To-do, PC Catat ke Duit; Invoice & Split bill ke Bikin', async () => {
+  it('Cepet & Catat: HP ke layar Catat & form To-do, iPad ke dialog To-do, PC Catat ke Duit & Split bill ke panel daftar; Invoice & Split bill ke Bikin', async () => {
     const targets = async (w) => {
       ionRouter.push.mockClear()
       for (const k of ['catat', 'todo', 'invoice', 'split']) await w.find(`[data-test="quick-${k}"]`).trigger('click')
@@ -65,7 +65,7 @@ describe('HomeMoney', () => {
     }
     expect(await targets(mountIt())).toEqual(['/tabs/menu/duit/catat', '/tabs/agenda/baru?tanggal=2026-11-16', '/tabs/menu/invoice/baru', '/tabs/menu/split-bill/baru', '/tabs/menu/duit/catat'])
     expect(await targets(mountIt({}, { '(min-width: 768px)': true }))).toEqual(['/tabs/menu/duit/catat', '/tabs/agenda?tambah=todo', '/tabs/menu/invoice/baru', '/tabs/menu/split-bill/baru', '/tabs/menu/duit/catat'])
-    expect(await targets(mountIt({}, { '(min-width: 768px)': true, '(min-width: 1100px)': true }))).toEqual(['/tabs/menu/duit', '/tabs/agenda?tambah=todo', '/tabs/menu/invoice/baru', '/tabs/menu/split-bill/baru', '/tabs/menu/duit'])
+    expect(await targets(mountIt({}, { '(min-width: 768px)': true, '(min-width: 1100px)': true }))).toEqual(['/tabs/menu/duit', '/tabs/agenda?tambah=todo', '/tabs/menu/invoice/baru', '/tabs/menu/split-bill?baru=1', '/tabs/menu/duit'])
     const labels = mountIt().findAll('.h-qb').map((b) => b.text())
     expect(labels).toEqual(['💸Catat', '✅To-do', '📄Invoice', '🍕Split bill'])
   })

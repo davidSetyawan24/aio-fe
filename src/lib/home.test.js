@@ -1,4 +1,4 @@
-import { attentionView, dateLine, doneToast, durationText, eventFinished, eventSub, eventTime, firstName, footerText, greeting, homeKey, moneyView, nextChip, owedInvoiceView, owedSplitView, catatPath, todoPath, splitToday, todayTodoItem, wibNow } from './home.js'
+import { attentionView, dateLine, doneToast, durationText, eventFinished, eventSub, eventTime, firstName, footerText, greeting, homeKey, moneyView, nextChip, owedInvoiceView, owedSplitView, catatPath, todoPath, splitPath, splitToday, todayTodoItem, wibNow } from './home.js'
 
 describe('lib/home', () => {
   it('wibNow pakai WIB, bukan jam HP', () => {
@@ -60,7 +60,7 @@ describe('Perlu diurus', () => {
     expect(inv(3)).toMatchObject({ sub: 'Rp27.192.000 · jatuh tempo 3 hari lagi', tone: 'amber' })
 
     expect(attentionView({ ...todo, lateDays: 1 }).sub).toBe('to-do telat dari kemarin')
-    expect(attentionView(todo)).toMatchObject({ key: 'todo:3:2026-11-13', title: 'Kirim revisi desain APS', sub: 'to-do telat 3 hari', tone: 'red', ask: 'Beres?', doneLabel: 'Beres', to: '/tabs/agenda', emoji: '✅', tint: '#E4F7C4' })
+    expect(attentionView(todo, '2026-11-16')).toMatchObject({ key: 'todo:3:2026-11-13', title: 'Kirim revisi desain APS', sub: 'to-do telat 3 hari', tone: 'red', ask: 'Beres?', doneLabel: 'Beres', to: '/tabs/agenda?tanggal=2026-11-16', emoji: '✅', tint: '#E4F7C4' })
 
     expect(attentionView(card)).toMatchObject({ key: 'card:10:2026-11-14', title: 'CC BCA Everyday', sub: 'Telat 2 hari · jatuh tempo 14 Nov', tone: 'red', ask: 'Udah bayar?', doneLabel: 'Udah bayar', to: '/tabs/uang', emoji: '💳', tint: '#F3E1FF' })
     const cc = (daysLeft, dueOn) => attentionView({ ...card, lateDays: 0, daysLeft, dueOn })
@@ -161,6 +161,11 @@ describe('Hari ini', () => {
     expect(owedInvoiceView({ total: 0, count: 0, lateCount: 0, nearestDue: null })).toEqual({ value: 'Rp0', sub: 'Udah masuk semua', tone: 'muted' })
     expect(owedSplitView({ total: 185_000, people: 3 })).toEqual({ value: 'Rp185rb', sub: '3 orang' })
     expect(owedSplitView({ total: 0, people: 0 })).toEqual({ value: 'Rp0', sub: 'Udah balik semua' })
+  })
+
+  it('tujuan Split bill baru: PC panel kanan daftar, HP halaman form', () => {
+    expect(splitPath(false)).toBe('/tabs/menu/split-bill/baru')
+    expect(splitPath(true)).toBe('/tabs/menu/split-bill?baru=1')
   })
 
   it('tujuan Catat & To-do', () => {

@@ -48,6 +48,13 @@ describe('HomeToday', () => {
     expect(rows()[0].find('[data-test="today-chip"]').exists()).toBe(false)
   })
 
+  it('jam "Seharian" & "s.d." pakai huruf lebih kecil biar muat satu baris', () => {
+    const w = mountIt({ events: [ev({ id: 1, allDay: true }), ev({ id: 2, startTime: '10:00', endTime: '11:00' }), ev({ id: 3, startTime: '09:00', endTime: '21:00', dayIndex: 2, dayCount: 2 })], todos: [] })
+    const tms = w.findAll('[data-test="today-event"] .tm')
+    expect(tms.map((t) => t.find('b').text())).toEqual(['Seharian', '10:00', 's.d. 21:00'])
+    expect(tms.map((t) => t.classes('long'))).toEqual([true, false, true])
+  })
+
   it('maks 4 baris + footer', () => {
     const events = [1, 2, 3].map((i) => ev({ id: i, title: `E${i}`, startTime: '15:00', endTime: '16:00' }))
     const w = mountIt({ events, todos: todos(3) })
@@ -99,15 +106,15 @@ describe('HomeToday', () => {
     expect(toastCreate).toHaveBeenLastCalledWith(expect.objectContaining({ message: 'Server lagi bermasalah' }))
   })
 
-  it('tap acara → Agenda + detail acara; footer & Agenda › → Agenda', async () => {
+  it('tap acara → Agenda + detail acara; footer & Agenda › → Agenda di hari ini', async () => {
     const w = mountIt({ events: [ev({ id: 5 })], todos: todos(1) })
     await w.find('[data-test="today-event"]').trigger('click')
     expect(ionRouter.push).toHaveBeenLastCalledWith(`/tabs/agenda?tanggal=${TODAY}&acara=5`)
     await w.find('[data-test="today-footer"]').trigger('click')
-    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/agenda')
+    expect(ionRouter.push).toHaveBeenLastCalledWith(`/tabs/agenda?tanggal=${TODAY}`)
     ionRouter.push.mockClear()
     await w.find('[data-test="today-link"]').trigger('click')
-    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/agenda')
+    expect(ionRouter.push).toHaveBeenLastCalledWith(`/tabs/agenda?tanggal=${TODAY}`)
     ionRouter.push.mockClear()
     await w.find('[data-test="today-todo"] button').trigger('click')
     await flushPromises()

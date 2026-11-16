@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.js'
 import HomePage from './HomePage.vue'
 
 const enter = vi.hoisted(() => ({ fn: null }))
+const view = vi.hoisted(() => ({ didEnter: null, didLeave: null }))
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ({ push: vi.fn() }),
@@ -12,6 +13,11 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
     enter.fn = fn
     fn()
   },
+  onIonViewDidEnter: (fn) => {
+    view.didEnter = fn
+    fn()
+  },
+  onIonViewDidLeave: (fn) => (view.didLeave = fn),
 }))
 vi.mock('@/components/NotifBell.vue', () => ({ default: { template: '<span class="bell-stub" data-test="bell" />' } }))
 
@@ -102,6 +108,20 @@ describe('HomePage', () => {
     await flushPromises()
     expect(api.get).toHaveBeenCalledTimes(1)
     expect(w.exists()).toBe(true)
+  })
+
+  it('balik dari background pas lagi di tab lain → Beranda nggak dimuat ulang (nanti pas dibuka aja)', async () => {
+    vi.setSystemTime(new Date('2026-11-16T01:12:00Z'))
+    await mountPage(async () => data())
+    view.didLeave()
+    api.get.mockClear()
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(api.get).not.toHaveBeenCalled()
+    view.didEnter()
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledTimes(1)
   })
 })
 

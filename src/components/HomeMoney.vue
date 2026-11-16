@@ -50,7 +50,7 @@ import { computed } from 'vue'
 import { useIonRouter } from '@ionic/vue'
 import { PhPlus } from '@phosphor-icons/vue'
 import { monthName } from '@/lib/duit.js'
-import { catatPath, moneyView, owedInvoiceView, owedSplitView, todoPath } from '@/lib/home.js'
+import { catatPath, moneyView, owedInvoiceView, owedSplitView, splitPath, todoPath } from '@/lib/home.js'
 import { useMedia } from '@/lib/media.js'
 
 const props = defineProps({
@@ -70,13 +70,13 @@ const quick = computed(() => [
   { key: 'catat', emoji: '💸', tint: '#FFE9D6', label: 'Catat', to: catatPath(wide.value) },
   { key: 'todo', emoji: '✅', tint: '#E4F7C4', label: 'To-do', to: todoPath(dialog.value, props.today) },
   { key: 'invoice', emoji: '📄', tint: '#DCEBFF', label: 'Invoice', to: '/tabs/menu/invoice/baru' },
-  { key: 'split', emoji: '🍕', tint: '#FFE0E6', label: 'Split bill', to: '/tabs/menu/split-bill/baru' },
+  { key: 'split', emoji: '🍕', tint: '#FFE0E6', label: 'Split bill', to: splitPath(wide.value) },
 ])
 const go = (path) => ionRouter.push(path)
 </script>
 
 <style scoped>
-.h-label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; }
+.h-label { display: flex; justify-content: space-between; align-items: center; min-height: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; }
 .h-hero { position: relative; overflow: hidden; padding: 18px 20px; border-radius: 25px; background: #141410; color: #F3F2EE; }
 .h-hero::before { content: ''; position: absolute; right: -60px; top: -80px; width: 220px; height: 220px; border-radius: 99px; background: radial-gradient(circle, rgba(200, 240, 74, .28), transparent 65%); pointer-events: none; }
 .h-hero > * { position: relative; }
@@ -108,6 +108,7 @@ const go = (path) => ionRouter.push(path)
 
 @media (hover: hover) { .h-qb:hover, .h-mini:hover { box-shadow: 0 0 0 1px var(--hair), var(--lift); } }
 @media (min-width: 1100px) {
+  .h-label:first-child { margin-top: 12px; }
   .h-v { font-size: 52px; }
   .h-quick { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .h-qb { flex-direction: row; justify-content: flex-start; padding: 10px 12px; gap: 12px; font-size: 14px; }

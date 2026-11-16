@@ -20,7 +20,7 @@
           <span class="ic" :style="{ background: viewOf(item).tint }">{{ viewOf(item).emoji }}</span>
           <div class="grow t">
             <span>{{ viewOf(item).title }}</span>
-            <small :class="store.isDone(item) ? '' : viewOf(item).tone">{{ store.isDone(item) ? 'Udah dicatet ✓' : viewOf(item).sub }}</small>
+            <small :class="store.isDone(item) ? '' : viewOf(item).tone"><template v-for="(part, i) in subParts(item)" :key="i"><span class="seg">{{ part }}</span>{{ ' ' }}</template></small>
           </div>
           <button
             v-if="viewOf(item).ask"
@@ -48,12 +48,18 @@ import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { useHomeStore } from '@/stores/home.js'
 
 const MAX = 6
-const props = defineProps({ items: { type: Array, required: true } })
+const props = defineProps({ items: { type: Array, required: true }, today: { type: String, required: true } })
 const store = useHomeStore()
 const ionRouter = useIonRouter()
 const expanded = ref(false)
 
-const viewOf = attentionView
+const viewOf = (item) => attentionView(item, props.today)
+/** Keterangan dipotong per " · " → kalau nggak muat (HP, tombol lebar) pindah barisnya di situ, bukan di tengah kalimat. */
+function subParts(item) {
+  if (store.isDone(item)) return ['Udah dicatet ✓']
+  const parts = viewOf(item).sub.split(' · ')
+  return parts.map((p, i) => (i < parts.length - 1 ? `${p} ·` : p))
+}
 const left = computed(() => props.items.filter((i) => !store.isDone(i)).length)
 const shown = computed(() => (expanded.value ? props.items : props.items.slice(0, MAX)))
 const hidden = computed(() => (expanded.value ? 0 : Math.max(0, props.items.length - MAX)))
@@ -71,7 +77,7 @@ async function tick(item) {
 </script>
 
 <style scoped>
-.h-label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; }
+.h-label { display: flex; justify-content: space-between; align-items: center; min-height: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; }
 .h-label .cnt { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--red); color: #fff; font-size: 11px; letter-spacing: 0; margin-left: 6px; }
 .h-list { padding: 4px 6px; }
 .h-todo { display: flex; align-items: center; gap: 12px; padding: 11px 10px; cursor: pointer; }
@@ -80,6 +86,7 @@ async function tick(item) {
 .h-todo .t { font-size: 14.5px; font-weight: 700; min-width: 0; }
 .h-todo .t > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-todo .t small { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.h-todo .t small .seg { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
 .h-todo .t small.red { color: var(--red); }
 .h-todo .t small.amber { color: #C27C00; }
 :root.theme-dark .h-todo .t small.amber { color: var(--amber); }
