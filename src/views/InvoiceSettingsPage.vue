@@ -161,7 +161,11 @@ const padOpen = ref(false)
 const formEl = ref(null)
 const photoEl = ref(null)
 
+// Nomor terakhir yang kebaca pas dibuka: cuma dikirim kalau diubah (buka 31 Okt, simpan abis tengah malem → jangan nyetel bulan baru).
+let loadedLast = '0'
+
 function fill(s) {
+  loadedLast = String(s.lastNumberThisMonth ?? 0)
   Object.assign(form, {
     name: s.name, phone: s.phone ?? '', email: s.email ?? '', initial: s.initial, bank: s.bank ?? '', accountNo: s.accountNo ?? '',
     accountName: s.accountName ?? '', opening: s.opening ?? '', closing: s.closing ?? '', signature: s.signature ?? null,
@@ -192,7 +196,10 @@ const letterhead = computed(() => ({
   name: form.name, phone: form.phone, email: form.email, initial: form.initial, bank: form.bank, accountNo: form.accountNo,
   accountName: form.accountName, opening: form.opening, closing: form.closing, signature: form.signature,
 }))
-const latest = computed(() => store.list?.[0] ?? null)
+// Invoice yang paling baru DIBIKIN (daftar dari BE urut tanggal invoice, bukan urutan bikin).
+const latest = computed(() =>
+  (store.list ?? []).reduce((best, i) => (!best || String(i.createdAt) > String(best.createdAt) || (i.createdAt === best.createdAt && i.id > best.id) ? i : best), null),
+)
 const previewInvoice = computed(() => {
   if (latest.value) return { ...latest.value, letterhead: letterhead.value }
   return {
@@ -247,7 +254,8 @@ async function save() {
     await store.saveSettings({
       name: form.name, phone: form.phone, email: form.email, initial: form.initial, bank: form.bank, accountNo: form.accountNo,
       accountName: form.accountName, opening: form.opening, closing: form.closing, signature: form.signature, prefix: form.prefix,
-      dueDays: form.dueDays, defaultNotes: form.defaultNotes, lastNumberThisMonth: lastNumber.value,
+      dueDays: form.dueDays, defaultNotes: form.defaultNotes,
+      ...(String(lastNumber.value) !== loadedLast ? { lastNumberThisMonth: lastNumber.value } : {}),
     })
     showToast('Pengaturan invoice kesimpen ✓')
     if (first) ionRouter.navigate(`${BASE}/baru`, 'forward', 'replace')

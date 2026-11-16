@@ -24,9 +24,9 @@ const settings = (over = {}) => ({
 const media = (matches) => (window.matchMedia = vi.fn(() => ({ matches, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
 
 let api
-async function mountPage({ query = '', s = settings(), putError = null } = {}) {
+async function mountPage({ query = '', s = settings(), putError = null, invoices = [] } = {}) {
   api = {
-    get: vi.fn(async (url) => (url === '/invoice-settings' ? { settings: s } : { today: '2026-11-16', summary: {}, invoices: [] })),
+    get: vi.fn(async (url) => (url === '/invoice-settings' ? { settings: s } : { today: '2026-11-16', summary: {}, invoices })),
     put: vi.fn(async (url, body) => {
       if (putError) throw putError
       return { settings: { ...s, ...body, complete: true, minLastNumber: 1 } }
@@ -90,7 +90,7 @@ describe('InvoiceSettingsPage', () => {
     expect(body).toEqual({
       name: 'Dave', phone: '0812', email: 'd@x.com', initial: 'ds', bank: 'BCA', accountNo: '123', accountName: 'David S',
       opening: 'Dengan hormat.', closing: 'Terima kasih.', signature: null, prefix: 'INV/DS', dueDays: 7,
-      defaultNotes: ['Catatan satu', 'Catatan dua'], lastNumberThisMonth: 1,
+      defaultNotes: ['Catatan satu', 'Catatan dua'],
     })
     expect(toast).toHaveBeenCalledWith('Pengaturan invoice kesimpen ✓')
   })
@@ -142,6 +142,15 @@ describe('InvoiceSettingsPage', () => {
     await w.find('[data-test="save"]').trigger('click')
     await flushPromises()
     expect(api.put.mock.calls[0][1].lastNumberThisMonth).toBe(7)
+  })
+
+  it('nomor terakhir nggak diubah → nggak ikut dikirim (buka 31 Okt, simpan abis tengah malem nggak nyetel bulan baru)', async () => {
+    const w = await mountPage({ s: settings({ lastNumberThisMonth: 4 }) })
+    await w.find('[data-f="lastNumberThisMonth"]').setValue('9')
+    await w.find('[data-f="lastNumberThisMonth"]').setValue('4')
+    await w.find('[data-test="save"]').trigger('click')
+    await flushPromises()
+    expect(api.put.mock.calls[0][1]).not.toHaveProperty('lastNumberThisMonth')
   })
 
   it('chip jatuh tempo 7/14/30', async () => {
@@ -230,5 +239,23 @@ describe('InvoiceSettingsPage', () => {
     expect(pc.find('[data-test="sheet"]').text()).toContain('David Setyawan')
     await pc.find('[data-f="name"]').setValue('Dave Baru')
     expect(pc.find('[data-test="sheet"]').text()).toContain('Dave Baru')
+  })
+
+  it('PC: contoh hasilnya pakai invoice yang paling baru dibikin (bukan tanggal invoice terbaru)', async () => {
+    media(true)
+    const inv = (id, name, issuedOn, createdAt) => ({
+      id, number: `INV/DS/2026/11/00${id}`, clientId: id, tint: '#eee', paidOn: null, client: { name, attn: '', address: '', email: '' },
+      issuedOn, dueOn: issuedOn, subject: '', items: [{ desc: 'K', detail: '', qty: 1, unit: 'Paket', price: 1000 }],
+      discount: 0, taxOn: false, taxPct: 11, notes: [], letterhead: {}, createdAt,
+    })
+    // Daftar dari BE urut tanggal invoice terbaru dulu.
+    const pc = await mountPage({
+      invoices: [
+        inv(2, 'PT Tanggal Paling Baru', '2026-11-20', '2026-11-10T03:00:00.000Z'),
+        inv(5, 'PT Barusan Dibikin', '2026-11-05', '2026-11-16T03:00:00.000Z'),
+        inv(4, 'PT Kemarin', '2026-11-06', '2026-11-15T03:00:00.000Z'),
+      ],
+    })
+    expect(pc.find('[data-test="sheet"]').text()).toContain('PT Barusan Dibikin')
   })
 })
