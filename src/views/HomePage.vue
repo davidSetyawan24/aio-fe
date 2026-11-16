@@ -101,6 +101,7 @@ onBeforeUnmount(() => {
   .h-side { position: sticky; top: 24px; }
 }
 @media (min-width: 2200px) {
+  .h-hello .h1 { font-size: 52px; }
   .h-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 480px; gap: 0 32px; }
 }
 @media (hover: hover) { .h-retry:not(:disabled):hover { opacity: .85; } }
