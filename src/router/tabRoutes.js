@@ -32,10 +32,10 @@ export function buildTabRoutes(pages) {
     { path: 'menu/split-bill/:id/ubah', component: SplitBillFormPage },
     { path: 'menu/bayar-rutin/baru', component: BayarRutinFormPage },
     { path: 'menu/bayar-rutin/:id/ubah', component: BayarRutinFormPage },
-    // atur/baru sebelum :id.
+    // Yang statis (atur, baru) ditulis sebelum :id biar gampang dibaca; vue-router sendiri tetep ngutamain yang statis.
     { path: 'menu/invoice/atur', component: InvoiceSettingsPage },
-    { path: 'menu/invoice/:id', component: InvoiceDetailPage },
     { path: 'menu/invoice/baru', component: InvoiceFormPage },
+    { path: 'menu/invoice/:id', component: InvoiceDetailPage },
     { path: 'menu/invoice/:id/ubah', component: InvoiceFormPage },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },

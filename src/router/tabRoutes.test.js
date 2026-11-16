@@ -1,3 +1,4 @@
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { buildTabRoutes } from './tabRoutes.js'
 
 const stub = { render: () => null }
@@ -20,12 +21,17 @@ const agendaFormStub = { render: () => null }
 const billsStub = { render: () => null }
 const billFormStub = { render: () => null }
 const uangStub = { render: () => null }
+const invoiceStub = { render: () => null }
+const invoiceDetailStub = { render: () => null }
+const invoiceSettingsStub = { render: () => null }
+const invoiceFormStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -35,8 +41,9 @@ describe('buildTabRoutes', () => {
   })
 
   it('opens modules outside the tab bar under menu/<key>, with a back button to Semua menu', () => {
-    const invoice = find('menu/invoice')
-    expect(invoice.props).toMatchObject({ title: 'Invoice', emoji: '📄', backTo: '/tabs/menu' })
+    const catatan = find('menu/catatan')
+    expect(catatan.component).toBe(stub)
+    expect(catatan.props).toMatchObject({ title: 'Catatan', backTo: '/tabs/menu' })
     for (const key of ['invoice', 'catatan']) expect(find(`menu/${key}`), key).toBeTruthy()
   })
 
@@ -102,6 +109,23 @@ describe('buildTabRoutes', () => {
     expect(find('menu/bayar-rutin/:id/ubah').component).toBe(billFormStub)
   })
 
+  it('opens Invoice, its form, detail and Atur invoice under Semua menu', () => {
+    expect(find('menu/invoice').component).toBe(invoiceStub)
+    expect(find('menu/invoice/baru').component).toBe(invoiceFormStub)
+    expect(find('menu/invoice/atur').component).toBe(invoiceSettingsStub)
+    expect(find('menu/invoice/:id').component).toBe(invoiceDetailStub)
+    expect(find('menu/invoice/:id/ubah').component).toBe(invoiceFormStub)
+  })
+
+  it('resolves /tabs/menu/invoice/baru & /atur to their pages, not the :id detail', () => {
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/', component: stub, children: routes }] })
+    const page = (path) => router.resolve(path).matched.at(-1).components.default
+    expect(page('/tabs/menu/invoice/baru')).toBe(invoiceFormStub)
+    expect(page('/tabs/menu/invoice/atur')).toBe(invoiceSettingsStub)
+    expect(page('/tabs/menu/invoice/12')).toBe(invoiceDetailStub)
+    expect(page('/tabs/menu/invoice/12/ubah')).toBe(invoiceFormStub)
+  })
+
   it('has the notifications pages', () => {
     expect(find('notifikasi').component).toBe(notifStub)
     expect(find('notifikasi/atur').component).toBe(notifSettingsStub)
@@ -109,7 +133,7 @@ describe('buildTabRoutes', () => {
 
   it('gives tab root pages the bell, detail module pages not', () => {
     expect(find('home').props.bell).toBe(true)
-    expect(find('menu/invoice').props.bell).toBeFalsy()
+    expect(find('menu/catatan').props.bell).toBeFalsy()
   })
 
   it('redirects the empty tab path to Beranda', () => {
