@@ -217,15 +217,21 @@ describe('AgendaPage', () => {
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/agenda/baru?tanggal=2026-11-14')
   })
 
-  it('opens the date from a notification link', async () => {
+  it('opens the date from a notification link, then drops ?tanggal so the tab does not snap back to it later', async () => {
     const w = await mountPage('/tabs/agenda?tanggal=2026-11-16')
     expect(w.find('h1').text()).toContain('Senin, 16 Nov')
+    expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: {} })
+  })
+
+  it('a plain visit leaves the address alone', async () => {
+    await mountPage()
+    expect(testRouter.replace).not.toHaveBeenCalled()
   })
 
   it('?acara= opens that event on its date and drops the query', async () => {
     const w = await mountPage('/tabs/agenda?tanggal=2026-11-21&acara=5')
     expect(w.find('[data-test="event-detail"]').text()).toContain('Futsal')
-    expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: { tanggal: '2026-11-21' } })
+    expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: {} })
   })
 
   it('?acara= that is not found stays quiet', async () => {
@@ -372,7 +378,7 @@ describe('AgendaPage', () => {
       const w = await mountPage('/tabs/agenda?tanggal=2026-11-21&tambah=todo')
       expect(w.find('[data-test="form-dialog"] [data-kind="todo"].on').exists()).toBe(true)
       expect(w.find('h1').text()).toContain('Minggu, 15 Nov')
-      expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: { tanggal: '2026-11-21' } })
+      expect(testRouter.replace).toHaveBeenCalledWith({ path: '/tabs/agenda', query: {} })
     })
 
     it('adds and edits in a dialog instead of a new page', async () => {

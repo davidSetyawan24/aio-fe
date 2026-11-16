@@ -232,10 +232,13 @@ onIonViewWillEnter(async () => {
   }
   openFromLink()
 })
-/** Link dari Beranda: ?tambah=todo (cuma iPad/PC, HP diabaikan) & ?acara=<id> (detail acara di tanggal yang lagi kebuka). Abis dipakai dibuang dari alamat. */
+/**
+ * Link dari notif / Beranda: ?tanggal (udah dibuka di atas), ?tambah=todo (cuma iPad/PC, HP diabaikan) & ?acara=<id> (detail acara di tanggal yang lagi kebuka).
+ * Abis dipakai SEMUA dibuang dari alamat — kalau ?tanggal ketinggalan, tab Agenda (yang inget alamat terakhirnya) bakal loncat balik ke tanggal itu tiap dibuka.
+ */
 function openFromLink() {
-  const { tambah, acara, ...rest } = route.query
-  if (tambah === undefined && acara === undefined) return
+  const { tanggal, tambah, acara, ...rest } = route.query
+  if (tanggal === undefined && tambah === undefined && acara === undefined) return
   if (tambah === 'todo') {
     sel.value = today.value
     view.value = 'day'
