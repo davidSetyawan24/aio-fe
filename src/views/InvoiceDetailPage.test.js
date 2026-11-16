@@ -15,6 +15,11 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   actionSheetController: { create: vi.fn(async (opts) => { sheetChoice.opts = opts; return { present: vi.fn(), onDidDismiss: async () => ({ data: sheetChoice.data }) } }) },
   toastController: { create: async (o) => { toast(o.message); return { present: vi.fn() } } },
 }))
+// PDF beneran nggak dibikin di sini (ada test sendiri di lib/invoicePdf): tiap panggilan nunggu dilepas dari test.
+const pdf = vi.hoisted(() => ({ calls: [], build: null }))
+vi.mock('@/lib/invoicePdf.js', () => ({ buildInvoicePdf: (...args) => pdf.build(...args) }))
+const share = vi.hoisted(() => ({ shareOrDownload: vi.fn(async () => 'shared'), downloadFile: vi.fn() }))
+vi.mock('@/lib/shareFile.js', () => share)
 
 const letterhead = { name: 'David', phone: '', email: '', initial: 'd', bank: 'BCA', accountNo: '1', accountName: 'D', opening: '', closing: '', signature: null }
 const inv = (over = {}) => ({
@@ -26,6 +31,12 @@ const inv = (over = {}) => ({
 const data = (invoices) => ({ today: '2026-11-16', summary: { unpaid: 0, unpaidCount: 0, lateCount: 0, nearestDue: null, received: [], receivedYear: 0 }, invoices })
 
 const media = (matches) => (window.matchMedia = vi.fn(() => ({ matches, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+
+/** Lepas PDF ke-i (isinya 'pdf-i' biar bisa dibedain). */
+async function readyPdf(i = 0) {
+  pdf.calls[i].resolve(new Blob([`pdf-${i}`], { type: 'application/pdf' }))
+  await flushPromises()
+}
 
 let api
 async function mountPage(invoices = [inv()]) {
@@ -46,6 +57,11 @@ async function mountPage(invoices = [inv()]) {
 }
 
 beforeEach(() => {
+  pdf.calls = []
+  pdf.build = vi.fn((invoice) => new Promise((resolve, reject) => pdf.calls.push({ invoice, resolve, reject })))
+  share.shareOrDownload.mockClear()
+  share.shareOrDownload.mockImplementation(async () => 'shared')
+  share.downloadFile.mockClear()
   ionRouter.push.mockClear()
   ionRouter.back.mockClear()
   toast.mockClear()
@@ -128,11 +144,102 @@ describe('InvoiceDetailPage', () => {
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/invoice/baru?dari=7')
   })
 
-  it('Bagikan & Unduh cuma tampil (disabled)', async () => {
+  it('Bagikan & Unduh disabled sampai PDF siap', async () => {
     const w = await mountPage()
+    expect(pdf.build).toHaveBeenCalledTimes(1)
+    expect(pdf.calls[0].invoice.number).toBe('INV/DS/2026/11/002')
     expect(w.find('[data-test="share"]').attributes('disabled')).toBeDefined()
     expect(w.find('[data-test="download"]').attributes('disabled')).toBeDefined()
     expect(w.find('[data-test="share"]').text()).toContain('Lagi nyiapin PDF…')
+    await readyPdf()
+    expect(w.find('[data-test="share"]').attributes('disabled')).toBeUndefined()
+    expect(w.find('[data-test="download"]').attributes('disabled')).toBeUndefined()
+    expect(w.find('[data-test="share"]').text()).not.toContain('Lagi nyiapin PDF…')
+  })
+
+  it('Bagikan: file PDF nama INV-DS-2026-11-002.pdf, tap dobel = 1 share', async () => {
+    let finish
+    share.shareOrDownload.mockImplementation(() => new Promise((r) => (finish = r)))
+    const w = await mountPage()
+    await readyPdf()
+    await w.find('[data-test="share"]').trigger('click')
+    await w.find('[data-test="share"]').trigger('click')
+    expect(share.shareOrDownload).toHaveBeenCalledTimes(1)
+    const [file, title] = share.shareOrDownload.mock.calls[0]
+    expect(file.name).toBe('INV-DS-2026-11-002.pdf')
+    expect(file.type).toBe('application/pdf')
+    expect(title).toBe('Invoice INV/DS/2026/11/002')
+    finish('cancelled')
+    await flushPromises()
+    expect(w.find('.det-error').exists()).toBe(false)
+    await w.find('[data-test="share"]').trigger('click')
+    expect(share.shareOrDownload).toHaveBeenCalledTimes(2)
+  })
+
+  it('Unduh: langsung download', async () => {
+    const w = await mountPage()
+    await readyPdf()
+    await w.find('[data-test="download"]').trigger('click')
+    expect(share.downloadFile).toHaveBeenCalledTimes(1)
+    expect(share.downloadFile.mock.calls[0][0].name).toBe('INV-DS-2026-11-002.pdf')
+    expect(share.shareOrDownload).not.toHaveBeenCalled()
+  })
+
+  it('Tandain lunas -> PDF disiapin ulang (cap LUNAS), tombol nunggu lagi', async () => {
+    const w = await mountPage()
+    await readyPdf()
+    api.get.mockImplementation(async () => data([inv({ paidOn: '2026-11-16', status: 'paid' })]))
+    await w.find('[data-test="paid"]').trigger('click')
+    w.findComponent(InvoicePaidSheet).vm.$emit('done', '2026-11-16')
+    await flushPromises()
+    expect(pdf.build).toHaveBeenCalledTimes(2)
+    expect(pdf.calls[1].invoice.paidOn).toBe('2026-11-16')
+    expect(w.find('[data-test="share"]').attributes('disabled')).toBeDefined()
+    await readyPdf(1)
+    expect(w.find('[data-test="share"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('daftar dimuat ulang dengan isi sama -> PDF nggak dibikin ulang', async () => {
+    const w = await mountPage()
+    await readyPdf()
+    const store = (await import('@/stores/invoices.js')).useInvoicesStore()
+    await store.load()
+    await flushPromises()
+    expect(pdf.build).toHaveBeenCalledTimes(1)
+    expect(w.find('[data-test="share"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('PDF lama yang telat jadi nggak nimpa PDF terbaru', async () => {
+    const w = await mountPage()
+    api.get.mockImplementation(async () => data([inv({ paidOn: '2026-11-16', status: 'paid' })]))
+    await w.find('[data-test="paid"]').trigger('click')
+    w.findComponent(InvoicePaidSheet).vm.$emit('done', '2026-11-16')
+    await flushPromises()
+    await readyPdf(1)
+    await readyPdf(0)
+    await w.find('[data-test="share"]').trigger('click')
+    expect(await share.shareOrDownload.mock.calls[0][0].text()).toBe('pdf-1')
+  })
+
+  it('PDF gagal dibikin -> tap Bagikan = coba lagi', async () => {
+    const w = await mountPage()
+    pdf.calls[0].reject(new Error('rusak'))
+    await flushPromises()
+    const btn = w.find('[data-test="share"]')
+    expect(btn.text()).toContain('PDF-nya gagal dibikin')
+    expect(btn.attributes('disabled')).toBeUndefined()
+    await btn.trigger('click')
+    expect(pdf.build).toHaveBeenCalledTimes(2)
+    expect(share.shareOrDownload).not.toHaveBeenCalled()
+  })
+
+  it('pratinjau layar penuh: tombol bagikan ikut aktif', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="paper"]').trigger('click')
+    expect(w.find('[data-test="preview-share"]').attributes('disabled')).toBeDefined()
+    await readyPdf()
+    await w.find('[data-test="preview-share"]').trigger('click')
+    expect(share.shareOrDownload).toHaveBeenCalledTimes(1)
   })
 
   it('HP: tap kertas buka pratinjau layar penuh', async () => {

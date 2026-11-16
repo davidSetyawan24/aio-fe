@@ -88,6 +88,25 @@ export function statusChip(inv) {
   return { text: `Tempo ${fmtDM(inv.dueOn)}`, tone: 'soft' }
 }
 
+/** Label tetap di kertas (pratinjau HTML & PDF pakai yang sama; huruf kapital diatur masing-masing). */
+export const PAPER = {
+  title: 'Invoice',
+  to: 'Kepada',
+  attn: 'U.p.',
+  issued: 'Tanggal',
+  due: 'Jatuh tempo',
+  total: 'Total tagihan',
+  subject: 'Perihal',
+  cols: ['#', 'Keterangan', 'Jumlah', 'Harga satuan', 'Subtotal'],
+  grand: 'Total',
+  bank: 'Pembayaran ditransfer ke',
+  bankRows: ['Bank', 'No. rekening', 'Atas nama'],
+  sign: 'Hormat saya,',
+  notes: 'Catatan',
+  stamp: 'LUNAS',
+  page: 'Hal',
+}
+
 /** Satu-satunya sumber isi kertas: dipakai pratinjau HTML dan PDF (teks formal, uang pakai spasi). */
 export function sheetModel(inv) {
   const c = inv.client ?? {}

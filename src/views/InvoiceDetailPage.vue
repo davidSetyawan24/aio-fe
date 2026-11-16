@@ -34,13 +34,14 @@
 
             <div class="dside">
               <div class="actions">
-                <button class="pill share" data-test="share" disabled>
+                <button class="pill share" data-test="share" :disabled="!pdfFile && !pdfFailed" @click="share">
                   <span class="grow">Bagikan PDF</span>
-                  <span class="soon">Lagi nyiapin PDF…</span>
+                  <span v-if="pdfFailed" class="soon">PDF-nya gagal dibikin, tap buat coba lagi</span>
+                  <span v-else-if="!pdfFile" class="soon">Lagi nyiapin PDF…</span>
                   <span class="ic"><PhShareFat :size="18" weight="bold" /></span>
                 </button>
                 <div class="act3">
-                  <button class="tile" data-test="download" disabled><PhDownloadSimple :size="22" />Unduh</button>
+                  <button class="tile" data-test="download" :disabled="!pdfFile" @click="download"><PhDownloadSimple :size="22" />Unduh</button>
                   <button class="tile" data-test="edit" @click="edit"><PhPencilSimple :size="22" />Ubah</button>
                   <button class="tile" data-test="dup" @click="duplicate"><PhCopy :size="22" />Duplikat</button>
                 </div>
@@ -75,7 +76,7 @@
           <div class="pvbar">
             <button class="iconbtn" data-test="preview-close" aria-label="Tutup" @click="preview = false"><PhX :size="20" /></button>
             <b>Pratinjau PDF</b>
-            <button class="iconbtn" aria-label="Bagikan" disabled><PhShareFat :size="20" /></button>
+            <button class="iconbtn" data-test="preview-share" aria-label="Bagikan" :disabled="!pdfFile" @click="share"><PhShareFat :size="20" /></button>
           </div>
           <div class="pvbody"><InvoicePaper :invoice="inv" fit="width" /></div>
         </div>
@@ -85,7 +86,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { IonContent, IonPage, actionSheetController, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
 import { PhCaretLeft, PhCaretRight, PhCheck, PhCopy, PhDownloadSimple, PhPencilSimple, PhShareFat, PhTrash, PhX } from '@phosphor-icons/vue'
@@ -93,9 +94,11 @@ import InvoicePaidSheet from '@/components/InvoicePaidSheet.vue'
 import InvoicePaper from '@/components/InvoicePaper.vue'
 import LaptopNote from '@/components/LaptopNote.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { fmtLong, rp, statusChip } from '@/lib/invoice.js'
+import { fileName, fmtLong, rp, sheetModel, statusChip } from '@/lib/invoice.js'
+import { buildInvoicePdf } from '@/lib/invoicePdf.js'
 import { useMedia } from '@/lib/media.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
+import { downloadFile, shareOrDownload } from '@/lib/shareFile.js'
 import { useInvoicesStore } from '@/stores/invoices.js'
 
 const BASE = '/tabs/menu/invoice'
@@ -129,6 +132,51 @@ const info = computed(() => [
   ['Perihal', inv.value.subject || '—'],
   ['Item', `${inv.value.items.length} item`],
 ])
+
+/*
+ * PDF disiapin di belakang layar begitu invoice-nya ada, biar tap Bagikan langsung manggil `navigator.share`
+ * (iOS cuma ngizinin dari tap, nggak boleh nunggu PDF dibikin dulu). Dibikin ulang cuma kalau isi kertasnya berubah
+ * (mis. abis Tandain lunas), bukan tiap daftar dimuat ulang.
+ */
+const pdfFile = ref(null)
+const pdfFailed = ref(false)
+let pdfRun = 0
+let sharing = false
+const paperKey = computed(() => (inv.value ? JSON.stringify(sheetModel(inv.value)) : ''))
+
+async function preparePdf() {
+  const invoice = inv.value
+  if (!invoice) return
+  const run = ++pdfRun
+  pdfFile.value = null
+  pdfFailed.value = false
+  try {
+    const blob = await buildInvoicePdf(invoice)
+    // PDF lama yang telat jadi nggak boleh nimpa yang terbaru
+    if (run === pdfRun) pdfFile.value = new File([blob], fileName(invoice.number), { type: 'application/pdf' })
+  } catch {
+    if (run === pdfRun) pdfFailed.value = true
+  }
+}
+watch(paperKey, (key) => key && preparePdf(), { immediate: true })
+
+async function share() {
+  if (pdfFailed.value) return preparePdf()
+  if (!pdfFile.value || sharing) return
+  sharing = true
+  try {
+    // Langsung dari tap, tanpa await sebelumnya (aturan iOS). Menu ditutup = 'cancelled', bukan error.
+    await shareOrDownload(pdfFile.value, `Invoice ${inv.value.number}`)
+  } catch {
+    error.value = 'PDF-nya gagal dibagiin. Coba lagi ya.'
+  } finally {
+    sharing = false
+  }
+}
+
+function download() {
+  if (pdfFile.value) downloadFile(pdfFile.value)
+}
 
 // Cadangan kalau daftar belum ke-load (kalender HP/WIB sama kayak BE, `today` dari server dipake begitu ada).
 const localToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())

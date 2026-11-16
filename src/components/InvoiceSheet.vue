@@ -10,42 +10,42 @@
           </div>
         </div>
         <div class="s-doc">
-          <div class="s-ttl">Invoice<i /></div>
+          <div class="s-ttl">{{ L.title }}<i /></div>
           <div class="s-no">{{ m.number }}</div>
         </div>
       </header>
 
       <section class="s-top2">
         <div>
-          <div class="s-lbl">Kepada</div>
+          <div class="s-lbl">{{ L.to }}</div>
           <div class="s-who"><template v-if="m.client.name">{{ m.client.name }}</template><span v-else class="s-ph">Nama klien</span></div>
-          <div v-if="m.client.attn" class="s-up">U.p. {{ m.client.attn }}</div>
+          <div v-if="m.client.attn" class="s-up">{{ L.attn }} {{ m.client.attn }}</div>
           <div class="s-addr">
             <template v-if="m.client.addressLines.length"><template v-for="(line, i) in m.client.addressLines" :key="i"><br v-if="i" />{{ line }}</template></template>
             <span v-else class="s-ph">Alamat klien</span>
             <template v-if="m.client.email"><br />{{ m.client.email }}</template>
           </div>
           <div class="s-meta">
-            <div><span class="s-lbl">Tanggal</span><b>{{ m.issued }}</b></div>
-            <div><span class="s-lbl">Jatuh tempo</span><b>{{ m.due }}</b></div>
+            <div><span class="s-lbl">{{ L.issued }}</span><b>{{ m.issued }}</b></div>
+            <div><span class="s-lbl">{{ L.due }}</span><b>{{ m.due }}</b></div>
           </div>
         </div>
         <div class="s-sum">
           <div>
-            <div class="s-lbl">Total tagihan</div>
+            <div class="s-lbl">{{ L.total }}</div>
             <div class="s-amt">{{ m.total }}</div>
           </div>
           <div class="s-due"><span>{{ m.chip.label }}</span><span class="s-chip">{{ m.chip.text }}</span></div>
         </div>
       </section>
 
-      <div v-if="m.subject" class="s-perihal"><span class="s-lbl">Perihal</span><b>{{ m.subject }}</b></div>
+      <div v-if="m.subject" class="s-perihal"><span class="s-lbl">{{ L.subject }}</span><b>{{ m.subject }}</b></div>
       <div v-else style="height: 26px" />
       <div class="s-intro">{{ m.opening }}</div>
 
       <table class="s-tbl">
         <thead>
-          <tr><th>#</th><th>Keterangan</th><th>Jumlah</th><th class="s-r">Harga satuan</th><th class="s-r">Subtotal</th></tr>
+          <tr><th v-for="(c, i) in L.cols" :key="c" :class="{ 's-r': i > 2 }">{{ c }}</th></tr>
         </thead>
         <tbody>
           <template v-if="m.rows.length">
@@ -65,36 +65,36 @@
         <div class="s-terbilang">{{ m.terbilang }}</div>
         <div class="s-box">
           <div v-for="e in m.extras" :key="e.label" class="s-row"><span>{{ e.label }}</span><b>{{ e.value }}</b></div>
-          <div class="s-grand"><span>Total</span><b>{{ m.total }}</b></div>
+          <div class="s-grand"><span>{{ L.grand }}</span><b>{{ m.total }}</b></div>
         </div>
       </div>
 
       <section class="s-bottom">
         <div class="s-bank">
-          <div class="s-lbl">Pembayaran ditransfer ke</div>
-          <div class="s-kv"><span>Bank</span><b>{{ m.lh.bank }}</b><span>No. rekening</span><b>{{ m.lh.accountNo }}</b><span>Atas nama</span><b>{{ m.lh.accountName }}</b></div>
+          <div class="s-lbl">{{ L.bank }}</div>
+          <div class="s-kv"><span>{{ L.bankRows[0] }}</span><b>{{ m.lh.bank }}</b><span>{{ L.bankRows[1] }}</span><b>{{ m.lh.accountNo }}</b><span>{{ L.bankRows[2] }}</span><b>{{ m.lh.accountName }}</b></div>
         </div>
         <div class="s-sign">
-          <div v-if="m.stamp" class="s-stamp"><b>LUNAS</b><span>{{ m.stamp }}</span></div>
-          Hormat saya,
+          <div v-if="m.stamp" class="s-stamp"><b>{{ L.stamp }}</b><span>{{ m.stamp }}</span></div>
+          {{ L.sign }}
           <div class="s-ttd"><img v-if="m.lh.signature" :src="m.lh.signature" alt="Tanda tangan" /></div>
           <div class="s-line">{{ m.lh.name }}</div>
         </div>
       </section>
 
       <section v-if="m.notes.length" class="s-notes">
-        <div class="s-lbl">Catatan</div>
+        <div class="s-lbl">{{ L.notes }}</div>
         <ol><li v-for="(n, i) in m.notes" :key="i">{{ n }}</li></ol>
       </section>
     </div>
-    <footer class="s-ft"><span>{{ m.closing }}</span><span><b>{{ m.number }}</b> · Hal 1/1</span></footer>
+    <footer class="s-ft"><span>{{ m.closing }}</span><span><b>{{ m.number }}</b> · {{ L.page }} 1/1</span></footer>
     <div class="s-strip" />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { sheetModel } from '@/lib/invoice.js'
+import { PAPER as L, sheetModel } from '@/lib/invoice.js'
 
 /** Kertas invoice 794px (A4) — isinya SEMUA dari sheetModel (sama dengan PDF). Kertas selalu putih, nggak ikut mode gelap. */
 const props = defineProps({ invoice: { type: Object, required: true } })

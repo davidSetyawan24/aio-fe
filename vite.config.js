@@ -16,7 +16,11 @@ export default defineConfig({
       devOptions: { enabled: true, type: 'module' },
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon-180.png', 'icons/favicon-32.png'],
       // Font Plus Jakarta Sans ikut disimpen di HP (rancangan usulan e: tetep jalan walau sinyal jelek).
-      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'], maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 },
+      // .woff latin = font yang ditanam ke PDF invoice (pdfkit nggak bisa baca woff2).
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}', '**/plus-jakarta-sans-latin-[4-8]00-*.woff'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+      },
       manifest: {
         name: 'AIO Space',
         short_name: 'AIO Space',
@@ -38,5 +42,10 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // 0.0.0.0 biar bisa dibuka dari HP/iPad lewat IP laptop. Port 5173 udah diizinin di CORS_ORIGINS BE.
   server: { host: '0.0.0.0', port: 5173, strictPort: true },
-  test: { environment: 'jsdom', globals: true },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    // Test PDF pakai build pdfkit yang sama kayak di browser (build Node bikin isi PDF rusak di jsdom: Buffer beda realm).
+    alias: [{ find: /^pdfkit$/, replacement: fileURLToPath(new URL('./node_modules/pdfkit/js/pdfkit.browser.mjs', import.meta.url)) }],
+  },
 })
