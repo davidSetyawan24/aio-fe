@@ -10,7 +10,6 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
   onIonViewWillEnter: (fn) => fn(),
-  onIonViewWillLeave: () => {},
   onIonViewDidEnter: () => {},
   toastController: { create: async (o) => { toast(o.message); return { present: vi.fn() } } },
 }))
@@ -58,7 +57,6 @@ const t = (w, id) => w.find(`[data-test="${id}"]`)
 beforeEach(() => {
   ionRouter.navigate.mockClear()
   toast.mockClear()
-  document.body.classList.remove('aio-no-tabbar')
 })
 
 describe('InvoiceFormPage', () => {
@@ -68,14 +66,12 @@ describe('InvoiceFormPage', () => {
     expect(t(w, 'client-name').exists()).toBe(false)
   })
 
-  it('baru: form tampil, judul nomor perkiraan, tab bar HP disembunyiin', async () => {
+  it('baru: form tampil, judul nomor perkiraan, tab bar nggak disentuh', async () => {
     const w = await mountAt('/tabs/menu/invoice/baru')
     expect(t(w, 'client-name').exists()).toBe(true)
     expect(w.text()).toContain('INV/DS/2026/11/002')
     expect(w.text()).toContain('Invoice baru')
-    expect(document.body.classList.contains('aio-no-tabbar')).toBe(true)
-    w.unmount()
-    expect(document.body.classList.contains('aio-no-tabbar')).toBe(false)
+    expect(document.body.className).toBe('')
   })
 
   it('Simpan → create → pindah ke detail (replace) + toast dari BE', async () => {

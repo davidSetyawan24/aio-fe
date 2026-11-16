@@ -26,8 +26,8 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, onIonViewWillLeave, toastController, useIonRouter } from '@ionic/vue'
+import { ref } from 'vue'
+import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
 import InvoiceForm from '@/components/InvoiceForm.vue'
 import LaptopNote from '@/components/LaptopNote.vue'
@@ -37,7 +37,6 @@ import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { useInvoicesStore } from '@/stores/invoices.js'
 
 const BASE = '/tabs/menu/invoice'
-const HIDE_TABS = 'aio-no-tabbar'
 const route = useRoute()
 const ionRouter = useIonRouter()
 const store = useInvoicesStore()
@@ -58,13 +57,7 @@ const source = ref(null)
 
 const showToast = async (message) => (await toastController.create({ message, duration: 2200, position: 'top', cssClass: 'aio-toast' })).present()
 
-// Tab bar HP disembunyiin di halaman ini (bar Total kaca yang nempel di bawah).
-const hideTabs = (on) => document.body.classList.toggle(HIDE_TABS, on)
-onBeforeUnmount(() => hideTabs(false))
-onIonViewWillLeave(() => hideTabs(false))
-
 onIonViewWillEnter(async () => {
-  hideTabs(true)
   if (ready.value) return
   try {
     await Promise.all([store.loadSettings(), store.load().catch(() => {})])
@@ -97,11 +90,14 @@ async function onSaved(saved) {
 </script>
 
 <style scoped>
-.form-page { padding-bottom: 130px; }
+.form-page { padding-bottom: 210px; }
 .form-page:not(.wide) { max-width: 620px; }
 .err { color: var(--red); font-size: 12.5px; font-weight: 600; margin: 6px 6px 0; }
 .empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 36px 18px; text-align: center; }
 .big { font-size: 38px; }
+@media (min-width: 768px) {
+  .form-page { padding-bottom: 130px; }
+}
 @media (min-width: 1100px) {
   .form-page { padding-bottom: 48px; }
 }

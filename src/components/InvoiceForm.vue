@@ -353,7 +353,7 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; }
 .note .nn { width: 20px; text-align: center; font-weight: 800; color: var(--muted); font-size: 13px; padding-top: 13px; flex: none; }
 .note .in { flex: 1; min-width: 0; }
 .del { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 12px 4px 4px; }
-.totbar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 20px; border-radius: 99px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); box-shadow: 0 0 0 1px var(--hair), 0 18px 40px -16px rgba(0, 0, 0, .3); }
+.totbar { position: fixed; left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 20px; border-radius: 99px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.6); -webkit-backdrop-filter: blur(22px) saturate(1.6); box-shadow: 0 0 0 1px var(--hair), 0 18px 40px -16px rgba(0, 0, 0, .3); }
 .totbar .k { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; }
 .totbar .v { font-size: 19px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ghostbtn { height: 46px; padding: 0 16px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 14px var(--ion-font-family); display: flex; align-items: center; gap: 7px; cursor: pointer; }
@@ -370,6 +370,7 @@ textarea.in { resize: none; line-height: 1.45; font-weight: 500; }
 .iconbtn { width: 42px; height: 42px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); display: grid; place-items: center; cursor: pointer; }
 .iconbtn.ghost { background: transparent; }
 
+@media (min-width: 768px) { .totbar { bottom: calc(12px + env(safe-area-inset-bottom)); } }
 @media (min-width: 1100px) {
   .fgrid { display: grid; grid-template-columns: minmax(440px, 560px) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 10px; }
   .pstick { position: sticky; top: 24px; }
