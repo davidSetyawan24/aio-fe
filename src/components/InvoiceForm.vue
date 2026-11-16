@@ -5,8 +5,8 @@
       <div class="label">Klien</div>
       <div class="shell"><div class="core fcard">
         <div class="sugwrap">
-          <input v-model="draft.client.name" class="in big" data-test="client-name" data-nav placeholder="Nama klien, misal PT …" autocomplete="off" enterkeyhint="next" @input="clientOpen = true" @blur="clientOpen = false" @keydown.enter.prevent="onEnter($event)" />
-          <SuggestBox v-if="clientOpen && clientRows.length" test-id="client" heading="Klien tersimpan" :rows="clientRows" @pick="pickClient" />
+          <input v-model="draft.client.name" class="in big" data-test="client-name" data-nav placeholder="Nama klien, misal PT …" autocomplete="off" enterkeyhint="next" @input="onClientName" @blur="clientOpen = false" @keydown.enter.prevent="onEnter($event)" />
+          <SuggestBox v-if="clientOpen && clientRows.length" test-id="client" heading="Klien lama" :rows="clientRows" @pick="pickClient" />
         </div>
         <p v-if="errors['client.name']" class="err" data-err="client.name">{{ errors['client.name'] }}</p>
         <p class="hint">Klien lama tinggal ketik namanya, sisanya keisi sendiri. Klien baru otomatis kesimpen.</p>
@@ -180,11 +180,19 @@ store.loadSuggestions().catch(() => {})
 const clientMatches = computed(() => {
   const q = draft.client.name.trim().toLowerCase()
   if (q.length < 2) return []
-  return (suggestions.value?.clients ?? []).filter((c) => c.name.toLowerCase().includes(q) && c.name.toLowerCase() !== q).slice(0, 5)
+  return (suggestions.value?.clients ?? []).filter((c) => c.name.toLowerCase().includes(q)).slice(0, 5)
 })
 const clientRows = computed(() =>
   clientMatches.value.map((c) => ({ key: c.id, title: c.name, sub: c.attn || c.email || '', tint: c.tint, initial: initialsOf(c.name).toUpperCase() })),
 )
+/* Nama klien lama diketik persis → kolom yang masih kosong keisi sendiri (cuma pas ngetik, bukan pas buka Ubah). */
+function onClientName() {
+  clientOpen.value = true
+  const key = draft.client.name.trim().toLowerCase()
+  const c = key && (suggestions.value?.clients ?? []).find((x) => x.name.trim().toLowerCase() === key)
+  if (!c) return
+  for (const f of ['attn', 'address', 'email']) if (!draft.client[f] && c[f]) draft.client[f] = c[f]
+}
 function pickClient(i) {
   const c = clientMatches.value[i]
   clientOpen.value = false

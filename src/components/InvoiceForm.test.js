@@ -88,6 +88,36 @@ describe('InvoiceForm — baru', () => {
     expect(t(w, 'sug-client').exists()).toBe(false)
   })
 
+  it('saran klien judulnya "Klien lama"', async () => {
+    const w = await mountForm()
+    await type(w, 'client-name', 'art')
+    expect(t(w, 'sug-client').text()).toContain('Klien lama')
+  })
+
+  it('ketik nama klien lama persis (beda huruf/spasi) → U.p./alamat/email keisi diem-diem, saran tetep nongol', async () => {
+    const w = await mountForm()
+    await type(w, 'client-name', '  pt artha prima solusi ')
+    expect(t(w, 'client-attn').element.value).toBe('Bagian Keuangan')
+    expect(t(w, 'client-address').element.value).toBe('Jl. Sudirman 1\nJakarta')
+    expect(t(w, 'client-email').element.value).toBe('fin@aps.id')
+    expect(t(w, 'client-name').element.value).toBe('  pt artha prima solusi ')
+    expect(w.findAll('[data-test="sug-client-item"]')).toHaveLength(1)
+  })
+
+  it('nama klien lama persis: kolom yang udah diisi nggak ketimpa', async () => {
+    const w = await mountForm()
+    await type(w, 'client-attn', 'Pak Budi')
+    await type(w, 'client-name', 'PT Artha Prima Solusi')
+    expect(t(w, 'client-attn').element.value).toBe('Pak Budi')
+    expect(t(w, 'client-address').element.value).toBe('Jl. Sudirman 1\nJakarta')
+  })
+
+  it('Ubah: buka invoice lama nggak ngisi kolom kosong dari klien tersimpan', async () => {
+    const w = await mountForm({ invoice: { ...existing(), client: { name: 'PT Artha Prima Solusi', attn: '', address: '', email: '' } } })
+    expect(t(w, 'client-attn').element.value).toBe('')
+    expect(t(w, 'client-address').element.value).toBe('')
+  })
+
   it('ketik 1 huruf belum muncul saran', async () => {
     const w = await mountForm()
     await type(w, 'client-name', 'a')
@@ -101,6 +131,22 @@ describe('InvoiceForm — baru', () => {
     expect(t(w, 'item-desc').element.value).toBe('Cloud Development')
     expect(w.find('[data-unit="Bulan"]').classes()).toContain('on')
     expect(t(w, 'item-price').element.value).toBe('850.000')
+  })
+
+  it('ketik keterangan item persis → saran tetep nongol (judul "Pernah dipakai") biar harga bisa diambil', async () => {
+    const w = await mountForm()
+    await type(w, 'item-desc', 'cloud development')
+    expect(t(w, 'sug-item').text()).toContain('Pernah dipakai')
+    await t(w, 'sug-item-item').trigger('click')
+    expect(t(w, 'item-desc').element.value).toBe('Cloud Development')
+    expect(t(w, 'item-price').element.value).toBe('850.000')
+  })
+
+  it('chip satuan: Paket / Bulan / Tahun / Jam', async () => {
+    const w = await mountForm()
+    expect(w.findAll('[data-unit]').map((b) => b.text()).slice(0, 4)).toEqual(['Paket', 'Bulan', 'Tahun', 'Jam'])
+    await w.find('[data-unit="Tahun"]').trigger('click')
+    expect(w.find('[data-unit="Tahun"]').classes()).toContain('on')
   })
 
   it('harga "850000" tampil "850.000"; subtotal item & total bar live', async () => {

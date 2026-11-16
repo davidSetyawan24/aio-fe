@@ -40,7 +40,7 @@ import SuggestBox from '@/components/SuggestBox.vue'
 import { formatAmount } from '@/lib/duit.js'
 import { rp } from '@/lib/invoice.js'
 
-const UNITS = ['Paket', 'Bulan', 'Jam', 'Hari', 'Unit']
+const UNITS = ['Paket', 'Bulan', 'Tahun', 'Jam', 'Hari', 'Unit']
 const props = defineProps({
   modelValue: { type: Object, required: true },
   index: { type: Number, required: true },
@@ -57,7 +57,7 @@ const units = computed(() => [...new Set([...UNITS, props.modelValue.unit].filte
 const matches = computed(() => {
   const q = props.modelValue.desc.trim().toLowerCase()
   if (q.length < 2) return []
-  return props.suggestions.filter((s) => s.desc.toLowerCase().includes(q) && s.desc.toLowerCase() !== q).slice(0, 5)
+  return props.suggestions.filter((s) => s.desc.toLowerCase().includes(q)).slice(0, 5)
 })
 const rows = computed(() => matches.value.map((s) => ({ key: `${s.desc}|${s.unit}|${s.price}`, title: s.desc, sub: `${rp(s.price)} / ${s.unit}` })))
 
