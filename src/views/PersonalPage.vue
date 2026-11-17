@@ -17,9 +17,9 @@
                 {{ label }}<span v-if="key === 'dokumen' && hasDue" class="p-dot" data-test="due-dot" />
               </button>
             </div>
-            <PersonalBio v-if="tab === 'bio'" :bio="bio" />
-            <PersonalDocs v-else-if="tab === 'dokumen'" :documents="store.documents" />
-            <PersonalAddresses v-else :addresses="store.addresses" />
+            <PersonalBio v-if="tab === 'bio'" :bio="bio" @edit="editBio" />
+            <PersonalDocs v-else-if="tab === 'dokumen'" :documents="store.documents" @open="openDoc" />
+            <PersonalAddresses v-else :addresses="store.addresses" @edit="editAddress" />
           </template>
 
           <template v-else>
@@ -31,24 +31,25 @@
               <div class="p-pcact">
                 <span class="p-open"><PhLockSimpleOpen :size="14" weight="fill" />Kebuka</span>
                 <button type="button" class="pill ghost" data-test="lock" @click="lockNow"><PhLockSimple :size="16" weight="bold" />&nbsp;Kunci</button>
-                <button type="button" class="pill ghost" data-test="add-address">+ Alamat</button>
-                <button type="button" class="pill" data-test="add-doc">Tambah dokumen <span class="ic"><PhPlus :size="17" weight="bold" /></span></button>
+                <button type="button" class="pill ghost" data-test="add-address" @click="addAddress">+ Alamat</button>
+                <button type="button" class="pill" data-test="add-doc" @click="addDoc">Tambah dokumen <span class="ic"><PhPlus :size="17" weight="bold" /></span></button>
               </div>
             </div>
             <div v-if="xwide" class="p-grid p-grid3" data-test="cols-3">
-              <div><PersonalBio :bio="bio" /></div>
-              <div><PersonalDocs :documents="store.documents" /></div>
-              <div><PersonalAddresses :addresses="store.addresses" /></div>
+              <div><PersonalBio :bio="bio" @edit="editBio" /></div>
+              <div><PersonalDocs :documents="store.documents" @open="openDoc" /></div>
+              <div><PersonalAddresses :addresses="store.addresses" @edit="editAddress" /></div>
             </div>
             <div v-else class="p-grid p-grid2" data-test="cols-2">
-              <div><PersonalDocs :documents="store.documents" /></div>
-              <div><PersonalBio :bio="bio" /><PersonalAddresses :addresses="store.addresses" /></div>
+              <div><PersonalDocs :documents="store.documents" @open="openDoc" /></div>
+              <div><PersonalBio :bio="bio" @edit="editBio" /><PersonalAddresses :addresses="store.addresses" @edit="editAddress" /></div>
             </div>
           </template>
+          <PersonalPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="openPanel('doc-edit', panel.id)" @done="onPanelDone" />
         </PersonalGate>
       </div>
 
-      <button v-if="showFab" slot="fixed" type="button" class="p-fab" data-test="fab">
+      <button v-if="showFab" slot="fixed" type="button" class="p-fab" data-test="fab" @click="tab === 'dokumen' ? addDoc() : addAddress()">
         {{ tab === 'dokumen' ? 'Dokumen' : 'Alamat' }} <span class="ic"><PhPlus :size="19" weight="bold" /></span>
       </button>
     </ion-content>
@@ -56,16 +57,19 @@
 </template>
 
 <script setup>
-import { computed, provide, ref } from 'vue'
+import { computed, provide, reactive, ref, watch } from 'vue'
 import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, toastController, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhLockSimple, PhLockSimpleOpen, PhPlus } from '@phosphor-icons/vue'
+import { useRoute, useRouter } from 'vue-router'
 import '@/components/personal.css'
 import PersonalAddresses from '@/components/PersonalAddresses.vue'
 import PersonalBio from '@/components/PersonalBio.vue'
 import PersonalDocs from '@/components/PersonalDocs.vue'
 import PersonalGate from '@/components/PersonalGate.vue'
+import PersonalPanel from '@/components/PersonalPanel.vue'
 import { useMedia } from '@/lib/media.js'
 import { dueList } from '@/lib/personal.js'
+import { PERSONAL_BASE } from '@/lib/personalLock.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
 const TABS = [['bio', 'Biodata'], ['dokumen', 'Dokumen'], ['alamat', 'Alamat']]
@@ -84,6 +88,66 @@ onIonViewDidLeave(() => (active.value = false))
 const bio = computed(() => store.bio ?? { fields: {}, extra: [] })
 const hasDue = computed(() => dueList(store.documents).length > 0)
 const showFab = computed(() => !wide.value && store.unlocked && store.today !== null && tab.value !== 'bio')
+
+const route = useRoute()
+const router = useRouter()
+
+/* ---- detail & form: HP = halaman anak, PC = panel geser ---- */
+const panel = reactive({ open: false, view: 'doc', id: null, key: 0 })
+function openPanel(view, id = null) {
+  panel.view = view
+  panel.id = id
+  panel.key += 1
+  panel.open = true
+}
+const closePanel = () => (panel.open = false)
+const toast = async (message) => {
+  try {
+    await (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
+  } catch {
+    // toast gagal tampil bukan urusan penting
+  }
+}
+async function onPanelDone(message, next) {
+  if (next?.docId) openPanel('doc', next.docId)
+  else closePanel()
+  await toast(message)
+}
+const open = (view, id, path) => (wide.value ? openPanel(view, id) : ionRouter.push(`${PERSONAL_BASE}/${path}`))
+const openDoc = (id) => open('doc', id, `dokumen/${id}`)
+const addDoc = () => open('doc-new', null, 'dokumen/baru')
+const addAddress = () => {
+  tab.value = 'alamat'
+  open('addr-new', null, 'alamat/baru')
+}
+const editAddress = (id) => open('addr-edit', id, `alamat/${id}/ubah`)
+const editBio = () => open('bio', null, 'biodata/ubah')
+// Dikunci (dari mana pun) → panel nggak boleh nongol lagi sendiri pas dibuka ulang.
+watch(() => store.unlocked, (unlocked) => !unlocked && closePanel())
+
+/**
+ * Link dari notif / Beranda (?dokumen=<id>) dan lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>).
+ * Baru dijalanin abis kebuka & datanya ke-muat (kekunci → nunggu PIN dulu). Abis dipakai query dibuang.
+ */
+function followLink() {
+  if (store.today === null || route.path !== PERSONAL_BASE) return
+  const { dokumen, panel: wanted, id, ...rest } = route.query
+  if (dokumen === undefined && wanted === undefined) return
+  router.replace({ path: PERSONAL_BASE, query: rest })
+  const docId = dokumen !== undefined ? dokumen : id
+  const view = dokumen !== undefined ? 'doc' : wanted
+  const num = Number(docId)
+  if (view === 'doc' || view === 'doc-edit') {
+    if (!Number.isInteger(num) || !store.documents.some((d) => d.id === num)) return
+  } else if (view === 'addr-edit') {
+    if (!Number.isInteger(num) || !store.addresses.some((a) => a.id === num)) return
+  }
+  if (!['doc', 'doc-new', 'doc-edit', 'addr-new', 'addr-edit', 'bio'].includes(view)) return
+  const needsId = ['doc', 'doc-edit', 'addr-edit'].includes(view)
+  if (wide.value) openPanel(view, needsId ? num : null)
+  else if (view === 'doc') ionRouter.push(`${PERSONAL_BASE}/dokumen/${num}`)
+}
+watch([() => store.today, () => route.query, () => route.path], followLink, { immediate: true })
 
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/menu', 'back', 'replace'))
 

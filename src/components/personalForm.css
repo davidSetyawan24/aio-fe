@@ -1,0 +1,86 @@
+/* Gaya bareng form & detail Data Pribadi (diawali pf- biar nggak kena kelas global). */
+.pf-head { display: flex; align-items: center; gap: 14px; margin: 14px 0 4px; }
+.pf-head .p-av { width: 60px; height: 60px; border-radius: 19px; font-size: 30px; }
+.pf-head h2 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.1; }
+.pf-head span.pf-subtle { display: block; color: var(--muted); font-weight: 600; font-size: 13.5px; margin-top: 3px; }
+.pf-title { margin: 14px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
+.pf-in { display: block; width: 100%; height: 50px; padding: 0 16px; border: 0; outline: 0; border-radius: 18px; background: var(--soft); color: var(--text); font: 600 16px var(--ion-font-family); box-sizing: border-box; }
+textarea.pf-in { height: 76px; padding: 14px 16px; resize: none; line-height: 1.4; }
+.pf-in::placeholder { color: var(--muted); }
+.pf-fld + .pf-fld { margin-top: 8px; }
+.pf-fld label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 6px 6px; }
+.pf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.pf-two > .pf-fld + .pf-fld { margin-top: 0; }
+.pf-hint { font-size: 12px; color: var(--muted); margin: 8px 6px 0; line-height: 1.5; }
+.pf-err { color: var(--red); font-size: 13px; font-weight: 700; margin: 12px 6px 0; line-height: 1.45; }
+.pf-err p { margin: 0; }
+.pf-save { width: 100%; margin-top: 22px; display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 6px 0 22px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink); font: 700 16px var(--ion-font-family); cursor: pointer; }
+.pf-save > span { width: 44px; height: 44px; border-radius: 99px; background: var(--lime); color: var(--lime-ink); display: grid; place-items: center; }
+.pf-save:disabled { opacity: .55; }
+.pf-ghost { width: 100%; margin-top: 10px; height: 50px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 14.5px var(--ion-font-family); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.pf-ghost svg { color: var(--red); }
+.pf-ghost:disabled { opacity: .55; }
+.pf-spin { width: 16px; height: 16px; border-radius: 99px; border: 2.5px solid rgba(28, 36, 0, .25); border-top-color: var(--lime-ink); animation: pf-spin .7s linear infinite; }
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+.pf-shake { animation: pf-sh .45s; }
+@keyframes pf-sh { 20%, 60% { translate: -8px 0; } 40%, 80% { translate: 8px 0; } }
+.pf-back { display: flex; align-items: center; gap: 4px; width: fit-content; margin: 0 0 12px -6px; padding: 6px 12px 6px 6px; border: 0; border-radius: 99px; background: transparent; color: var(--muted); font: 600 14px var(--ion-font-family); cursor: pointer; }
+.pf-back:active { background: var(--soft); }
+.pf-state { padding: 40px 12px; text-align: center; color: var(--muted); font-size: 14px; font-weight: 600; }
+
+/* kotak tanggal & pengingat */
+.pf-datebox { padding: 14px; border-radius: 22px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); }
+.pf-datebox + .pf-datebox { margin-top: 10px; }
+.pf-ttl { font-size: 14px; font-weight: 800; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.pf-ttl small { font-weight: 600; color: var(--muted); font-size: 12px; }
+.pf-datebox .pf-in { height: 46px; }
+.pf-sub2 { font-size: 12px; font-weight: 700; color: var(--muted); margin: 12px 2px 6px; display: flex; justify-content: space-between; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-cp { height: 36px; padding: 0 12px; border: 0; border-radius: 99px; background: var(--card); color: var(--text); box-shadow: 0 0 0 1px var(--hair); font: 700 13px var(--ion-font-family); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.pf-cp.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.pf-cp.ghost { background: transparent; box-shadow: inset 0 0 0 1.5px var(--hair); color: var(--muted); }
+.pf-cp .x { opacity: .6; }
+.pf-pick { margin-top: 10px; padding: 12px; border-radius: 18px; background: var(--soft); }
+.pf-pick .pf-sub2 { margin-top: 0; }
+.pf-pick .pf-cp { background: var(--card); box-shadow: none; }
+.pf-pick .pf-cp.on { background: var(--ink); color: var(--on-ink); }
+.pf-nrow { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pf-nrow input { width: 64px; height: 38px; border: 0; outline: 0; border-radius: 12px; background: var(--card); color: var(--text); text-align: center; font: 800 16px var(--ion-font-family); }
+.pf-seg { display: flex; flex: 1; padding: 3px; border-radius: 99px; background: var(--card); }
+.pf-seg button { flex: 1; height: 32px; border: 0; border-radius: 99px; background: transparent; color: var(--muted); font: 700 12.5px var(--ion-font-family); cursor: pointer; }
+.pf-seg button.on { background: var(--ink); color: var(--on-ink); }
+.pf-use { width: 100%; height: 42px; margin-top: 12px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink); font: 700 13.5px var(--ion-font-family); cursor: pointer; }
+.pf-toggle { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: 0; border-radius: 18px; background: var(--soft); color: var(--text); cursor: pointer; font: 700 14px var(--ion-font-family); text-align: left; }
+.pf-toggle + .pf-toggle { margin-top: 6px; }
+.pf-tick { width: 24px; height: 24px; flex-shrink: 0; border-radius: 8px; box-shadow: inset 0 0 0 2px var(--muted); display: grid; place-items: center; }
+.pf-toggle.on .pf-tick { background: var(--ink); color: var(--lime); box-shadow: none; }
+:root.theme-dark .pf-toggle.on .pf-tick { background: var(--lime); color: #141410; }
+.pf-addrow { width: 100%; height: 46px; margin-top: 8px; border: 0; border-radius: 16px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--hair); color: var(--muted); font: 700 13.5px var(--ion-font-family); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* pilih jenis */
+.pf-typegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.pf-tbtn { border: 0; border-radius: 20px; background: var(--card); color: var(--text); box-shadow: 0 0 0 1px var(--hair); padding: 14px 6px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font: 700 12.5px var(--ion-font-family); cursor: pointer; text-align: center; line-height: 1.2; }
+.pf-tbtn .p-av { width: 46px; height: 46px; }
+.pf-tbtn small { display: block; font-size: 10.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+
+/* detail */
+.pf-toprow { display: flex; align-items: center; justify-content: space-between; }
+.pf-dcard { padding: 14px 16px; }
+.pf-dcard + .pf-dcard { border-top: 1px solid var(--hair); }
+.pf-dtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pf-dk { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.pf-dbig { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+.pf-rems { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pf-rem { height: 28px; padding: 0 10px; border-radius: 99px; background: var(--soft); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.pf-rem svg { color: var(--muted); }
+.pf-act { margin-top: 12px; height: 42px; padding: 0 16px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink); font: 700 13.5px var(--ion-font-family); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.pf-act svg { color: var(--lime); }
+:root.theme-dark .pf-act svg { color: #141410; }
+.pf-act:disabled { opacity: .55; }
+.pf-renew { margin-top: 12px; padding: 12px; border-radius: 18px; background: var(--soft); }
+.pf-renew .pf-dk { margin-bottom: 6px; }
+.pf-rrow { display: flex; gap: 8px; }
+.pf-rrow input { flex: 1; min-width: 0; height: 42px; border: 0; outline: 0; border-radius: 14px; background: var(--card); color: var(--text); padding: 0 12px; font: 700 15px var(--ion-font-family); }
+.pf-rrow button { height: 42px; padding: 0 14px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink); font: 700 13px var(--ion-font-family); cursor: pointer; }
+.pf-rrow button:disabled { opacity: .55; }

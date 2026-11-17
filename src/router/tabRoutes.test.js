@@ -27,13 +27,14 @@ const invoiceSettingsStub = { render: () => null }
 const invoiceFormStub = { render: () => null }
 const homeStub = { render: () => null }
 const personalStub = { render: () => null }
+const personalSubStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
-  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -95,6 +96,21 @@ describe('buildTabRoutes', () => {
     expect(find('menu/kartu').component).toBe(walletStub)
     expect(find('menu/kartu/tambah').component).toBe(walletFormStub)
     expect(find('menu/kartu/:id').component).toBe(walletFormStub)
+  })
+
+  it('opens the Data Pribadi detail and form pages as one wrapper, told apart by meta.view', () => {
+    const expected = {
+      'menu/data-pribadi/dokumen/baru': 'doc-new',
+      'menu/data-pribadi/dokumen/:id': 'doc',
+      'menu/data-pribadi/dokumen/:id/ubah': 'doc-edit',
+      'menu/data-pribadi/alamat/baru': 'addr-new',
+      'menu/data-pribadi/alamat/:id/ubah': 'addr-edit',
+      'menu/data-pribadi/biodata/ubah': 'bio',
+    }
+    for (const [path, view] of Object.entries(expected)) {
+      expect(find(path).component).toBe(personalSubStub)
+      expect(find(path).meta).toEqual({ view })
+    }
   })
 
   it('opens Kategori and its form under Semua menu', () => {

@@ -133,6 +133,8 @@ export function dueList(docs) {
 export function reminderError(list, r) {
   if (list.length >= MAX_REMINDERS) return `Maksimal ${MAX_REMINDERS} pengingat.`
   if (r.n === '' || r.n === null || r.n === undefined || !Number.isInteger(Number(r.n))) return 'Isi angkanya dulu.'
+  if (!UNIT_RANGE[r.unit]) return 'Satuannya nggak dikenal.'
+  if (!REMINDER_HOURS.includes(r.time)) return 'Jamnya nggak dikenal.'
   const n = Number(r.n)
   const [min, max] = UNIT_RANGE[r.unit]
   if (n < min) return `Minimal ${min} ${UNIT_NAME[r.unit]}.`

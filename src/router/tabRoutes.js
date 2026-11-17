@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage, 'data-pribadi': PersonalPage }
   const moduleRoutes = modules.map((m) => {
@@ -37,6 +37,13 @@ export function buildTabRoutes(pages) {
     { path: 'menu/invoice/baru', component: InvoiceFormPage },
     { path: 'menu/invoice/:id', component: InvoiceDetailPage },
     { path: 'menu/invoice/:id/ubah', component: InvoiceFormPage },
+    // Rute anak Data Pribadi: satu halaman pembungkus, `meta.view` yang nentuin isinya.
+    { path: 'menu/data-pribadi/dokumen/baru', component: PersonalSubPage, meta: { view: 'doc-new' } },
+    { path: 'menu/data-pribadi/dokumen/:id', component: PersonalSubPage, meta: { view: 'doc' } },
+    { path: 'menu/data-pribadi/dokumen/:id/ubah', component: PersonalSubPage, meta: { view: 'doc-edit' } },
+    { path: 'menu/data-pribadi/alamat/baru', component: PersonalSubPage, meta: { view: 'addr-new' } },
+    { path: 'menu/data-pribadi/alamat/:id/ubah', component: PersonalSubPage, meta: { view: 'addr-edit' } },
+    { path: 'menu/data-pribadi/biodata/ubah', component: PersonalSubPage, meta: { view: 'bio' } },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },

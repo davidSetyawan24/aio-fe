@@ -9,6 +9,7 @@ import BudgetPage from '@/views/BudgetPage.vue'
 import CategoryFormPage from '@/views/CategoryFormPage.vue'
 import HomePage from '@/views/HomePage.vue'
 import PersonalPage from '@/views/PersonalPage.vue'
+import PersonalSubPage from '@/views/PersonalSubPage.vue'
 import InvoicePage from '@/views/InvoicePage.vue'
 import InvoiceDetailPage from '@/views/InvoiceDetailPage.vue'
 import InvoiceSettingsPage from '@/views/InvoiceSettingsPage.vue'
@@ -41,7 +42,7 @@ const routes = [
     component: TabsLayout,
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
-      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage,
+      CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },

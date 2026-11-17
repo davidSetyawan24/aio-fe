@@ -130,6 +130,11 @@ describe('reminderError', () => {
     expect(reminderError([], { n: 0, unit: 'day', time: '09:00' })).toBeNull()
     expect(reminderError([], { n: 0, unit: 'week', time: '09:00' })).toBe('Minimal 1 minggu.')
   })
+  it('answers with a message instead of throwing on an unknown unit or hour', () => {
+    expect(reminderError([], { n: 1, unit: 'year', time: '09:00' })).toBe('Satuannya nggak dikenal.')
+    expect(reminderError([], { n: 1, unit: 'week', time: '10:00' })).toBe('Jamnya nggak dikenal.')
+    expect(reminderError([], { n: 1, unit: undefined, time: '09:00' })).toBe('Satuannya nggak dikenal.')
+  })
   it('rejects duplicates', () => expect(reminderError(list, { n: '1', unit: 'month', time: '09:00' })).toBe('Pengingat itu udah ada.'))
   it('rejects a fourth', () => {
     const three = [{ n: 1, unit: 'day', time: '09:00' }, { n: 2, unit: 'day', time: '09:00' }, { n: 3, unit: 'day', time: '09:00' }]

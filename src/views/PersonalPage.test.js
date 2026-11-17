@@ -1,14 +1,18 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { setPersonalApi, usePersonalStore } from '@/stores/personal.js'
 import PersonalPage from './PersonalPage.vue'
 
 const toastCreate = vi.hoisted(() => vi.fn())
+const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
+const sheetCreate = vi.hoisted(() => vi.fn())
 const copyMock = vi.hoisted(() => vi.fn())
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
-  useIonRouter: () => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }),
+  useIonRouter: () => ionRouter,
   toastController: { create: toastCreate },
+  actionSheetController: { create: sheetCreate },
 }))
 vi.mock('@/components/NotifBell.vue', () => ({ default: { template: '<span />' } }))
 vi.mock('@/lib/clipboard.js', () => ({ copyToClipboard: copyMock }))
@@ -25,14 +29,14 @@ const full = {
 }
 
 const mounted = []
-let api
+let api, router
 function stubMedia(width) {
   window.matchMedia = (query) => {
     const min = Number(/min-width:\s*(\d+)px/.exec(query)?.[1] ?? 0)
     return { matches: width >= min, addEventListener: () => {}, removeEventListener: () => {} }
   }
 }
-async function mountPage({ width = 390, unlocked = true } = {}) {
+async function mountPage({ width = 390, unlocked = true, url = '/tabs/menu/data-pribadi' } = {}) {
   stubMedia(width)
   api = {
     get: vi.fn(async (url) => (url === '/personal/status' ? { configured: true, hasPin: true, unlocked } : full)),
@@ -46,13 +50,19 @@ async function mountPage({ width = 390, unlocked = true } = {}) {
   // Sudah kebuka (boot-nya udah lewat): isi dimuat gerbang begitu kepasang.
   store.booted = true
   store.status = { configured: true, hasPin: true, unlocked }
-  const w = mount(PersonalPage, { global: { plugins: [pinia] }, attachTo: document.body })
+  router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/menu/data-pribadi', component: PersonalPage }] })
+  router.push(url)
+  await router.isReady()
+  vi.spyOn(router, 'replace')
+  const w = mount(PersonalPage, { global: { plugins: [pinia, router], stubs: { teleport: true } }, attachTo: document.body })
   mounted.push(w)
   await flushPromises()
   return w
 }
 
 beforeEach(() => {
+  ionRouter.push.mockReset()
+  sheetCreate.mockReset().mockResolvedValue({ present: vi.fn(), onDidDismiss: vi.fn(async () => ({ data: 'delete' })) })
   toastCreate.mockReset().mockResolvedValue({ present: vi.fn() })
   copyMock.mockReset().mockResolvedValue(true)
 })
@@ -144,5 +154,120 @@ describe('PersonalPage', () => {
     const three = await mountPage({ width: 1920 })
     expect(three.find('[data-test="cols-3"]').exists()).toBe(true)
     expect(three.find('[data-test="cols-2"]').exists()).toBe(false)
+  })
+
+  describe('opening detail & forms', () => {
+    it('phone: tapping a document row pushes its detail page', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="doc-row"]').find((r) => r.text().includes('KTP')).trigger('click')
+      expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/data-pribadi/dokumen/1')
+    })
+
+    it('phone: FAB opens the new document or new address page, Ubah opens biodata', async () => {
+      const w = await mountPage()
+      await w.find('[data-test="fab"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/data-pribadi/dokumen/baru')
+      await w.find('[data-test="tab-alamat"]').trigger('click')
+      await w.find('[data-test="fab"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/data-pribadi/alamat/baru')
+      await w.find('[data-test="address-edit"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/data-pribadi/alamat/1/ubah')
+      await w.find('[data-test="tab-bio"]').trigger('click')
+      await w.find('[data-test="bio-edit"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/data-pribadi/biodata/ubah')
+    })
+
+    it('phone: ?dokumen=7 once open goes to that detail and drops the query', async () => {
+      const w = await mountPage({ url: '/tabs/menu/data-pribadi?dokumen=6' })
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+      expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/data-pribadi/dokumen/6')
+      expect(w.find('[data-test="panel"]').exists()).toBe(false)
+    })
+
+    it('waits for the PIN before following ?dokumen=', async () => {
+      const w = await mountPage({ url: '/tabs/menu/data-pribadi?dokumen=6', unlocked: false })
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(w.vm).toBeTruthy()
+    })
+
+    it('ignores ?dokumen= of a document that is not there but still drops it', async () => {
+      await mountPage({ url: '/tabs/menu/data-pribadi?dokumen=999' })
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+    })
+
+    it('PC: ?dokumen=6 opens the detail panel and drops the query', async () => {
+      const w = await mountPage({ width: 1440, url: '/tabs/menu/data-pribadi?dokumen=6' })
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('[data-test="panel"]').text()).toContain('SIM C')
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+    })
+
+    it('PC: ?panel=addr-new from a redirected sub page opens the form panel', async () => {
+      const w = await mountPage({ width: 1440, url: '/tabs/menu/data-pribadi?panel=addr-new' })
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('[data-test="panel"]').text()).toContain('Alamat baru')
+    })
+
+    it('PC: clicking a document opens a panel; Esc closes it, but not while a sheet is open', async () => {
+      const w = await mountPage({ width: 1440 })
+      await w.findAll('[data-test="doc-row"]')[0].trigger('click')
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      const sheet = document.createElement('ion-action-sheet')
+      document.body.appendChild(sheet)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      sheet.remove()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+    })
+
+    it('PC: Tambah dokumen, + Alamat and biodata Ubah open panels', async () => {
+      const w = await mountPage({ width: 1440 })
+      await w.find('[data-test="add-doc"]').trigger('click')
+      expect(w.find('[data-test="panel"]').text()).toContain('Dokumen apa?')
+      await w.find('[data-test="add-address"]').trigger('click')
+      expect(w.find('[data-test="panel"]').text()).toContain('Alamat baru')
+      await w.find('[data-test="bio-edit"]').trigger('click')
+      expect(w.find('[data-test="panel"]').text()).toContain('Ubah biodata')
+    })
+
+    it('PC: editing from the detail swaps the panel to the form, saving returns to the detail with a toast', async () => {
+      const w = await mountPage({ width: 1440 })
+      await w.findAll('[data-test="doc-row"]').find((r) => r.text().includes('SIM C')).trigger('click')
+      await w.find('[data-test="edit"]').trigger('click')
+      expect(w.find('[data-test="panel"]').text()).toContain('Ubah SIM C')
+      api.put.mockResolvedValue({ document: full.documents[1] })
+      await w.find('[data-test="panel"] form').trigger('submit')
+      await flushPromises()
+      expect(toastCreate.mock.calls.at(-1)[0].message).toBe('Kesimpen ✓')
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('[data-test="edit"]').exists()).toBe(true)
+    })
+
+    it('PC: the panel refuses to close while saving', async () => {
+      const w = await mountPage({ width: 1440 })
+      await w.find('[data-test="add-address"]').trigger('click')
+      await w.find('[data-test="f-name"]').setValue('Kantor')
+      api.post.mockReturnValue(new Promise(() => {}))
+      await w.find('[data-test="panel"] form').trigger('submit')
+      await w.find('.pp-x').trigger('click')
+      await w.find('.pp-scrim').trigger('click')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+    })
+
+    it('PC: locking closes the panel for good', async () => {
+      const w = await mountPage({ width: 1440 })
+      await w.findAll('[data-test="doc-row"]')[0].trigger('click')
+      await w.find('[data-test="lock"]').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').exists()).toBe(false)
+      expect(w.text()).not.toContain('3275')
+    })
   })
 })
