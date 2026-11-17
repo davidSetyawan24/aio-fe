@@ -2,7 +2,8 @@
   <div class="pd-detail">
     <p v-if="!doc" class="pf-state" data-test="gone">Dokumennya nggak ketemu. Mungkin udah dihapus.</p>
     <template v-else>
-      <div class="pf-toprow">
+      <!-- Tanpa tombol balik (panel PC): Ubah di barisnya sendiri, rata kiri, jauh dari tombol tutup. -->
+      <div class="pf-toprow" :class="{ 'pd-solo': !$slots.back }">
         <slot name="back" />
         <button type="button" class="p-edit pd-edit" data-test="edit" @click="$emit('edit')"><PhPencilSimple :size="15" />Ubah</button>
       </div>
@@ -172,4 +173,6 @@ async function confirmDelete() {
 
 <style scoped>
 .pd-edit { margin-left: auto; }
+.pd-solo { justify-content: flex-start; margin-top: 18px; }
+.pd-solo .pd-edit { margin-left: 0; padding: 7px 13px 7px 11px; border-radius: 99px; background: var(--soft); color: var(--text); }
 </style>

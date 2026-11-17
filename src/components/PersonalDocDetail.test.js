@@ -50,6 +50,14 @@ describe('PersonalDocDetail', () => {
     expect(copyMock).toHaveBeenCalledWith('B 1234 XYZ')
   })
 
+  it('without a back button (PC panel) Ubah sits on its own row on the left, away from the close button', () => {
+    const { w } = mountDetail(1)
+    expect(w.find('.pf-toprow').classes()).toContain('pd-solo')
+    const withBack = mount(PersonalDocDetail, { props: { docId: 1 }, slots: { back: '<button class="pf-back">Data Pribadi</button>' }, attachTo: document.body })
+    expect(withBack.find('.pf-toprow').classes()).not.toContain('pd-solo')
+    withBack.unmount()
+  })
+
   it('says "Berlaku seumur hidup" for a KTP only once', () => {
     const { w } = mountDetail(1)
     expect(w.text().split('Berlaku seumur hidup')).toHaveLength(2)
