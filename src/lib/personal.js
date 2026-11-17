@@ -74,6 +74,8 @@ export function stateText(date) {
 }
 
 export function farText(daysLeft) {
+  if (daysLeft <= 0) return 'Hari ini'
+  if (daysLeft < 30) return `${daysLeft} hari lagi`
   return daysLeft >= 365 ? `${Math.floor(daysLeft / 365)} tahun lagi` : `${Math.max(1, Math.round(daysLeft / 30))} bulan lagi`
 }
 

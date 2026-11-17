@@ -50,6 +50,15 @@ describe('PersonalDocDetail', () => {
     expect(copyMock).toHaveBeenCalledWith('B 1234 XYZ')
   })
 
+  it('a near date without reminders reads in days, not "1 bulan lagi"', () => {
+    const { w } = mountDetail(6)
+    store.documents = store.documents.map((d) => (d.id === 6 ? { ...d, dates: [date({ on: '2026-11-23', reminders: [], daysLeft: 5 })] } : d))
+    return flushPromises().then(() => {
+      expect(w.text()).toContain('5 hari lagi')
+      expect(w.text()).not.toContain('1 bulan lagi')
+    })
+  })
+
   it('shows dates with state chips and reminder chips', () => {
     const { w } = mountDetail(6)
     expect(w.text()).toContain('Berlaku s.d.')

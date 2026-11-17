@@ -76,6 +76,11 @@ describe('texts', () => {
   it('says how far away a date is', () => {
     expect(farText(730)).toBe('2 tahun lagi')
     expect(farText(210)).toBe('7 bulan lagi')
+    expect(farText(30)).toBe('1 bulan lagi')
+    expect(farText(29)).toBe('29 hari lagi')
+    expect(farText(5)).toBe('5 hari lagi')
+    expect(farText(1)).toBe('1 hari lagi')
+    expect(farText(0)).toBe('Hari ini')
   })
 
   it('writes reminders', () => {
