@@ -81,6 +81,18 @@ describe('PersonalGate', () => {
     expect(w.find('[data-test="inside"]').exists()).toBe(false)
   })
 
+  it('the 5th wrong pin (0 left) goes straight to the wait, like the 429', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    const w = await mountGate({ 'POST /personal/unlock': new ApiError('PIN salah.', 422, { left: 0 }) })
+    await type(w, '000000')
+    expect(w.text()).toContain('Kebanyakan salah. Coba lagi 60 detik lagi.')
+    expect(w.text()).not.toContain('Sisa 0×')
+    expect(w.find('[data-k="1"]').attributes('disabled')).toBeDefined()
+    vi.advanceTimersByTime(1000)
+    await flushPromises()
+    expect(w.text()).toContain('Coba lagi 59 detik lagi.')
+  })
+
   it('after a sign-out the old content never shows: a fresh gate asks the server, then shows the pin', async () => {
     const w = await mountGate({ 'POST /personal/unlock': { status: status({ unlocked: true }) } })
     await type(w, '123456')

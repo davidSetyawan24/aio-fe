@@ -119,6 +119,8 @@ function forgotNext() {
   view.value = 'forgot-pin'
 }
 
+/** Lama kekunci abis 5× salah (sama kayak limiter PIN di server). */
+const LOCKOUT_SEC = 60
 let timer = null
 function startWait(seconds) {
   waitSec.value = Math.max(1, Math.ceil(seconds))
@@ -153,8 +155,10 @@ async function tryUnlock(pin) {
   try {
     await store.unlock(pin)
   } catch (err) {
-    if (err?.status === 422 && err.fields?.left !== undefined) error.value = `PIN salah. Sisa ${err.fields.left}× lagi.`
-    else if (err?.status === 429) startWait(err.fields?.retryAfterSec ?? 60)
+    // Salah ke-5 (sisa 0) = udah kekunci di server → langsung tunggu, sama kayak 429.
+    if (err?.status === 422 && err.fields?.left === 0) startWait(LOCKOUT_SEC)
+    else if (err?.status === 422 && err.fields?.left !== undefined) error.value = `PIN salah. Sisa ${err.fields.left}× lagi.`
+    else if (err?.status === 429) startWait(err.fields?.retryAfterSec ?? LOCKOUT_SEC)
     else error.value = err?.message ?? 'Ada yang error. Coba lagi ya.'
   } finally {
     busy.value = false
