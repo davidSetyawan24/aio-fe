@@ -61,10 +61,12 @@ function del() {
   pin.value = pin.value.slice(0, -1)
 }
 
-const isTyping = (el) => el instanceof Element && (el.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null)
+const FIELD = 'input, textarea, select, ion-input, ion-textarea, ion-searchbar, [contenteditable]:not([contenteditable="false"])'
+// Event keyboard "composed": di document, target dipotong jadi host (mis. <ion-input>) — jadi cek seluruh jalurnya.
+const isTyping = (e) => (e.composedPath?.() ?? [e.target]).some((el) => el instanceof Element && el.matches(FIELD))
 
 function onKey(e) {
-  if (!pageActive.value || isTyping(e.target)) return
+  if (!pageActive.value || isTyping(e)) return
   if (e.metaKey || e.ctrlKey || e.altKey) return
   if (/^\d$/.test(e.key)) press(e.key)
   else if (e.key === 'Backspace') del()
