@@ -53,6 +53,15 @@ describe('PersonalDocForm (new)', () => {
     expect(api.post).not.toHaveBeenCalled()
   })
 
+  it('lets Lainnya take letters (text keyboard), numbers-only types keep the number pad', async () => {
+    const w = mountForm()
+    await w.find('[data-test="type-lain"]').trigger('click')
+    expect(w.find('[data-test="val-0"]').attributes('inputmode')).toBe('text')
+    await w.find('[data-test="change-type"]').trigger('click')
+    await w.find('[data-test="type-ktp"]').trigger('click')
+    expect(w.find('[data-test="val-0"]').attributes('inputmode')).toBe('numeric')
+  })
+
   it('needs the date of a required date, and shows the STNK hint', async () => {
     const w = mountForm()
     await w.find('[data-test="type-stnk"]').trigger('click')

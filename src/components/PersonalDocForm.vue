@@ -34,7 +34,7 @@
       <div class="p-glabel">Nomor</div>
       <div v-for="(name, i) in t.fields" :key="name" class="pf-fld">
         <label :for="`pf-v${i}`">{{ name }}</label>
-        <input :id="`pf-v${i}`" v-model="form.values[i]" class="pf-in" :data-test="`val-${i}`" :inputmode="textual(name) ? 'text' : 'numeric'" :placeholder="name"
+        <input :id="`pf-v${i}`" v-model="form.values[i]" class="pf-in" :data-test="`val-${i}`" :inputmode="t.custom || textual(name) ? 'text' : 'numeric'" :placeholder="name"
           :maxlength="MAX_VALUE" autocomplete="off" @keydown.enter.prevent="focusNext" />
       </div>
       <p v-if="t.note" class="pf-hint">{{ t.note }}, jadi nggak ada pengingat.</p>
