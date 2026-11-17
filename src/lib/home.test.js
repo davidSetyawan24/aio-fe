@@ -30,6 +30,7 @@ describe('lib/home', () => {
     expect(homeKey({ kind: 'todo', todoId: 5, occurrence: '2026-11-12' })).toBe('todo:5:2026-11-12')
     expect(homeKey({ kind: 'invoice', invoiceId: 7 })).toBe('invoice:7')
     expect(homeKey({ kind: 'budget', categoryId: 4 })).toBe('budget:4')
+    expect(homeKey({ kind: 'document', documentId: 6, dateKey: 'expiry' })).toBe('document:6:expiry')
   })
 
   it('todayTodoItem', () => {
@@ -44,6 +45,17 @@ describe('Perlu diurus', () => {
   const invoice = { kind: 'invoice', invoiceId: 7, number: 'INV-7', client: 'PT Maju', amount: 4_500_000, lateDays: 17, daysLeft: 0 }
   const todo = { kind: 'todo', todoId: 3, title: 'Kirim revisi desain APS', occurrence: '2026-11-13', recurring: false, lateDays: 3 }
   const card = { kind: 'card', sourceId: 10, name: 'CC BCA Everyday', bank: 'BCA', dueOn: '2026-11-14', lateDays: 2, daysLeft: 0 }
+
+  it('dokumen: ikon jenis, teks kuning/merah, nggak bisa dicentang, buka Data Pribadi', () => {
+    const doc = { kind: 'document', documentId: 6, type: 'simc', title: 'SIM C', dateKey: 'expiry', dueOn: '2026-12-05', daysLeft: 17, lateDays: 0 }
+    expect(attentionView(doc)).toEqual({
+      key: 'document:6:expiry', emoji: '🛵', tint: '#FFE0E6', title: 'SIM C', sub: 'Habis 17 hari lagi · 5 Des',
+      tone: 'amber', ask: null, doneLabel: null, to: '/tabs/menu/data-pribadi?dokumen=6',
+    })
+    expect(attentionView({ ...doc, daysLeft: -3, lateDays: 3, dueOn: '2026-11-15' })).toMatchObject({ sub: 'Udah lewat 3 hari · 15 Nov', tone: 'red' })
+    expect(attentionView({ ...doc, daysLeft: 224, dueOn: '2027-06-30' }).sub).toBe('Habis 7 bulan lagi · 30 Jun')
+    expect(attentionView({ ...doc, daysLeft: 0, dueOn: '2026-11-18' }).sub).toBe('Habis hari ini · 18 Nov')
+  })
 
   it('teks tiap jenis Perlu diurus', () => {
     const v = attentionView(bill)

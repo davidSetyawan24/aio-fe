@@ -93,6 +93,7 @@ const wide = useMedia('(min-width: 1100px)')
 /** Emoji + tint per jenis notif (pastel, sesuai mockup). */
 const LOOKS = {
   tagihan: { emoji: '🔁', tint: '#E4F7C4' },
+  dokumen: { emoji: '🪪', tint: '#DCEBFF' },
   todo: { emoji: '✅', tint: '#DCEBFF' },
   agenda: { emoji: '📅', tint: '#F3E1FF' },
   keamanan: { emoji: '🔐', tint: '#FFE0E6' },

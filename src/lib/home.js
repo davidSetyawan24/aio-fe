@@ -1,6 +1,7 @@
 import { HARI, isRecurring, monthName, weekdayOf } from './agenda.js'
 import { shortDue } from './bayarRutin.js'
 import { attentionKey, pct } from './overview.js'
+import { DOC_TYPES, stateText } from './personal.js'
 import { rp, rpShort } from './wallet.js'
 
 /** Tanggal & menit hari ini di WIB (UTC+7), apa pun zona jam HP-nya. */
@@ -25,6 +26,7 @@ export const dateLine = (date) => `${HARI[weekdayOf(date)]}, ${Number(date.slice
 export function homeKey(item) {
   if (item.kind === 'todo') return `todo:${item.todoId}:${item.occurrence}`
   if (item.kind === 'invoice') return `invoice:${item.invoiceId}`
+  if (item.kind === 'document') return `document:${item.documentId}:${item.dateKey}`
   return attentionKey(item)
 }
 
@@ -53,6 +55,15 @@ export function attentionView(item, today) {
       key, emoji: '📄', tint: '#DCEBFF', title: item.client,
       sub: `${rp(item.amount)} · ${late ? `invoice telat ${item.lateDays} hari` : `jatuh tempo ${whenText(item.daysLeft)}`}`,
       tone: late ? 'red' : 'amber', ask: null, doneLabel: null, to: `/tabs/menu/invoice/${item.invoiceId}`,
+    }
+  }
+  if (item.kind === 'document') {
+    const late = item.lateDays > 0
+    const date = { state: late ? 'late' : 'soon', daysLeft: item.daysLeft, lateDays: item.lateDays }
+    return {
+      key, emoji: DOC_TYPES[item.type].emoji, tint: DOC_TYPES[item.type].tint, title: item.title,
+      sub: `${stateText(date)} · ${shortDue(item.dueOn)}`,
+      tone: late ? 'red' : 'amber', ask: null, doneLabel: null, to: `/tabs/menu/data-pribadi?dokumen=${item.documentId}`,
     }
   }
   if (item.kind === 'todo') {
