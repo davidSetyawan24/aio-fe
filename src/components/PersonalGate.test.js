@@ -19,7 +19,7 @@ let store
 
 async function mountGate(handlers = {}, statusOver = {}) {
   const calls = {
-    'GET /personal/status': status(statusOver),
+    'GET /personal/status': { status: status(statusOver) },
     'GET /personal': { today: '2026-11-18', bio: { fields: {}, extra: [] }, documents: [], addresses: [] },
     ...handlers,
   }

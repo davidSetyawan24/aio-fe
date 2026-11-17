@@ -34,7 +34,7 @@ async function mountSub({ view, params = {}, width = 390, unlocked = true }) {
   Object.assign(route, { params, query: {}, meta: { view } })
   stubMedia(width)
   api = {
-    get: vi.fn(async (u) => (u === '/personal/status' ? { configured: true, hasPin: true, unlocked } : full)),
+    get: vi.fn(async (u) => (u === '/personal/status' ? { status: { configured: true, hasPin: true, unlocked } } : full)),
     post: vi.fn(async () => ({ document: full.documents[0], address: full.addresses[0] })), put: vi.fn(async () => ({ document: full.documents[0], address: full.addresses[0], bio: full.bio })), del: vi.fn(),
   }
   setPersonalApi(api)

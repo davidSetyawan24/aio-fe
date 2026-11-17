@@ -41,7 +41,8 @@ export const usePersonalStore = defineStore('personal', {
     },
 
     async loadStatus() {
-      this.status = await personalApi.get('/personal/status')
+      const { status } = await personalApi.get('/personal/status')
+      this.status = status
     },
 
     /** Kosongin semua isi + tandain kekunci (tanpa nanya server). */

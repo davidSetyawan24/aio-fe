@@ -39,7 +39,7 @@ function stubMedia(width) {
 async function mountPage({ width = 390, unlocked = true, url = '/tabs/menu/data-pribadi' } = {}) {
   stubMedia(width)
   api = {
-    get: vi.fn(async (url) => (url === '/personal/status' ? { configured: true, hasPin: true, unlocked } : full)),
+    get: vi.fn(async (url) => (url === '/personal/status' ? { status: { configured: true, hasPin: true, unlocked } } : full)),
     post: vi.fn(async (url) => (url === '/personal/lock' ? { status: { configured: true, hasPin: true, unlocked: false } } : {})),
     put: vi.fn(), del: vi.fn(),
   }

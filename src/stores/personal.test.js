@@ -24,18 +24,28 @@ function setup(handlers = {}) {
 
 describe('personal store', () => {
   it('locks first on boot, then reads the status, once', async () => {
-    const s = setup({ 'GET /personal/status': status() })
+    // Bentuk respons BE asli: GET /personal/status → data { status: {...} }
+    const s = setup({ 'POST /personal/lock': { status: status() }, 'GET /personal/status': { status: status() } })
     await s.boot()
     await s.boot()
     expect(calls).toEqual(['POST /personal/lock', 'GET /personal/status'])
+    expect(s.status).toEqual({ configured: true, hasPin: true, unlocked: false })
     expect(s.unlocked).toBe(false)
     expect(s.booted).toBe(true)
   })
 
   it('still reads the status when the first lock fails', async () => {
-    const s = setup({ 'POST /personal/lock': new ApiError('x', 0), 'GET /personal/status': status() })
+    const s = setup({ 'POST /personal/lock': new ApiError('x', 0), 'GET /personal/status': { status: status() } })
     await s.boot()
+    expect(s.status.configured).toBe(true)
     expect(s.status.hasPin).toBe(true)
+  })
+
+  it('reads an unlocked status the way the server sends it', async () => {
+    const s = setup({ 'GET /personal/status': { status: status({ unlocked: true }) } })
+    await s.loadStatus()
+    expect(s.status).toEqual({ configured: true, hasPin: true, unlocked: true })
+    expect(s.unlocked).toBe(true)
   })
 
   it('unlocks and carries the remaining tries on a wrong pin', async () => {
