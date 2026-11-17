@@ -1,9 +1,10 @@
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import PinPad from './PinPad.vue'
 
 const mounted = []
-const make = (props = {}) => {
-  const w = mount(PinPad, { props: { mode: 'unlock', ...props }, attachTo: document.body })
+const make = (props = {}, active = ref(true)) => {
+  const w = mount(PinPad, { props: { mode: 'unlock', ...props }, global: { provide: { pageActive: active } }, attachTo: document.body })
   mounted.push(w)
   return w
 }
@@ -86,5 +87,28 @@ describe('PinPad', () => {
     await w.find('[data-test="forgot"]').trigger('click')
     expect(w.emitted('forgot')).toHaveLength(1)
     expect(make({ mode: 'create' }).find('[data-test="forgot"]').exists()).toBe(false)
+  })
+
+  it('ignores keys typed into an input elsewhere', async () => {
+    const w = make()
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    for (const key of '123456') input.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    await w.vm.$nextTick()
+    expect(w.findAll('.p-dots i.on')).toHaveLength(0)
+    expect(w.emitted('done')).toBeUndefined()
+    input.remove()
+  })
+
+  it('ignores the keyboard while its page is not the active view', async () => {
+    const active = ref(false)
+    const w = make({}, active)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
+    await w.vm.$nextTick()
+    expect(w.findAll('.p-dots i.on')).toHaveLength(0)
+    active.value = true
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }))
+    await w.vm.$nextTick()
+    expect(w.findAll('.p-dots i.on')).toHaveLength(1)
   })
 })

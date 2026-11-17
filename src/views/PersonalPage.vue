@@ -56,8 +56,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { IonContent, IonPage, toastController, useIonRouter } from '@ionic/vue'
+import { computed, provide, ref } from 'vue'
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, toastController, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhLockSimple, PhLockSimpleOpen, PhPlus } from '@phosphor-icons/vue'
 import '@/components/personal.css'
 import PersonalAddresses from '@/components/PersonalAddresses.vue'
@@ -74,6 +74,12 @@ const ionRouter = useIonRouter()
 const wide = useMedia('(min-width: 1100px)')
 const xwide = useMedia('(min-width: 1600px)')
 const tab = ref('dokumen')
+
+// Ionic nyimpen halaman yang ditinggal: keyboard layar PIN cuma boleh nangkep pas halaman ini yang keliatan.
+const active = ref(true)
+provide('pageActive', active)
+onIonViewDidEnter(() => (active.value = true))
+onIonViewDidLeave(() => (active.value = false))
 
 const bio = computed(() => store.bio ?? { fields: {}, extra: [] })
 const hasDue = computed(() => dueList(store.documents).length > 0)

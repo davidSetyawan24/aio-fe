@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { PhBackspace, PhLockKey } from '@phosphor-icons/vue'
 
 /** Layar PIN: tombol angka di layar (BUKAN input, biar keyboard iOS nggak kebuka). 6 angka → `done` sekali. */
@@ -36,6 +36,9 @@ const COPY = {
   confirm: { title: 'Ulangi PIN-nya', hint: 'Ketik lagi 6 angka yang sama.' },
 }
 const copy = computed(() => COPY[props.mode] ?? COPY.unlock)
+
+// Halaman induk yang bilang pad ini lagi keliatan (Ionic nyimpen halaman yang ditinggal tetep kepasang).
+const pageActive = inject('pageActive', ref(true))
 
 const pin = ref('')
 const shake = ref(false)
@@ -58,7 +61,10 @@ function del() {
   pin.value = pin.value.slice(0, -1)
 }
 
+const isTyping = (el) => el instanceof Element && (el.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null)
+
 function onKey(e) {
+  if (!pageActive.value || isTyping(e.target)) return
   if (e.metaKey || e.ctrlKey || e.altKey) return
   if (/^\d$/.test(e.key)) press(e.key)
   else if (e.key === 'Backspace') del()
