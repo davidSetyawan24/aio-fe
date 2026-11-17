@@ -58,7 +58,7 @@
 
 <script setup>
 import { computed, provide, reactive, ref, watch } from 'vue'
-import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, toastController, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhLockSimple, PhLockSimpleOpen, PhPlus } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
 import '@/components/personal.css'
@@ -69,6 +69,7 @@ import PersonalGate from '@/components/PersonalGate.vue'
 import PersonalPanel from '@/components/PersonalPanel.vue'
 import { useMedia } from '@/lib/media.js'
 import { dueList } from '@/lib/personal.js'
+import { showToast } from '@/lib/personalForm.js'
 import { PERSONAL_BASE } from '@/lib/personalLock.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
@@ -101,17 +102,10 @@ function openPanel(view, id = null) {
   panel.open = true
 }
 const closePanel = () => (panel.open = false)
-const toast = async (message) => {
-  try {
-    await (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
-  } catch {
-    // toast gagal tampil bukan urusan penting
-  }
-}
 async function onPanelDone(message, next) {
   if (next?.docId) openPanel('doc', next.docId)
   else closePanel()
-  await toast(message)
+  await showToast(message)
 }
 const open = (view, id, path) => (wide.value ? openPanel(view, id) : ionRouter.push(`${PERSONAL_BASE}/${path}`))
 const openDoc = (id) => open('doc', id, `dokumen/${id}`)
@@ -153,8 +147,7 @@ const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navig
 
 async function lockNow() {
   await store.lock()
-  const toast = await toastController.create({ message: 'Data Pribadi dikunci 🔒', duration: 1800, position: 'top', cssClass: 'aio-toast' })
-  await toast.present()
+  await showToast('Data Pribadi dikunci 🔒')
 }
 </script>
 

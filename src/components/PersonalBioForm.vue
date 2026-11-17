@@ -32,7 +32,7 @@ import { PhCheck, PhPlus, PhX } from '@phosphor-icons/vue'
 import '@/components/personal.css'
 import '@/components/personalForm.css'
 import { BIO_FIELDS } from '@/lib/personal.js'
-import { MAX_EXTRA, MAX_LABEL, MAX_VALUE, bioErrors, blankBio, errorLines, focusNext } from '@/lib/personalForm.js'
+import { MAX_EXTRA, MAX_LABEL, MAX_VALUE, bioErrors, blankBio, errorLines, focusNext, useShake } from '@/lib/personalForm.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
 /** Form biodata: 12 kolom bebas (boleh kosong) + "Data lain". Sukses → emit `done(pesan)`. */
@@ -49,17 +49,9 @@ const form = reactive({
   extra: bio.extra.map(keyed),
 })
 const errors = ref([])
-const shake = ref(false)
+const { shake, doShake } = useShake()
 
 const addExtra = () => form.extra.push(keyed({ label: '', value: '' }))
-
-function doShake() {
-  shake.value = false
-  requestAnimationFrame(() => {
-    shake.value = true
-    setTimeout(() => (shake.value = false), 500)
-  })
-}
 
 async function save() {
   if (busy.value) return

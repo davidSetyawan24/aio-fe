@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+import { toastController } from '@ionic/vue'
 import { ADDRESS_FIELDS, BIO_FIELDS, DOC_TYPES } from './personal.js'
 
 /** Isian form Data Pribadi + cek sebelum kirim. Batas & pesannya KEMBAR sama server. */
@@ -104,4 +106,26 @@ export function focusNext(e) {
   const next = fields[fields.indexOf(e.target) + 1]
   if (next) next.focus()
   else e.target.blur()
+}
+
+/** Toast di atas layar 1,8 dtk. Gagal tampil nggak dianggap masalah (dipakai abis aksi yang udah sukses). */
+export async function showToast(message) {
+  try {
+    await (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
+  } catch {
+    // toast gagal tampil bukan urusan penting
+  }
+}
+
+/** Form goyang ±0,5 dtk pas ada error. Pasang `{ 'pf-shake': shake }` di <form>. */
+export function useShake() {
+  const shake = ref(false)
+  function doShake() {
+    shake.value = false
+    requestAnimationFrame(() => {
+      shake.value = true
+      setTimeout(() => (shake.value = false), 500)
+    })
+  }
+  return { shake, doShake }
 }

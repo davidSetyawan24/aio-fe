@@ -46,7 +46,7 @@ import { PhCheck, PhTrash } from '@phosphor-icons/vue'
 import '@/components/personal.css'
 import '@/components/personalForm.css'
 import { ADDRESS_FIELDS } from '@/lib/personal.js'
-import { MAX_LABEL, MAX_STREET, MAX_VALUE, addressErrors, blankAddress, errorLines, focusNext } from '@/lib/personalForm.js'
+import { MAX_LABEL, MAX_STREET, MAX_VALUE, addressErrors, blankAddress, errorLines, focusNext, useShake } from '@/lib/personalForm.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
 /** Form alamat (baru / ubah). Sukses → emit `done(pesan)`. */
@@ -62,15 +62,7 @@ const isEdit = props.addressId !== null && props.addressId !== ''
 const original = isEdit ? store.addresses.find((a) => a.id === Number(props.addressId)) ?? null : null
 const form = reactive({ ...blankAddress(), ...(original ? Object.fromEntries(Object.entries(original).filter(([k]) => k !== 'id')) : {}) })
 const errors = ref([])
-const shake = ref(false)
-
-function doShake() {
-  shake.value = false
-  requestAnimationFrame(() => {
-    shake.value = true
-    setTimeout(() => (shake.value = false), 500)
-  })
-}
+const { shake, doShake } = useShake()
 
 const body = () => ({ name: form.name.trim(), ktp: form.ktp, domicile: form.domicile, ...Object.fromEntries(ADDRESS_FIELDS.map(([k]) => [k, String(form[k]).trim()])) })
 

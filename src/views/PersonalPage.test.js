@@ -184,10 +184,33 @@ describe('PersonalPage', () => {
       expect(w.find('[data-test="panel"]').exists()).toBe(false)
     })
 
-    it('waits for the PIN before following ?dokumen=', async () => {
-      const w = await mountPage({ url: '/tabs/menu/data-pribadi?dokumen=6', unlocked: false })
+    // Notif / Beranda buka link saat kekunci: query harus tahan sampai PIN bener, baru diikuti.
+    async function unlockFromLocked(width) {
+      const w = await mountPage({ width, url: '/tabs/menu/data-pribadi?dokumen=6', unlocked: false })
+      expect(router.replace).not.toHaveBeenCalled()
+      expect(router.currentRoute.value.query.dokumen).toBe('6')
       expect(ionRouter.push).not.toHaveBeenCalled()
-      expect(w.vm).toBeTruthy()
+      expect(w.find('[data-test="panel"]').exists()).toBe(false)
+      const open = { configured: true, hasPin: true, unlocked: true }
+      api.post.mockImplementation(async (url) => (url === '/personal/unlock' ? { status: open } : {}))
+      await usePersonalStore().unlock('123456')
+      await flushPromises()
+      return w
+    }
+
+    it('phone: locked with ?dokumen= keeps the query, then after the PIN goes to the detail and drops it', async () => {
+      await unlockFromLocked(390)
+      expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/data-pribadi/dokumen/6')
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+      expect(router.currentRoute.value.query.dokumen).toBeUndefined()
+    })
+
+    it('PC: locked with ?dokumen= keeps the query, then after the PIN opens the panel and drops it', async () => {
+      const w = await unlockFromLocked(1440)
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('[data-test="panel"]').text()).toContain('SIM C')
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(router.currentRoute.value.query.dokumen).toBeUndefined()
     })
 
     it('ignores ?dokumen= of a document that is not there but still drops it', async () => {

@@ -64,13 +64,13 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { actionSheetController, toastController } from '@ionic/vue'
+import { actionSheetController } from '@ionic/vue'
 import { PhArrowsClockwise, PhBell, PhCheck, PhPencilSimple, PhTrash } from '@phosphor-icons/vue'
 import CopyRow from '@/components/CopyRow.vue'
 import '@/components/personal.css'
 import '@/components/personalForm.css'
 import { DOC_TYPES, docSub, docTitle, farText, formatDate, reminderText, stateText } from '@/lib/personal.js'
-import { errorLines } from '@/lib/personalForm.js'
+import { errorLines, showToast } from '@/lib/personalForm.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
 /** Detail satu dokumen: nomor (tap = salin), masa berlaku + pengingat, perpanjang / bayar pajak, hapus. */
@@ -97,13 +97,6 @@ const renewing = ref(null)
 const newDate = ref('')
 const error = ref('')
 
-const toast = async (message) => {
-  try {
-    await (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
-  } catch {
-    // toast gagal tampil bukan urusan penting
-  }
-}
 
 /** +5 tahun (isian awal kotak perpanjang); 29 Feb → 28 Feb. */
 function plusFive(on) {
@@ -138,7 +131,7 @@ async function payTax() {
     const updated = await store.taxPaid(doc.value.id)
     next = updated.dates.find((d) => d.key === 'tax')?.on
   })
-  if (ok) toast(`Pajak ${title} beres ✓ · lanjut s.d. ${formatDate(next)}`)
+  if (ok) showToast(`Pajak ${title} beres ✓ · lanjut s.d. ${formatDate(next)}`)
 }
 
 async function renew(dt) {
@@ -150,7 +143,7 @@ async function renew(dt) {
   const ok = await run(() => store.renewDate(doc.value.id, dt.key, newDate.value))
   if (!ok) return
   renewing.value = null
-  toast(`${name} udah diperpanjang ✓`)
+  showToast(`${name} udah diperpanjang ✓`)
 }
 
 let confirming = false

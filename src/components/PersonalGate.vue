@@ -47,10 +47,11 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { toastController, useIonRouter } from '@ionic/vue'
+import { useIonRouter } from '@ionic/vue'
 import { PhArrowRight, PhCaretLeft, PhKey, PhLockKey } from '@phosphor-icons/vue'
 import PinPad from '@/components/PinPad.vue'
 import { useMedia } from '@/lib/media.js'
+import { showToast } from '@/lib/personalForm.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
@@ -74,7 +75,6 @@ const mode = computed(() => {
 })
 
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/menu', 'back', 'replace'))
-const toast = async (message) => (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
 
 async function checkStatus() {
   statusError.value = ''
@@ -166,7 +166,7 @@ async function savePin(pin) {
     if (resetting) await store.resetPin(password.value, pin)
     else await store.setPin(pin)
     reset()
-    toast(resetting ? 'PIN baru udah dipasang ✓' : 'PIN udah dipasang ✓').catch(() => {})
+    showToast(resetting ? 'PIN baru udah dipasang ✓' : 'PIN udah dipasang ✓')
   } catch (err) {
     first.value = null
     error.value = err?.message ?? 'Ada yang error. Coba lagi ya.'

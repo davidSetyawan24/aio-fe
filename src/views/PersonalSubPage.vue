@@ -20,7 +20,7 @@
 
 <script setup>
 import { provide, ref } from 'vue'
-import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft } from '@phosphor-icons/vue'
 import { useRoute } from 'vue-router'
 import PersonalAddressForm from '@/components/PersonalAddressForm.vue'
@@ -29,6 +29,7 @@ import PersonalDocDetail from '@/components/PersonalDocDetail.vue'
 import PersonalDocForm from '@/components/PersonalDocForm.vue'
 import PersonalGate from '@/components/PersonalGate.vue'
 import { useMedia } from '@/lib/media.js'
+import { showToast } from '@/lib/personalForm.js'
 import { PERSONAL_BASE } from '@/lib/personalLock.js'
 
 /**
@@ -63,11 +64,7 @@ async function onDone(message, next) {
   // Dokumen baru: langsung ke detailnya (gantiin form, jadi "kembali" balik ke daftar).
   if (view === 'doc-new' && next?.docId) ionRouter.navigate(`${PERSONAL_BASE}/dokumen/${next.docId}`, 'forward', 'replace')
   else goBack()
-  try {
-    await (await toastController.create({ message, duration: 1800, position: 'top', cssClass: 'aio-toast' })).present()
-  } catch {
-    // toast gagal tampil bukan urusan penting
-  }
+  await showToast(message)
 }
 </script>
 

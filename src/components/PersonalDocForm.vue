@@ -66,7 +66,7 @@ import DocReminderPicker from '@/components/DocReminderPicker.vue'
 import '@/components/personal.css'
 import '@/components/personalForm.css'
 import { DOC_TYPES, DOC_TYPE_ORDER, docTitle } from '@/lib/personal.js'
-import { MAX_LABEL, MAX_VALUE, blankDoc, docErrors, docPayload, docToForm, errorLines, focusNext } from '@/lib/personalForm.js'
+import { MAX_LABEL, MAX_VALUE, blankDoc, docErrors, docPayload, docToForm, errorLines, focusNext, useShake } from '@/lib/personalForm.js'
 import { usePersonalStore } from '@/stores/personal.js'
 
 /** Form dokumen: baru (pilih jenis dulu) / ubah (jenis dikunci). Sukses → emit `done(pesan, { docId })`, yang nutup layar & ngasih toast induknya. */
@@ -85,7 +85,7 @@ const type = ref(original?.type ?? null)
 const step = ref(isEdit ? 'fill' : 'pick')
 const form = reactive(original ? docToForm(original) : { label: '', values: [], dates: [] })
 const errors = ref([])
-const shake = ref(false)
+const { shake, doShake } = useShake()
 const t = computed(() => DOC_TYPES[type.value ?? 'ktp'])
 
 function pickType(key) {
@@ -103,14 +103,6 @@ function typeCaption(key) {
   return def.dates.length ? 'ada masa berlaku' : 'cuma nomor'
 }
 const textual = (name) => /plat|rangka|mesin|paspor|visa/i.test(name)
-
-function doShake() {
-  shake.value = false
-  requestAnimationFrame(() => {
-    shake.value = true
-    setTimeout(() => (shake.value = false), 500)
-  })
-}
 
 async function save() {
   if (busy.value) return
