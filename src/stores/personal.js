@@ -54,6 +54,12 @@ export const usePersonalStore = defineStore('personal', {
       if (this.status) this.status = { ...this.status, unlocked: false }
     },
 
+    /** Logout / sesi habis: isi dikosongin + status dibuang, jadi abis login lagi wajib dicek ulang ke server dulu. */
+    signOut() {
+      this.forget()
+      this.status = null
+    },
+
     /** Jalanin aksi yang butuh kebuka: 423 → kekunci, lalu lempar lagi. */
     async guarded(run) {
       try {

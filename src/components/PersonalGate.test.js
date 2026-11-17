@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
 import { setPersonalApi, usePersonalStore } from '@/stores/personal.js'
+import { useAuthStore } from '@/stores/auth.js'
 import PersonalGate from './PersonalGate.vue'
 
 const toastCreate = vi.hoisted(() => vi.fn())
@@ -77,6 +78,42 @@ describe('PersonalGate', () => {
     const w = await mountGate({ 'POST /personal/unlock': new ApiError('PIN salah.', 422, { left: 4 }) })
     await type(w, '000000')
     expect(w.text()).toContain('PIN salah. Sisa 4× lagi.')
+    expect(w.find('[data-test="inside"]').exists()).toBe(false)
+  })
+
+  it('after a sign-out the old content never shows: a fresh gate asks the server, then shows the pin', async () => {
+    const w = await mountGate({ 'POST /personal/unlock': { status: status({ unlocked: true }) } })
+    await type(w, '123456')
+    expect(w.find('[data-test="inside"]').exists()).toBe(true)
+    w.unmount()
+    mounted.splice(mounted.indexOf(w), 1)
+    useAuthStore().markGuest()
+    let answer
+    api.get.mockImplementation(async (url) => (url === '/personal/status' ? new Promise((r) => { answer = r }) : null))
+    const w2 = mount(PersonalGate, { slots: { default: '<div data-test="inside">isi rahasia</div>' }, attachTo: document.body })
+    mounted.push(w2)
+    await flushPromises()
+    expect(w2.find('[data-test="inside"]').exists()).toBe(false)
+    expect(w2.text()).toContain('Lagi ngecek')
+    answer({ status: status() })
+    await flushPromises()
+    expect(w2.find('[data-test="inside"]').exists()).toBe(false)
+    expect(w2.find('.p-pad').exists()).toBe(true)
+  })
+
+  it('a gate that stays mounted through a sign-out asks the server again after the next login', async () => {
+    const w = await mountGate({ 'POST /personal/unlock': { status: status({ unlocked: true }) } })
+    await type(w, '123456')
+    const auth = useAuthStore()
+    auth.status = 'authed'
+    auth.markGuest()
+    await flushPromises()
+    expect(w.find('[data-test="inside"]').exists()).toBe(false)
+    api.get.mockClear()
+    auth.status = 'authed'
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledWith('/personal/status')
+    expect(w.find('.p-pad').exists()).toBe(true)
     expect(w.find('[data-test="inside"]').exists()).toBe(false)
   })
 

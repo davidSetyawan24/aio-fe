@@ -48,6 +48,19 @@ describe('personal store', () => {
     expect(s.unlocked).toBe(true)
   })
 
+  it('signOut empties the content and drops the status until the server is asked again', async () => {
+    const s = setup({ 'GET /personal': full })
+    s.status = status({ unlocked: true })
+    await s.load()
+    s.signOut()
+    expect(s.documents).toEqual([])
+    expect(s.bio).toBeNull()
+    expect(s.addresses).toEqual([])
+    expect(s.today).toBeNull()
+    expect(s.status).toBeNull()
+    expect(s.unlocked).toBe(false)
+  })
+
   it('unlocks and carries the remaining tries on a wrong pin', async () => {
     const s = setup({ 'POST /personal/unlock': (b) => (b.pin === '123456' ? { status: status({ unlocked: true }) } : Promise.reject(new ApiError('PIN salah.', 422, { left: 4 }))) })
     await expect(s.unlock('000000')).rejects.toMatchObject({ status: 422, fields: { left: 4 } })

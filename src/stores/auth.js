@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api as defaultApi } from '@/lib/api.js'
 import { usePushStore } from './push.js'
+import { usePersonalStore } from './personal.js'
 
 let authApi = defaultApi
 
@@ -91,6 +92,8 @@ export const useAuthStore = defineStore('auth', {
       this.status = 'guest'
       // Sesi habis / logout: keadaan notif di layar dicek ulang dari nol abis login lagi (server bisa udah ngapus langganannya).
       usePushStore().state = 'loading'
+      // Isi Data Pribadi nggak boleh nyangkut di memori: abis login lagi wajib PIN (status dicek ulang ke server).
+      usePersonalStore().signOut()
     },
   },
 })

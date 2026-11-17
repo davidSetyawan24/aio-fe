@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
 import { setAuthApi, useAuthStore } from './auth.js'
 import { usePushStore } from './push.js'
+import { usePersonalStore } from './personal.js'
 
 const david = { id: 1, username: 'david', name: 'David Setyawan' }
 
@@ -82,6 +83,22 @@ it('sesi habis (markGuest) → keadaan push dicek ulang abis login lagi', () => 
   push.state = 'on'
   useAuthStore().markGuest()
   expect(push.state).toBe('loading')
+})
+
+it('sesi habis / logout (markGuest) → isi Data Pribadi dikosongin & status wajib dicek ulang', () => {
+  const personal = usePersonalStore()
+  personal.status = { configured: true, hasPin: true, unlocked: true }
+  personal.today = '2026-11-18'
+  personal.bio = { fields: { name: 'David' }, extra: [] }
+  personal.documents = [{ id: 1, type: 'ktp', label: null, values: ['3275012407970001'], dates: [] }]
+  personal.addresses = [{ id: 2, name: 'Rumah' }]
+  useAuthStore().markGuest()
+  expect(personal.unlocked).toBe(false)
+  expect(personal.status).toBeNull()
+  expect(personal.today).toBeNull()
+  expect(personal.bio).toBeNull()
+  expect(personal.documents).toEqual([])
+  expect(personal.addresses).toEqual([])
 })
 
 describe('logout', () => {

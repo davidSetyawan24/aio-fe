@@ -54,9 +54,11 @@ import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { usePersonalStore } from '@/stores/personal.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 /** Gerbang Data Pribadi: kekunci → layar PIN; kebuka → isi (slot) setelah datanya dimuat. */
 const store = usePersonalStore()
+const auth = useAuthStore()
 const ionRouter = useIonRouter()
 const wide = useMedia('(min-width: 1100px)')
 
@@ -181,6 +183,11 @@ watch(() => store.unlocked, (open) => {
   if (open) loadData()
   else reset()
 }, { immediate: true })
+
+// Status dibuang pas logout / sesi habis → abis login lagi tanya server dulu (gerbang yang masih kepasang juga).
+watch(() => auth.status, (s) => {
+  if (s === 'authed' && store.status === null) checkStatus()
+})
 
 onMounted(checkStatus)
 onBeforeUnmount(() => clearInterval(timer))
