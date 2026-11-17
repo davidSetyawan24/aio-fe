@@ -52,7 +52,7 @@
           </div>
         </div></div>
       </template>
-      <p v-else-if="type.note" class="pf-hint">{{ type.note }}.</p>
+      <p v-else-if="type.note && subline !== type.note" class="pf-hint">{{ type.note }}.</p>
 
       <p v-if="error" class="pf-err" role="alert" data-test="detail-error">{{ error }}</p>
       <button type="button" class="pf-ghost" data-test="delete" :disabled="busy" @click="confirmDelete">

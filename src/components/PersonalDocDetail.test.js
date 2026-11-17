@@ -50,6 +50,11 @@ describe('PersonalDocDetail', () => {
     expect(copyMock).toHaveBeenCalledWith('B 1234 XYZ')
   })
 
+  it('says "Berlaku seumur hidup" for a KTP only once', () => {
+    const { w } = mountDetail(1)
+    expect(w.text().split('Berlaku seumur hidup')).toHaveLength(2)
+  })
+
   it('a near date without reminders reads in days, not "1 bulan lagi"', () => {
     const { w } = mountDetail(6)
     store.documents = store.documents.map((d) => (d.id === 6 ? { ...d, dates: [date({ on: '2026-11-23', reminders: [], daysLeft: 5 })] } : d))
