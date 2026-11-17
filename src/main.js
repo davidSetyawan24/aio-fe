@@ -30,6 +30,8 @@ import { isMainPage, useNotificationsStore } from './stores/notifications.js'
 import { takeNotifId } from './lib/push.js'
 import { listenPushOpen } from './lib/pushOpen.js'
 import { usePushStore } from './stores/push.js'
+import { installPersonalLock } from './lib/personalLock.js'
+import { usePersonalStore } from './stores/personal.js'
 
 // scrollAssist dimatiin: tebakan tinggi keyboard Ionic (290px) salah buat keyboard iOS asli, dan geseran
 // otomatisnya bentrok sama "mode ngetik" di halaman login. Form wajib dirancang tetep kelihatan di atas keyboard.
@@ -60,6 +62,17 @@ router.afterEach((to) => {
   if (id === null) return
   useNotificationsStore().readFromPush(id).catch(() => {})
   router.replace(path)
+})
+
+// Data Pribadi: kekunci lagi pas pindah halaman / app ditinggal lama. Diam kalau belum login atau lagi kekunci.
+installPersonalLock({
+  router,
+  store: {
+    lock: () => {
+      const personal = usePersonalStore()
+      if (useAuthStore().status === 'authed' && personal.unlocked) personal.lock()
+    },
+  },
 })
 
 // Tap notif di layar HP: pesan dari service worker (app kebuka) / alamat yang ketunda (app dibuka dari notif).

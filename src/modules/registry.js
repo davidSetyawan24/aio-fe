@@ -27,6 +27,8 @@ export const modules = [
   { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'ready', tab: 2, icon: PhCalendarBlank },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
+  // 18/11: dokumen (KTP, SIM, paspor, STNK…), biodata & alamat — dikunci PIN, isinya dienkripsi di server.
+  { key: 'data-pribadi', label: 'Data Pribadi', emoji: '🪪', tint: '#DCEBFF', category: 'pribadi', status: 'ready' },
   { key: 'kalender-dia', label: 'Kalender Dia', emoji: '🌙', tint: '#E9E4FF', category: 'pribadi', status: 'soon' },
 ]
 
