@@ -7,7 +7,9 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Versi baru nunggu dipencet (kapsul "Ada versi baru AIO"); service worker didaftar sendiri di main.js.
+      registerType: 'prompt',
+      injectRegister: false,
       // Service worker sendiri (src/sw.js): simpen file app + nerima notif di layar HP (Web Push) + tap notif.
       strategies: 'injectManifest',
       srcDir: 'src',

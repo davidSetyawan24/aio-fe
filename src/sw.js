@@ -3,11 +3,15 @@ import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { notificationFromPush, rememberPendingOpen } from './lib/push.js'
+import { isSkipWaiting } from './lib/swMessages.js'
 
-// File hasil build (diisi vite-plugin-pwa). Versi baru langsung dipake (sama kayak autoUpdate sebelumnya).
+// File hasil build (diisi vite-plugin-pwa). Versi baru NUNGGU sampai tombol "Muat ulang" dipencet
+// (biar halaman lama yang masih kebuka nggak nyari file versi lama yang udah dibuang).
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
-self.skipWaiting()
+self.addEventListener('message', (event) => {
+  if (isSkipWaiting(event.data)) self.skipWaiting()
+})
 clientsClaim()
 // Alamat app (mis. /tabs/uang) dibuka offline → index.html.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))

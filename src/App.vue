@@ -19,6 +19,7 @@
       </ion-menu>
       <ion-router-outlet id="main" />
     </ion-split-pane>
+    <UpdateBanner :no-sidebar="showSplash || isLogin" />
   </ion-app>
 </template>
 
@@ -28,6 +29,7 @@ import { useRoute } from 'vue-router'
 import { IonApp, IonMenu, IonRouterOutlet, IonSplitPane } from '@ionic/vue'
 import AioLogo from '@/components/AioLogo.vue'
 import AppSplash from '@/components/AppSplash.vue'
+import UpdateBanner from '@/components/UpdateBanner.vue'
 import { PhCaretRight } from '@phosphor-icons/vue'
 import { tabItems } from '@/modules/registry.js'
 import { setStatusBarColor, statusBarColor } from '@/lib/theme.js'

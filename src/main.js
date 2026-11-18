@@ -32,6 +32,8 @@ import { listenPushOpen } from './lib/pushOpen.js'
 import { usePushStore } from './stores/push.js'
 import { installPersonalLock } from './lib/personalLock.js'
 import { usePersonalStore } from './stores/personal.js'
+import { createApplier, watchForUpdates } from './lib/appUpdate.js'
+import { useAppUpdateStore } from './stores/appUpdate.js'
 
 // scrollAssist dimatiin: tebakan tinggi keyboard Ionic (290px) salah buat keyboard iOS asli, dan geseran
 // otomatisnya bentrok sama "mode ngetik" di halaman login. Form wajib dirancang tetep kelihatan di atas keyboard.
@@ -74,6 +76,22 @@ installPersonalLock({
     },
   },
 })
+
+// Versi baru AIO (build production aja): service worker baru nunggu → kapsul "Ada versi baru AIO" → Muat ulang.
+// Dicek pas mulai, tiap app balik keliatan (iOS sering cuma nidurin PWA), dan tiap 30 menit.
+if (import.meta.env.PROD) {
+  const appUpdate = useAppUpdateStore()
+  import('virtual:pwa-register')
+    .then(({ registerSW }) => {
+      const updateSW = registerSW({
+        onNeedRefresh: () => appUpdate.markNeedRefresh(),
+        onRegisteredSW: (_url, registration) => registration && watchForUpdates({ registration }),
+      })
+      appUpdate.setApplier(createApplier({ updateSW }))
+    })
+    .catch(() => {})
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && appUpdate.undismiss())
+}
 
 // Tap notif di layar HP: pesan dari service worker (app kebuka) / alamat yang ketunda (app dibuka dari notif).
 listenPushOpen({ serviceWorker: navigator.serviceWorker, caches: globalThis.caches, navigate: (path) => router.push(path) }).catch(() => {})
