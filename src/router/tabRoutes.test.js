@@ -28,13 +28,14 @@ const invoiceFormStub = { render: () => null }
 const homeStub = { render: () => null }
 const personalStub = { render: () => null }
 const personalSubStub = { render: () => null }
+const cctvStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
-  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub, CctvPage: cctvStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -57,6 +58,10 @@ describe('buildTabRoutes', () => {
 
   it('opens Data Pribadi on its own page under Semua menu', () => {
     expect(find('menu/data-pribadi').component).toBe(personalStub)
+  })
+
+  it('opens CCTV on its own page under Semua menu', () => {
+    expect(find('menu/cctv').component).toBe(cctvStub)
   })
 
   it('opens the Uang tab on its own page', () => {

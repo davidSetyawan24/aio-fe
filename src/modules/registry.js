@@ -29,6 +29,8 @@ export const modules = [
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
   // 18/11: dokumen (KTP, SIM, paspor, STNK…), biodata & alamat — dikunci PIN, isinya dienkripsi di server.
   { key: 'data-pribadi', label: 'Data Pribadi', emoji: '🪪', tint: '#DCEBFF', category: 'pribadi', status: 'ready' },
+  // 18/11: liat 2 kamera rumah live — cuma dari Chrome di Mac, lewat app mini "AIO CCTV" di Mac itu (server AIO nggak ikut).
+  { key: 'cctv', label: 'CCTV', emoji: '📹', tint: '#DCEBFF', category: 'pribadi', status: 'ready' },
   { key: 'kalender-dia', label: 'Kalender Dia', emoji: '🌙', tint: '#E9E4FF', category: 'pribadi', status: 'soon' },
 ]
 
