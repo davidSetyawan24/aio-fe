@@ -20,7 +20,7 @@
 import { PhArrowClockwise, PhSparkle, PhX } from '@phosphor-icons/vue'
 import { useAppUpdateStore } from '@/stores/appUpdate.js'
 
-/** `noSidebar`: halaman tanpa sidebar (login/splash) → di iPad/PC kapsul di tengah layar penuh. */
+/** `noSidebar`: halaman tanpa sidebar & selalu gelap (login/splash/offline) → kapsul terang, di iPad/PC di tengah layar penuh. */
 defineProps({ noSidebar: { type: Boolean, default: false } })
 
 const store = useAppUpdateStore()
@@ -49,7 +49,9 @@ const store = useAppUpdateStore()
   from { transform: translateY(-140%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-:root.theme-dark .upd-cap {
+/* Mode gelap, dan login/splash/offline yang selalu gelap: kapsul terang biar nggak nyatu sama latar. */
+:root.theme-dark .upd-cap,
+.upd-cap.upd-solo {
   background: rgba(242, 242, 238, 0.94);
   color: #141410;
   box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.7);
@@ -65,7 +67,8 @@ const store = useAppUpdateStore()
   background: rgba(200, 240, 74, 0.16);
   color: #c8f04a;
 }
-:root.theme-dark .upd-spark { background: #141410; }
+:root.theme-dark .upd-spark,
+.upd-solo .upd-spark { background: #141410; }
 .upd-txt { flex: 1; min-width: 0; white-space: nowrap; }
 .upd-txt b, .upd-txt small { display: block; overflow: hidden; text-overflow: ellipsis; }
 .upd-txt b { font-size: 13.5px; font-weight: 800; }
