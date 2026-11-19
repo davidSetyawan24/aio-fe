@@ -8,6 +8,7 @@ import { PhCalendarBlank, PhChartPieSlice, PhHouse, PhSquaresFour, PhUserCircle 
 export const categories = [
   { key: 'keuangan', label: 'Keuangan' },
   { key: 'produktivitas', label: 'Produktivitas' },
+  { key: 'kesehatan', label: 'Kesehatan' },
   { key: 'pribadi', label: 'Pribadi' },
 ]
 
@@ -27,6 +28,8 @@ export const modules = [
   { key: 'agenda', label: 'Agenda', emoji: '📅', tint: '#F3E1FF', category: 'produktivitas', status: 'ready', tab: 2, icon: PhCalendarBlank },
   { key: 'catatan', label: 'Catatan', emoji: '📝', tint: '#FFE0E6', category: 'produktivitas', status: 'soon' },
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
+  // 19/11: timbangan Zepp (upload gambar / isi manual), rata-rata 7 hari, target, grafik.
+  { key: 'badan', label: 'Badan', emoji: '⚖️', tint: '#E4F7C4', category: 'kesehatan', status: 'ready' },
   // 18/11: dokumen (KTP, SIM, paspor, STNK…), biodata & alamat — dikunci PIN, isinya dienkripsi di server.
   { key: 'data-pribadi', label: 'Data Pribadi', emoji: '🪪', tint: '#DCEBFF', category: 'pribadi', status: 'ready' },
   // 18/11: liat 2 kamera rumah live — cuma dari Chrome di Mac, lewat app mini "AIO CCTV" di Mac itu (server AIO nggak ikut).

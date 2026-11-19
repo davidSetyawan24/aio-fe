@@ -17,19 +17,20 @@ describe('module registry', () => {
   })
 
   it('has the agreed modules, Duit, Atur budget, Kartu & Rekening and Kategori ready', () => {
-    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Bayar Rutin', 'Invoice', 'Split bill', 'Agenda', 'Catatan', 'Data Pribadi', 'CCTV', 'Kalender Dia'])
-    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['uang', 'duit', 'budget', 'kartu', 'kategori', 'bayar-rutin', 'invoice', 'split-bill', 'agenda', 'data-pribadi', 'cctv'])
+    expect(modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Bayar Rutin', 'Invoice', 'Split bill', 'Agenda', 'Catatan', 'Badan', 'Data Pribadi', 'CCTV', 'Kalender Dia'])
+    expect(modules.filter((m) => m.status === 'ready').map((m) => m.key)).toEqual(['uang', 'duit', 'budget', 'kartu', 'kategori', 'bayar-rutin', 'invoice', 'split-bill', 'agenda', 'badan', 'data-pribadi', 'cctv'])
     expect(modulePath(modules.find((m) => m.key === 'budget'))).toBe('/tabs/menu/budget')
     expect(modulePath(modules.find((m) => m.key === 'kategori'))).toBe('/tabs/menu/kategori')
   })
 
   it('groups modules by category in category order', () => {
     const groups = groupByCategory(modules)
-    expect(groups.map((g) => g.label)).toEqual(['Keuangan', 'Produktivitas', 'Pribadi'])
+    expect(groups.map((g) => g.label)).toEqual(['Keuangan', 'Produktivitas', 'Kesehatan', 'Pribadi'])
     expect(groups[0].modules.map((m) => m.label)).toEqual(['Uang', 'Duit', 'Atur budget', 'Kartu & Rekening', 'Kategori', 'Bayar Rutin', 'Invoice', 'Split bill'])
     expect(groups[1].modules.map((m) => m.label)).toEqual(['Agenda', 'Catatan'])
-    expect(groups[2].modules.map((m) => m.label)).toEqual(['Data Pribadi', 'CCTV', 'Kalender Dia'])
-    expect(categories.map((c) => c.key)).toEqual(['keuangan', 'produktivitas', 'pribadi'])
+    expect(groups[2].modules.map((m) => m.label)).toEqual(['Badan'])
+    expect(groups[3].modules.map((m) => m.label)).toEqual(['Data Pribadi', 'CCTV', 'Kalender Dia'])
+    expect(categories.map((c) => c.key)).toEqual(['keuangan', 'produktivitas', 'kesehatan', 'pribadi'])
   })
 
   it('finds Kalender Dia when typing "kalender"', () => {

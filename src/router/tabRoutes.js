@@ -5,9 +5,9 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
-  const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage, 'data-pribadi': PersonalPage, cctv: CctvPage }
+  const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage, 'data-pribadi': PersonalPage, cctv: CctvPage, badan: BadanPage }
   const moduleRoutes = modules.map((m) => {
     const path = modulePath(m).replace('/tabs/', '')
     if (ready[m.key]) return { path, component: ready[m.key] }
