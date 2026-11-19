@@ -1,0 +1,144 @@
+import { describe, it, expect } from 'vitest'
+import {
+  METRIC_KEYS, METRICS, BODY_TYPES, ARAH, bodyTypeFromZepp,
+  avg7, count7, weekDelta, tone, startValue, progress, weightGoal, eta, etaFor,
+  checkFlags, bodySummary, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
+} from './badan.js'
+
+const F = [
+  ['2026-11-01', 75.0, 30.0, 52.0], ['2026-11-02', 74.8, 29.8, 52.1], ['2026-11-04', 74.6, 29.9, 52.0],
+  ['2026-11-07', 74.4, 29.5, 52.2], ['2026-11-08', 74.2, 29.4, 52.3], ['2026-11-10', 74.0, 29.2, 52.3],
+  ['2026-11-14', 73.6, 29.0, 52.4],
+].map(([weighedOn, weight, fat, muscle]) => ({ weighedOn, weighedAt: '06:00', weight, fat, muscle }))
+const T = { arah: 'cutting', fat: 22, muscle: null, weightMin: 65, weightMax: 69, startedOn: '2026-11-01' }
+
+describe('konstanta', () => {
+  it('kunci, rentang, tipe, arah', () => {
+    expect(METRIC_KEYS).toEqual(['weight', 'fat', 'muscle', 'water', 'visceral', 'bone', 'protein', 'bmr', 'bmi', 'score'])
+    expect(METRICS.weight).toEqual({ dec: 2, min: 20, max: 300 })
+    expect(METRICS.bmr).toEqual({ dec: 0, min: 500, max: 5000 })
+    expect(BODY_TYPES).toHaveLength(9)
+    expect(ARAH).toEqual(['recomp', 'jaga', 'cutting', 'bulking'])
+    expect(CHART_ORDER).toHaveLength(10)
+    expect(DEFAULT_ON).toEqual(['fat', 'muscle', 'weight'])
+    expect(METRIC_LABEL.fat).toEqual(['Lemak tubuh', 'Lemak'])
+    expect(UNIT.bmr).toBe('kkal')
+    expect(ARAH_INFO.jaga.t).toBe('Pertahanin badan yang sekarang.')
+  })
+  it('bodyTypeFromZepp', () => {
+    expect(bodyTypeFromZepp('Balanced-muscular')).toBe('balanced_muscular')
+    expect(bodyTypeFromZepp('thick set')).toBe('thick_set')
+    expect(bodyTypeFromZepp('???')).toBeNull()
+    expect(bodyTypeFromZepp(null)).toBeNull()
+  })
+})
+
+describe('tampilan', () => {
+  it('fmt & monthLabel', () => {
+    expect(fmt(74.9, 2)).toBe('74,90')
+    expect(fmt(null, 1)).toBe('–')
+    expect(monthLabel('2027-05')).toBe('Mei 2027')
+  })
+})
+
+describe('avg7 / count7 / weekDelta', () => {
+  it('rata-rata & jumlah', () => {
+    expect(avg7(F, 'weight', '2026-11-14')).toBeCloseTo(73.9333, 4)
+    expect(count7(F, '2026-11-14')).toBe(3)
+    expect(avg7(F, 'fat', '2026-11-07')).toBeCloseTo(29.8, 4)
+    expect(avg7(F, 'weight', '2026-10-31')).toBeNull()
+  })
+  it('selisih mingguan', () => {
+    expect(weekDelta(F, 'weight', '2026-11-14')).toBeCloseTo(-0.7667, 4)
+    expect(weekDelta(F, 'fat', '2026-11-14')).toBeCloseTo(-0.6, 4)
+    expect(weekDelta(F, 'muscle', '2026-11-14')).toBeCloseTo(0.2583, 4)
+    expect(weekDelta(F, 'weight', '2026-11-02')).toBeNull()
+  })
+})
+
+describe('tone', () => {
+  it('aturan arah', () => {
+    expect(tone('cutting', 'weight', -0.7)).toBe('good')
+    expect(tone('bulking', 'weight', -0.7)).toBe('bad')
+    expect(tone('recomp', 'weight', -0.7)).toBe('neutral')
+    expect(tone('jaga', 'fat', 0.3)).toBe('bad')
+    expect(tone(null, 'fat', -1)).toBe('neutral')
+    expect(tone('recomp', 'water', -1)).toBe('neutral')
+    expect(tone('cutting', 'fat', 0)).toBe('neutral')
+    expect(tone('cutting', 'muscle', 0.2)).toBe('good')
+  })
+})
+
+describe('startValue / progress / weightGoal', () => {
+  it('startValue', () => {
+    expect(startValue(F, 'weight', '2026-11-01')).toBe(75)
+    expect(startValue(F, 'weight', '2026-10-20')).toBe(75)
+    expect(startValue(F, 'weight', '2026-12-31')).not.toBeNull()
+    expect(startValue([], 'weight', '2026-11-01')).toBeNull()
+  })
+  it('progress', () => {
+    const p = progress(30, 29.2, 22)
+    expect(p.pct).toBe(10)
+    expect(p.left).toBeCloseTo(7.2, 4)
+    expect(p.reached).toBe(false)
+    expect(progress(30, 21.5, 22)).toEqual({ pct: 100, left: 0, reached: true })
+  })
+  it('weightGoal cutting progress', () => {
+    const g = weightGoal(T, F, '2026-11-14')
+    expect(g).toMatchObject({ mode: 'reach', state: 'progress', goal: 69, pct: 18 })
+    expect(g.left).toBeCloseTo(4.9333, 4)
+  })
+  it('weightGoal keep', () => {
+    expect(weightGoal({ ...T, arah: 'recomp', weightMin: 73, weightMax: 75 }, F, '2026-11-14')).toMatchObject({ mode: 'keep', inRange: true })
+    expect(weightGoal({ ...T, arah: 'recomp' }, F, '2026-11-14')).toMatchObject({ mode: 'keep', inRange: false })
+  })
+  it('weightGoal below / above / null', () => {
+    const low = [{ weighedOn: '2026-11-14', weight: 64.5 }]
+    expect(weightGoal(T, low, '2026-11-14').state).toBe('below')
+    expect(weightGoal({ ...T, arah: 'bulking' }, [{ weighedOn: '2026-11-14', weight: 73.9 }], '2026-11-14').state).toBe('above')
+    expect(weightGoal({ ...T, weightMin: null, weightMax: null }, F, '2026-11-14')).toBeNull()
+    expect(weightGoal(null, F, '2026-11-14')).toBeNull()
+  })
+})
+
+describe('eta', () => {
+  const rows = Array.from({ length: 43 }, (_, i) => ({
+    weighedOn: new Date(Date.UTC(2026, 9, 1 + i)).toISOString().slice(0, 10), weight: 80 - 0.05 * i,
+  }))
+  it('perkiraan', () => {
+    expect(eta(rows, 'weight', '2026-11-12', 69)).toBe('2027-05')
+    expect(eta(rows, 'weight', '2026-11-12', 79)).toBeNull()
+    expect(eta(rows.slice(0, 20), 'weight', '2026-11-12', 69)).toBeNull()
+    expect(eta(rows, 'weight', '2026-11-12', 10)).toBeNull()
+  })
+  it('etaFor', () => {
+    const t = { arah: 'cutting', fat: null, muscle: null, weightMin: 65, weightMax: 69, startedOn: '2026-10-01' }
+    expect(etaFor(t, rows, '2026-11-12')).toEqual({ key: 'weight', month: '2027-05' })
+    expect(etaFor(null, rows, '2026-11-12')).toBeNull()
+  })
+})
+
+describe('checkFlags', () => {
+  const real = { weighedOn: '2026-01-23', weight: 74.9, score: 56, bmi: 27.2, fat: 25.6, water: 51.0, bmr: 1650, visceral: 10, bone: 2.83, muscle: 52.85, protein: 19.5 }
+  it('kasus dasar', () => {
+    expect(checkFlags(real, null, '2026-01-23')).toEqual([])
+    expect(checkFlags({ ...real, fat: 2.56 }, null, '2026-01-23')).toEqual(['fat', 'muscle', 'bone'])
+    expect(checkFlags({ ...real, visceral: null }, null, '2026-01-23')).toEqual(['visceral'])
+    expect(checkFlags({ ...real, bmr: 16500 }, null, '2026-01-23')).toEqual(['bmr'])
+  })
+  it('loncatan', () => {
+    expect(checkFlags(real, { ...real, weighedOn: '2026-01-20', weight: 70.0 }, '2026-01-23')).toContain('weight')
+    expect(checkFlags(real, { ...real, weighedOn: '2026-01-03', weight: 70.0 }, '2026-01-23')).not.toContain('weight')
+  })
+})
+
+describe('bodySummary', () => {
+  it('kosong', () => expect(bodySummary([], null)).toBeNull())
+  it('ringkasan', () => {
+    const s = bodySummary(F, T)
+    expect(s).toMatchObject({ lastOn: '2026-11-14', from: '2026-11-08', to: '2026-11-14', arah: 'cutting' })
+    expect(s.tones).toMatchObject({ weight: 'good', fat: 'good', muscle: 'good' })
+    expect(s.spark).toHaveLength(5)
+    expect(s.spark.at(-1)).toBeCloseTo(29.2, 4)
+  })
+})
