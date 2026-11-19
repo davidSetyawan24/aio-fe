@@ -26,12 +26,13 @@ export function dateLabel(date, today) {
 /** 'HH:MM' → "06.42" (tampilan kolom Jam). */
 export const timeLabel = (hhmm) => (hhmm ? hhmm.replace(':', '.') : 'Pilih jam')
 
-/** Angka buat diketik ulang: koma desimal, tanpa titik ribuan. */
+/** Angka buat diketik ulang: koma desimal; titik ribuan cuma buat BMR ("1.650", `parseNum` bacanya balik 1650). */
 const numText = (v, key) => {
   if (typeof v !== 'number' || !Number.isFinite(v)) return ''
   const dec = METRICS[key].dec
-  return v.toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: false })
+  return v.toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: key === 'bmr' })
 }
+const comma = (n) => String(n).replace('.', ',')
 const blankValues = () => Object.fromEntries(METRIC_KEYS.map((k) => [k, '']))
 const nowTime = (now) => `${pad(Math.floor(now.minutes / 60))}:${pad(now.minutes % 60)}`
 
@@ -69,7 +70,8 @@ export function formErrors(form, today) {
     if (v === null) {
       if (k === 'weight') out.weight = 'Beratnya wajib diisi.'
     } else if (Number.isNaN(v)) out[k] = 'Isi angka aja ya.'
-    else if (v < METRICS[k].min || v > METRICS[k].max) out[k] = `Di luar rentang wajar (${METRICS[k].min}–${METRICS[k].max}).`
+    else if (METRICS[k].dec === 0 && !Number.isInteger(v)) out[k] = 'Angkanya harus bulat.'
+    else if (v < METRICS[k].min || v > METRICS[k].max) out[k] = `Di luar rentang wajar (${comma(METRICS[k].min)}–${comma(METRICS[k].max)}).`
   }
   return out
 }

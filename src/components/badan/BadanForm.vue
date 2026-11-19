@@ -45,7 +45,7 @@
     </div>
 
     <div class="bf-group"><span>Lainnya</span><small v-if="mode === 'manual'">boleh kosong</small></div>
-    <div class="bf-grid">
+    <div class="bf-grid lain">
       <label v-for="k in OTHERS" :key="k" class="bf-nf" :class="{ warn: warn.has(k), bad: errors[k] }" :data-k="k">
         <span class="lb">{{ METRIC_LABEL[k][0] }}</span>
         <span class="iw">

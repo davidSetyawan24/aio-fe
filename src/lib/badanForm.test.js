@@ -44,7 +44,8 @@ describe('forms', () => {
     expect(f.date).toBe('2026-11-17')
     expect(f.time).toBe('06:12')
     expect(f.values.weight).toBe('75,10')
-    expect(f.values.bmr).toBe('1650')
+    expect(f.values.bmr).toBe('1.650')
+    expect(f.values.score).toBe('56')
     expect(f.bodyType).toBe('thick_set')
   })
   it('fromRead fills numbers and falls back to now for the time', () => {
@@ -74,6 +75,32 @@ describe('forms', () => {
     expect(formErrors(f, TODAY).time).toBe('Jamnya belum diisi.')
     f.time = '07:15'
     expect(formErrors(f, TODAY)).toEqual({})
+  })
+  it('rentang desimal ditulis pakai koma', () => {
+    const f = blankForm({ date: TODAY, minutes: 600 })
+    f.values.weight = '74,9'
+    f.values.bone = '12'
+    expect(formErrors(f, TODAY).bone).toBe('Di luar rentang wajar (0,5–10).')
+  })
+  it('visceral, BMR, skor harus bulat (pesan di kolomnya)', () => {
+    const f = blankForm({ date: TODAY, minutes: 600 })
+    f.values.weight = '74,9'
+    f.values.visceral = '10,5'
+    f.values.bmr = '1650,5'
+    f.values.score = '56.5'
+    const e = formErrors(f, TODAY)
+    expect(e.visceral).toBe('Angkanya harus bulat.')
+    expect(e.bmr).toBe('Angkanya harus bulat.')
+    expect(e.score).toBe('Angkanya harus bulat.')
+    f.values.visceral = '10'
+    f.values.bmr = '1.650'
+    f.values.score = '56'
+    expect(formErrors(f, TODAY)).toEqual({})
+  })
+  it('BMR ditulis pakai titik ribuan & kebaca balik jadi angka yang sama', () => {
+    const f = fromRead({ bmr: 1650, weight: 74.9 }, { date: TODAY, minutes: 600 })
+    expect(f.values.bmr).toBe('1.650')
+    expect(toPayload(f, 'scan').bmr).toBe(1650)
   })
   it('builds the payload: numbers or null, date, time, source', () => {
     const f = blankForm({ date: TODAY, minutes: 7 * 60 + 15 })

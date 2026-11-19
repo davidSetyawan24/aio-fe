@@ -210,7 +210,8 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bp-wait { padding: 30px 4px; color: var(--muted); font-size: 13.5px; font-weight: 600; }
 .bs-back { display: flex; align-items: center; gap: 2px; width: fit-content; height: 44px; margin: 0 0 0 -6px; padding: 0 8px 0 6px; border: 0; background: none; color: var(--muted); font: 700 14.5px var(--ion-font-family); cursor: pointer; }
 
-.bf-pick { position: relative; }
+/* Input tanggal/jam bawaan (transparan) nutup SELURUH kotak kolom (posisinya ikut .bf-nf), jadi tap di mana aja buka picker. */
+.bf-pick { position: static; }
 .bf-val { display: block; flex: 1; min-width: 0; font: 800 17px var(--ion-font-family); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bf-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; font-size: 16px; cursor: pointer; }
 .bf-nf:has(.bf-pick input:focus-visible) { box-shadow: inset 0 0 0 2px var(--ink); background: var(--card); }
@@ -268,6 +269,7 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
   .bu-imgcol .bu-strip { display: none; }
   .bu-imgcol .bu-imgfull { display: block; margin-top: 14px; }
   .bu-sk3.lain { grid-template-columns: 1fr 1fr 1fr; }
+  .bu-grid .bf-grid.lain { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Atur target (bt-): sheet HP / dialog PC, di-teleport ke ion-app */
