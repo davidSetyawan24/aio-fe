@@ -71,6 +71,14 @@ describe('HomePage', () => {
     expect(w.findAll('.h-qb')).toHaveLength(4)
   })
 
+  it('kartu Badan: tampil kalau ada body, hilang kalau null', async () => {
+    const body = { lastOn: '2026-11-16', lastAt: '06:42', from: '2026-11-10', to: '2026-11-16', arah: null, fat: 21, muscle: 33, weight: 74, deltas: { fat: null, muscle: null, weight: null }, tones: { fat: 'neutral', muscle: 'neutral', weight: 'neutral' }, weightGoal: null, spark: [] }
+    const w = await mountPage(async () => ({ ...data(), body }))
+    expect(w.find('[data-test="slot-side"] [data-test="home-body"]').exists()).toBe(true)
+    const w2 = await mountPage(async () => ({ ...data(), body: null }))
+    expect(w2.find('[data-test="home-body"]').exists()).toBe(false)
+  })
+
   it('gagal muat pertama → pesan + Coba lagi', async () => {
     vi.setSystemTime(new Date('2026-11-16T01:12:00Z'))
     let fail = true

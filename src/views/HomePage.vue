@@ -18,6 +18,7 @@
             <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
           </section>
           <section class="h-side" data-test="slot-side">
+            <div class="h-bodywrap"><HomeBody :body="store.data.body ?? null" :today="store.data.today" /></div>
             <HomeMoney :money="store.data.money" :owed="store.data.owed" :today="store.data.today" />
           </section>
         </div>
@@ -30,6 +31,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, onIonViewWillEnter } from '@ionic/vue'
 import HomeAttention from '@/components/HomeAttention.vue'
+import HomeBody from '@/components/HomeBody.vue'
 import HomeMoney from '@/components/HomeMoney.vue'
 import HomeToday from '@/components/HomeToday.vue'
 import NotifBell from '@/components/NotifBell.vue'
@@ -100,6 +102,8 @@ onBeforeUnmount(() => {
 .h-retry:disabled { opacity: .5; cursor: default; }
 
 .h-grid { display: block; margin-top: 8px; }
+.h-side { display: flex; flex-direction: column; }
+.h-bodywrap { order: -1; }
 
 @media (min-width: 1100px) {
   .h-page { max-width: none; margin: 0; padding: 64px 48px 48px; }
@@ -107,6 +111,7 @@ onBeforeUnmount(() => {
   .h-attn { grid-area: attn; }
   .h-today { grid-area: today; }
   .h-side { grid-area: side; }
+  .h-bodywrap { order: 1; }
 }
 @media (min-width: 1600px) {
   .h-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 420px; grid-template-areas: 'attn today side'; }
