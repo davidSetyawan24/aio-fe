@@ -38,6 +38,8 @@
 
       <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @done="onPanelDone" />
 
+      <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" @close="targetOpen = false" />
+
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="openPanel('upload')">
         Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
       </button>
@@ -56,6 +58,7 @@ import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
 import BadanLast from '@/components/badan/BadanLast.vue'
 import BadanPanel from '@/components/badan/BadanPanel.vue'
+import BadanTargetSheet from '@/components/badan/BadanTargetSheet.vue'
 import BadanTarget from '@/components/badan/BadanTarget.vue'
 import '@/components/badan/badan.css'
 import { ARAH_INFO } from '@/lib/badan.js'
@@ -97,7 +100,12 @@ async function load() {
 /** HP (<768px) = halaman anak, ≥768px = panel geser. */
 const panel = reactive({ open: false, view: 'detail', id: null, key: 0 })
 const PATHS = { upload: () => `${BASE}/upload`, manual: () => `${BASE}/catat`, detail: (id) => `${BASE}/${id}`, edit: (id) => `${BASE}/${id}/ubah` }
+const targetOpen = ref(false)
 function openPanel(view, id = null) {
+  if (view === 'target') {
+    targetOpen.value = true
+    return
+  }
   if (!wide.value && PATHS[view]) return ionRouter.push(PATHS[view](id))
   panel.view = view
   panel.id = id
@@ -111,7 +119,7 @@ function onPanelDone(message) {
   else closePanel()
   if (message) showToast(message)
 }
-defineExpose({ openPanel, panel })
+defineExpose({ openPanel, panel, targetOpen })
 
 /**
  * Lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>). Baru dijalanin abis datanya ke-muat; abis dipakai query dibuang.
