@@ -30,7 +30,7 @@ describe('HomeBody', () => {
   it('cutting: kurang X kg ke 69, panah & hari', () => {
     const w = mountIt()
     expect(w.text()).toContain('kurang 4,9 kg ke 69')
-    expect(w.text()).toContain('timbang terakhir hari ini 06.42')
+    expect(w.text()).toContain('timbang terakhir hari ini, 06.42')
     expect(w.find('[data-test="hb-fat"]').text()).toBe('↓0,6')
     expect(w.find('[data-test="hb-fat"]').classes()).toContain('good')
   })
@@ -38,6 +38,12 @@ describe('HomeBody', () => {
     expect(mountIt({ body: body({ weightGoal: { mode: 'keep', inRange: true, min: 65, max: 69 } }) }).text()).toContain('aman di kisaran')
     expect(mountIt({ body: body({ weightGoal: { mode: 'keep', inRange: false, min: 65, max: 69 } }) }).text()).toContain('di luar kisaran 65–69')
     expect(mountIt({ body: body({ weightGoal: null }) }).find('[data-test="hb-weight"]').text()).toBe('↓0,5')
+  })
+  it('di luar kisaran: kuning (warn), bukan merah', () => {
+    const w = mountIt({ body: body({ weightGoal: { mode: 'reach', state: 'above', goal: 69, min: 65, max: 69 } }) })
+    expect(w.find('[data-test="hb-weight"]').text()).toBe('di atas kisaran 65–69')
+    expect(w.find('[data-test="hb-weight"]').classes()).toContain('warn')
+    expect(w.find('[data-test="hb-weight"]').classes()).not.toContain('bad')
   })
   it('tap: ke halaman Badan', async () => {
     await mountIt().find('[data-test="home-body-card"]').trigger('click')

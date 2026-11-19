@@ -18,7 +18,7 @@
             <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
           </section>
           <section class="h-side" data-test="slot-side">
-            <div class="h-bodywrap"><HomeBody :body="store.data.body ?? null" :today="store.data.today" /></div>
+            <div v-if="store.data.body" class="h-bodywrap"><HomeBody :body="store.data.body ?? null" :today="store.data.today" /></div>
             <HomeMoney :money="store.data.money" :owed="store.data.owed" :today="store.data.today" />
           </section>
         </div>

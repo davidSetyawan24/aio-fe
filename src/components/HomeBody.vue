@@ -5,7 +5,7 @@
       <div class="core hb-card" data-test="home-body-card" @click="go">
         <div class="hb-top">
           <span class="hb-ic">⚖️</span>
-          <div class="hb-grow"><b>Rata-rata 7 hari</b><small>timbang terakhir {{ dayWord(body.lastOn, today) }} {{ jam(body.lastAt) }}</small></div>
+          <div class="hb-grow"><b>Rata-rata 7 hari</b><small>{{ sub }}</small></div>
         </div>
         <div class="hb-3">
           <div>
@@ -35,7 +35,7 @@
 import { computed } from 'vue'
 import { useIonRouter } from '@ionic/vue'
 import { fmt } from '@/lib/badan.js'
-import { dayWord, deltaView, jam } from '@/lib/badanView.js'
+import { deltaView, headerSub } from '@/lib/badanView.js'
 
 const props = defineProps({
   body: { type: Object, default: null },
@@ -46,6 +46,7 @@ const go = () => ionRouter.push('/tabs/menu/badan')
 
 const fatD = computed(() => (props.body ? deltaView(props.body.deltas.fat, 1) : null))
 const muscleD = computed(() => (props.body ? deltaView(props.body.deltas.muscle, 1) : null))
+const sub = computed(() => (props.body ? headerSub(null, props.body.lastOn, props.body.lastAt, props.today) : ''))
 const arrow = (d) => (d.dir === 'down' ? '↓' : d.dir === 'up' ? '↑' : '')
 
 const note = computed(() => {
@@ -57,10 +58,10 @@ const note = computed(() => {
     return d ? { tone: 'neutral', text: `${arrow(d)}${d.text}` } : null
   }
   const range = `${fmt(g.min, 0)}–${fmt(g.max, 0)}`
-  if (g.mode === 'keep') return g.inRange ? { tone: 'good', text: 'aman di kisaran' } : { tone: 'bad', text: `di luar kisaran ${range}` }
+  if (g.mode === 'keep') return g.inRange ? { tone: 'good', text: 'aman di kisaran' } : { tone: 'warn', text: `di luar kisaran ${range}` }
   if (g.state === 'in') return { tone: 'good', text: '✓ udah masuk kisaran' }
-  if (g.state === 'below') return { tone: 'bad', text: `di bawah kisaran ${range}` }
-  if (g.state === 'above') return { tone: 'bad', text: `di atas kisaran ${range}` }
+  if (g.state === 'below') return { tone: 'warn', text: `di bawah kisaran ${range}` }
+  if (g.state === 'above') return { tone: 'warn', text: `di atas kisaran ${range}` }
   return { tone: 'neutral', text: `kurang ${fmt(g.left, 1)} kg ke ${fmt(g.goal, 0)}` }
 })
 
@@ -92,6 +93,8 @@ const path = computed(() => {
 .hb-d.neutral { color: var(--muted); font-weight: 700; }
 .hb-d.good { color: var(--green); }
 .hb-d.bad { color: var(--red); }
+.hb-d.warn { color: #C27C00; }
+:root.theme-dark .hb-d.warn { color: var(--amber); }
 .hb-spark { display: block; width: 100%; height: 36px; margin-top: 10px; color: var(--muted); }
 .hb-cap { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
 @media (hover: hover) { .hb-card:hover { background: rgba(127, 127, 120, .05); } }
