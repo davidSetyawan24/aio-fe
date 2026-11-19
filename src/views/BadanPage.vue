@@ -109,7 +109,7 @@ const closePanel = () => (panel.open = false)
 function onPanelDone(message) {
   if (panel.view === 'edit') openPanel('detail', panel.id)
   else closePanel()
-  showToast(message)
+  if (message) showToast(message)
 }
 defineExpose({ openPanel, panel })
 

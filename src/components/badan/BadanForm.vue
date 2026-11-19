@@ -1,30 +1,31 @@
 <template>
   <form class="bf-form" :class="{ 'bf-shake': shake }" novalidate data-test="form" @submit.prevent="submit()">
-    <template v-if="mode === 'result'">
-      <div v-if="blocked" class="bf-block" data-test="block">
-        <b><PhWarning :size="18" weight="bold" />Timbangan ini udah pernah disimpen</b>
-        <p>{{ dDay(blocked.weighedOn) }} · {{ jam(blocked.weighedAt) }} · {{ fmt(blocked.weight, 2) }} kg udah ada di riwayat. Nggak disimpen dobel.</p>
-        <button type="button" class="pill small" data-test="view-existing" @click="$emit('open', blocked.id)">Liat yang udah ada <span class="ic"><PhCaretRight :size="14" weight="bold" /></span></button>
-      </div>
-      <div v-else-if="warn.size" class="bf-warnsum" data-test="warnsum"><PhWarning :size="18" weight="bold" /><span>{{ warn.size }} angka kurang yakin kebacanya. Cocokin sama gambar ya, yang kuning.</span></div>
-      <div v-else class="bf-oksum" data-test="oksum"><PhCheck :size="18" weight="bold" /><span>Semua angka kebaca jelas. Tinggal Simpen.</span></div>
-    </template>
-    <div v-else-if="blocked" class="bf-block" data-test="block">
+    <div v-if="blocked" class="bf-block" data-test="block">
       <b><PhWarning :size="18" weight="bold" />Timbangan ini udah pernah disimpen</b>
       <p>{{ dDay(blocked.weighedOn) }} · {{ jam(blocked.weighedAt) }} · {{ fmt(blocked.weight, 2) }} kg udah ada di riwayat. Nggak disimpen dobel.</p>
       <button type="button" class="pill small" data-test="view-existing" @click="$emit('open', blocked.id)">Liat yang udah ada <span class="ic"><PhCaretRight :size="14" weight="bold" /></span></button>
     </div>
+    <template v-else-if="mode === 'result'">
+      <div v-if="warn.size" class="bf-warnsum" data-test="warnsum"><PhWarning :size="18" weight="bold" /><span>{{ warn.size }} angka kurang yakin kebacanya. Cocokin sama gambar ya, yang kuning.</span></div>
+      <div v-else class="bf-oksum" data-test="oksum"><PhCheck :size="18" weight="bold" /><span>Semua angka kebaca jelas. Tinggal Simpen.</span></div>
+    </template>
 
     <div class="bf-group"><span>Waktu timbang</span></div>
     <div class="bf-grid">
       <label class="bf-nf" :class="{ bad: errors.date }">
         <span class="lb">Tanggal</span>
-        <span class="iw"><input v-model="form.date" class="bf-in" data-test="date" autocomplete="off" @input="onWhen('date')" @keydown.enter.prevent="focusNext" /></span>
+        <span class="iw bf-pick">
+          <span class="bf-val" data-test="date-text">{{ dateLabel(form.date, today) }}</span>
+          <input type="date" aria-label="Tanggal" data-test="date" :value="form.date" :max="today" min="2000-01-01" @input="onWhen('date', $event)" @change="onWhen('date', $event)" />
+        </span>
         <span v-if="errors.date" class="em-err" data-test="err-date">{{ errors.date }}</span>
       </label>
       <label class="bf-nf" :class="{ bad: errors.time }">
         <span class="lb">Jam</span>
-        <span class="iw"><input v-model="form.time" class="bf-in" inputmode="numeric" data-test="time" autocomplete="off" @input="onWhen('time')" @keydown.enter.prevent="focusNext" /></span>
+        <span class="iw bf-pick">
+          <span class="bf-val" data-test="time-text">{{ timeLabel(form.time) }}</span>
+          <input type="time" aria-label="Jam" data-test="time" :value="form.time" @input="onWhen('time', $event)" @change="onWhen('time', $event)" />
+        </span>
         <span v-if="errors.time" class="em-err" data-test="err-time">{{ errors.time }}</span>
       </label>
     </div>
@@ -81,7 +82,7 @@ import { computed, reactive, ref } from 'vue'
 import { actionSheetController } from '@ionic/vue'
 import { PhCaretRight, PhCheck, PhEyeSlash, PhWarning } from '@phosphor-icons/vue'
 import { BODY_TYPES, METRICS, METRIC_LABEL, UNIT, fmt } from '@/lib/badan.js'
-import { blankForm, formErrors, fromRead, fromWeighing, parseNum, toPayload } from '@/lib/badanForm.js'
+import { blankForm, dateLabel, formErrors, fromRead, fromWeighing, timeLabel, toPayload } from '@/lib/badanForm.js'
 import { dDay, jam } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { errorLines, focusNext, useShake } from '@/lib/personalForm.js'
@@ -106,7 +107,7 @@ const store = useBadanStore()
 const now = wibNow()
 const today = now.date
 const form = reactive(
-  props.mode === 'edit' && props.initial ? fromWeighing(props.initial, today) : props.mode === 'result' && props.initial ? fromRead(props.initial, now) : blankForm(now),
+  props.mode === 'edit' && props.initial ? fromWeighing(props.initial) : props.mode === 'result' && props.initial ? fromRead(props.initial, now) : blankForm(now),
 )
 const warn = reactive(new Set(props.mode === 'result' ? props.check : []))
 const errors = reactive({})
@@ -125,7 +126,8 @@ function onNum(k) {
   delete errors[k]
 }
 /** Ganti tanggal / jam → timbangan "udah ada" yang tadi ngeblok bisa dicoba lagi. */
-function onWhen(k) {
+function onWhen(k, e) {
+  form[k] = e.target.value
   delete errors[k]
   blocked.value = null
 }
@@ -143,7 +145,7 @@ async function confirmReplace(existingRow, payload) {
   return data === 'replace'
 }
 
-async function submit(replaceWith = null) {
+async function submit() {
   if (busy.value) return
   lines.value = []
   for (const k of Object.keys(errors)) delete errors[k]
@@ -153,27 +155,36 @@ async function submit(replaceWith = null) {
     doShake()
     return
   }
-  const payload = toPayload(form, source(), today)
-  const replace = replaceWith !== null
   busy.value = true
   try {
-    if (props.mode === 'edit') await store.update(props.initial.id, payload, { replace })
-    else await store.save(payload, { replace })
-    const swapped = replace ? ` Timbangan ${jam(replaceWith.weighedAt)} diganti` : ''
-    emit('done', `${props.mode === 'edit' ? 'Perubahan kesimpen ✓' : 'Kesimpen ✓'}${swapped}`)
-  } catch (err) {
-    if (err?.status === 409 && err.fields?.existing) {
-      if (err.fields.reason === 'exact') blocked.value = err.fields.existing
-      else if (!replace && (await confirmReplace(err.fields.existing, payload))) {
-        busy.value = false
-        return submit(err.fields.existing)
-      }
-    } else {
-      lines.value = errorLines(err)
-      doShake()
-    }
+    await send(toPayload(form, source()), null)
   } finally {
     busy.value = false
+  }
+}
+
+/** Kirim ke server. `replaceWith` = timbangan lama yang udah disetujui buat diganti (kirim ulang `replace: true`). */
+async function send(payload, replaceWith) {
+  try {
+    if (props.mode === 'edit') await store.update(props.initial.id, payload, { replace: !!replaceWith })
+    else await store.save(payload, { replace: !!replaceWith })
+    const swapped = replaceWith ? ` Timbangan ${jam(replaceWith.weighedAt)} diganti` : ''
+    emit('done', `${props.mode === 'edit' ? 'Perubahan kesimpen ✓' : 'Kesimpen ✓'}${swapped}`)
+  } catch (err) {
+    const existingRow = err?.fields?.existing
+    if (err?.status === 409 && existingRow && !replaceWith) {
+      if (err.fields.reason === 'exact') {
+        blocked.value = existingRow
+        return
+      }
+      if (err.fields.reason === 'sameDay') {
+        if (await confirmReplace(existingRow, payload)) await send(payload, existingRow)
+        return
+      }
+    }
+    // 409 yang nggak dikenal / 409 lagi abis Ganti: tetep kasih tau user.
+    lines.value = err?.status === 409 ? [err.message] : errorLines(err)
+    doShake()
   }
 }
 </script>

@@ -82,7 +82,7 @@ const goExisting = (existingId) => ionRouter.navigate(`${BASE}/${existingId}`, '
 
 async function onDone(message) {
   goBack()
-  await showToast(message)
+  if (message) await showToast(message)
 }
 </script>
 

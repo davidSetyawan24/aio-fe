@@ -40,8 +40,12 @@ afterEach(() => mounted.splice(0).forEach((w) => w.unmount()))
 describe('BadanForm manual', () => {
   it('starts with today and the current time, and the year hint follows the year', () => {
     const w = make()
-    expect(w.find('[data-test="date"]').element.value).toMatch(/^\d{1,2} \w+$/)
-    expect(w.find('[data-test="time"]').element.value).toMatch(/^\d{2}\.\d{2}$/)
+    expect(w.find('[data-test="date"]').attributes('type')).toBe('date')
+    expect(w.find('[data-test="date"]').attributes('max')).toBe(wibNow().date)
+    expect(w.find('[data-test="time"]').attributes('type')).toBe('time')
+    expect(w.find('[data-test="date"]').element.value).toBe(wibNow().date)
+    expect(w.find('[data-test="date-text"]').text()).toMatch(/^\d{1,2} \w+$/)
+    expect(w.find('[data-test="time-text"]').text()).toMatch(/^\d{2}\.\d{2}$/)
     expect(w.text()).toContain(`Tahun ngikut tahun sekarang (${wibNow().date.slice(0, 4)}).`)
     expect(w.text()).toContain('wajib cuma Berat')
     expect(w.text()).toContain('boleh kosong')
@@ -88,6 +92,37 @@ describe('BadanForm manual', () => {
     expect(w.emitted('done')[0]).toEqual(['Kesimpen ✓ Timbangan 06.12 diganti'])
   })
 
+  it('keeps busy (Simpen disabled) until the replace request resolves', async () => {
+    const w = make()
+    let release
+    api.post.mockRejectedValueOnce(conflict('sameDay'))
+    api.post.mockImplementationOnce(() => new Promise((res) => (release = () => res({ weighing: { id: 9 } }))))
+    await w.find('[data-test="f-weight"]').setValue('74,9')
+    await submit(w)
+    expect(api.post).toHaveBeenCalledTimes(2)
+    expect(w.vm.busy).toBe(true)
+    expect(w.find('[data-test="save"]').attributes('disabled')).toBeDefined()
+    await w.find('form').trigger('submit')
+    expect(api.post).toHaveBeenCalledTimes(2)
+    release()
+    await flushPromises()
+    expect(w.vm.busy).toBe(false)
+    expect(w.emitted('done')).toHaveLength(1)
+  })
+
+  it('409 with an unknown reason, or a repeat 409 after Ganti, shows an error instead of staying silent', async () => {
+    const w = make()
+    api.post.mockRejectedValueOnce(new ApiError('Aneh.', 409, { reason: 'aneh', existing }))
+    await w.find('[data-test="f-weight"]').setValue('74,9')
+    await submit(w)
+    expect(w.find('[data-test="error"]').text()).toBe('Aneh.')
+    api.post.mockReset()
+    api.post.mockRejectedValueOnce(conflict('sameDay')).mockRejectedValueOnce(conflict('sameDay'))
+    await submit(w)
+    expect(api.post).toHaveBeenCalledTimes(2)
+    expect(w.find('[data-test="error"]').exists()).toBe(true)
+  })
+
   it('409 sameDay: Batal sends nothing more', async () => {
     sheet.onDidDismiss.mockResolvedValue({ role: 'cancel' })
     const w = make()
@@ -108,7 +143,7 @@ describe('BadanForm manual', () => {
     await w.find('[data-test="view-existing"]').trigger('click')
     expect(w.emitted('open')[0]).toEqual([3])
     // ganti jam → blok ilang
-    await w.find('[data-test="time"]').setValue('06.30')
+    await w.find('[data-test="time"]').setValue('06:30')
     expect(w.find('[data-test="block"]').exists()).toBe(false)
     expect(w.find('[data-test="save"]').attributes('disabled')).toBeUndefined()
   })
@@ -118,7 +153,9 @@ describe('BadanForm edit', () => {
   it('fills the form from the weighing and PATCHes with a "Perubahan kesimpen" toast', async () => {
     const w = make({ mode: 'edit', initial: weighing })
     expect(w.find('[data-test="f-weight"]').element.value).toBe('75,10')
-    expect(w.find('[data-test="date"]').element.value).toBe('17 November')
+    expect(w.find('[data-test="date"]').element.value).toBe('2026-11-17')
+    expect(w.find('[data-test="date-text"]').text()).toBe('17 November')
+    expect(w.find('[data-test="time-text"]').text()).toBe('06.12')
     expect(w.find('[data-test="bodyType"]').element.value).toBe('thick_set')
     expect(w.text()).not.toContain('Tahun ngikut')
     await w.find('[data-test="f-weight"]').setValue('74,9')

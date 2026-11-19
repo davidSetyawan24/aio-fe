@@ -1,4 +1,4 @@
-import { blankForm, formErrors, fromRead, fromWeighing, parseDate, parseNum, parseTime, toPayload } from './badanForm.js'
+import { blankForm, dateLabel, formErrors, fromRead, fromWeighing, parseNum, timeLabel, toPayload } from './badanForm.js'
 
 const TODAY = '2026-11-19'
 const weighing = { id: 7, weighedOn: '2026-11-17', weighedAt: '06:12', weight: 75.1, fat: 25.6, muscle: 52.85, water: 51, visceral: 10, bone: 2.83, protein: 19.5, bmr: 1650, bmi: 27.2, score: 56, bodyType: 'thick_set', source: 'scan' }
@@ -22,46 +22,36 @@ describe('parseNum', () => {
   })
 })
 
-describe('parseDate / parseTime', () => {
-  it('reads "19 November", "19 Nov", "19/11" with the current year', () => {
-    expect(parseDate('19 November', 2026)).toBe('2026-11-19')
-    expect(parseDate('3 nov', 2026)).toBe('2026-11-03')
-    expect(parseDate('19/11', 2026)).toBe('2026-11-19')
-    expect(parseDate('17 November 2025', 2026)).toBe('2025-11-17')
-    expect(parseDate('31 Februari', 2026)).toBeNull()
-    expect(parseDate('ngaco', 2026)).toBeNull()
-  })
-  it('reads 06.12 / 6:12 / 0612', () => {
-    expect(parseTime('06.12')).toBe('06:12')
-    expect(parseTime('6:12')).toBe('06:12')
-    expect(parseTime('0612')).toBe('06:12')
-    expect(parseTime('25.00')).toBeNull()
-    expect(parseTime('')).toBeNull()
+describe('labels', () => {
+  it('writes the date long and the year only when it is not this year; time with a dot', () => {
+    expect(dateLabel('2026-11-19', TODAY)).toBe('19 November')
+    expect(dateLabel('2025-11-17', TODAY)).toBe('17 November 2025')
+    expect(dateLabel('', TODAY)).toBe('Pilih tanggal')
+    expect(timeLabel('06:42')).toBe('06.42')
   })
 })
 
 describe('forms', () => {
   it('blank manual form uses today and the current time, empty numbers', () => {
     const f = blankForm({ date: TODAY, minutes: 7 * 60 + 15 })
-    expect(f.date).toBe('19 November')
-    expect(f.time).toBe('07.15')
+    expect(f.date).toBe('2026-11-19')
+    expect(f.time).toBe('07:15')
     expect(f.values.weight).toBe('')
     expect(f.bodyType).toBe('')
   })
-  it('fromWeighing writes numbers with their decimals and the year only when it is not this year', () => {
-    const f = fromWeighing(weighing, TODAY)
-    expect(f.date).toBe('17 November')
-    expect(f.time).toBe('06.12')
+  it('fromWeighing keeps ISO date / HH:MM and writes numbers with their decimals', () => {
+    const f = fromWeighing(weighing)
+    expect(f.date).toBe('2026-11-17')
+    expect(f.time).toBe('06:12')
     expect(f.values.weight).toBe('75,10')
     expect(f.values.bmr).toBe('1650')
     expect(f.bodyType).toBe('thick_set')
-    expect(fromWeighing({ ...weighing, weighedOn: '2025-11-17' }, TODAY).date).toBe('17 November 2025')
   })
   it('fromRead fills numbers and falls back to now for the time', () => {
     const f = fromRead({ weight: 74.9, bone: 2.83, bodyType: 'thick_set' }, { date: TODAY, minutes: 6 * 60 + 42 })
     expect(f.values.weight).toBe('74,90')
     expect(f.values.fat).toBe('')
-    expect(f.time).toBe('06.42')
+    expect(f.time).toBe('06:42')
     expect(f.bodyType).toBe('thick_set')
   })
   it('requires weight, range-checks, rejects a future date and a bad time', () => {
@@ -75,24 +65,24 @@ describe('forms', () => {
     f.values.fat = 'x'
     expect(formErrors(f, TODAY).fat).toBe('Isi angka aja ya.')
     f.values.fat = ''
-    f.date = '20 November'
+    f.date = '2026-11-20'
     expect(formErrors(f, TODAY).date).toBe('Tanggalnya belum kejadian.')
-    f.date = 'ngaco'
-    expect(formErrors(f, TODAY).date).toBe('Tanggalnya nggak kebaca. Contoh: 19 November.')
-    f.date = '19 November'
-    f.time = '25.00'
-    expect(formErrors(f, TODAY).time).toBe('Jamnya nggak kebaca. Contoh: 07.15.')
-    f.time = '07.15'
+    f.date = ''
+    expect(formErrors(f, TODAY).date).toBe('Tanggalnya belum diisi.')
+    f.date = '2026-11-19'
+    f.time = ''
+    expect(formErrors(f, TODAY).time).toBe('Jamnya belum diisi.')
+    f.time = '07:15'
     expect(formErrors(f, TODAY)).toEqual({})
   })
-  it('builds the payload: numbers or null, ISO date, HH:MM, source', () => {
+  it('builds the payload: numbers or null, date, time, source', () => {
     const f = blankForm({ date: TODAY, minutes: 7 * 60 + 15 })
     f.values.weight = '74,9'
     f.values.bmr = '1.650'
     f.bodyType = 'skinny'
-    const p = toPayload(f, 'manual', TODAY)
+    const p = toPayload(f, 'manual')
     expect(p).toMatchObject({ weighedOn: '2026-11-19', weighedAt: '07:15', weight: 74.9, fat: null, bmr: 1650, bodyType: 'skinny', source: 'manual' })
     f.bodyType = ''
-    expect(toPayload(f, 'manual', TODAY).bodyType).toBeNull()
+    expect(toPayload(f, 'manual').bodyType).toBeNull()
   })
 })

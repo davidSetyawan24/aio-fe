@@ -95,9 +95,10 @@ async function confirmDelete() {
     busy.value = true
     deleted.value = true
     // Vue 3.5 buang emit dari komponen yang udah dicopot → kabarin induk DULU, baru ubah store.
-    emit('done', 'Timbangan dihapus')
+    emit('done')
     try {
       await store.remove(r.id)
+      showToast('Timbangan dihapus')
     } catch (err) {
       deleted.value = false
       showToast(errorLines(err)[0])

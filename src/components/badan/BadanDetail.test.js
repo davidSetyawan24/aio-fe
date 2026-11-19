@@ -7,7 +7,8 @@ import BadanDetail from './BadanDetail.vue'
 
 const sheet = vi.hoisted(() => ({ present: vi.fn(), onDidDismiss: vi.fn() }))
 const sheetCreate = vi.hoisted(() => vi.fn())
-vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), actionSheetController: { create: sheetCreate } }))
+const toastCreate = vi.hoisted(() => vi.fn())
+vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), actionSheetController: { create: sheetCreate }, toastController: { create: toastCreate } }))
 
 const TODAY = wibNow().date
 const base = { weighedAt: '06:12', fat: 28, muscle: 52, water: 50, visceral: 9, bone: 2.9, protein: 17, bmr: 1650, bmi: 24.6, score: 80, bodyType: 'thick_set', source: 'scan' }
@@ -34,6 +35,7 @@ beforeEach(() => {
   sheet.onDidDismiss.mockReset().mockResolvedValue({ data: 'delete' })
   sheet.present.mockReset()
   sheetCreate.mockReset().mockResolvedValue(sheet)
+  toastCreate.mockReset().mockResolvedValue({ present: vi.fn() })
 })
 afterEach(() => mounted.splice(0).forEach((w) => w.unmount()))
 
@@ -80,7 +82,17 @@ describe('BadanDetail', () => {
     expect(cfg.subHeader).toBe('Angkanya ilang dari riwayat, grafik, dan rata-rata 7 hari.')
     expect(api.del).toHaveBeenCalledWith('/body/weighings/3')
     expect(sawRemoveWhenEmitted).toBe(0)
-    expect(w.emitted('done')[0]).toEqual(['Timbangan dihapus'])
+    expect(w.emitted('done')).toHaveLength(1)
+    expect(toastCreate.mock.calls[0][0].message).toBe('Timbangan dihapus')
+  })
+
+  it('Hapus that fails: no success toast, error toast instead', async () => {
+    const w = await mountDetail(3)
+    api.del.mockRejectedValue(new Error('gagal'))
+    await w.find('[data-test="delete"]').trigger('click')
+    await flushPromises()
+    expect(toastCreate.mock.calls.map((c) => c[0].message)).not.toContain('Timbangan dihapus')
+    expect(toastCreate).toHaveBeenCalledTimes(1)
   })
 
   it('Batal on the sheet does not delete', async () => {
