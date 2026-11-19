@@ -76,7 +76,7 @@ describe('BadanSubPage', () => {
 
   it('upload: registered with a placeholder and a back button', async () => {
     const w = await mountSub({ view: 'upload' })
-    expect(w.find('[data-test="upload-placeholder"]').exists()).toBe(true)
+    expect(w.find('[data-test="upload"]').exists()).toBe(true)
     await w.find('[data-test="back"]').trigger('click')
     expect(ionRouter.back).toHaveBeenCalled()
   })

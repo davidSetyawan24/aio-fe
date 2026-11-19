@@ -16,7 +16,7 @@
           <BadanForm v-else-if="view === 'manual'" mode="manual" @done="onDone" @open="goExisting" />
           <BadanForm v-else-if="view === 'edit' && weighing" mode="edit" :initial="weighing" @done="onDone" @open="goExisting" />
           <p v-else-if="view === 'edit'" class="bd-gone" data-test="gone">Timbangannya nggak ketemu. Mungkin udah dihapus.</p>
-          <div v-else-if="view === 'upload'" data-test="upload-placeholder" />
+          <BadanUpload v-else-if="view === 'upload'" @manual="goManual" @done="onDone" @open="goExisting" />
         </template>
       </div>
     </ion-content>
@@ -30,6 +30,7 @@ import { PhCaretLeft } from '@phosphor-icons/vue'
 import { useRoute } from 'vue-router'
 import BadanDetail from '@/components/badan/BadanDetail.vue'
 import BadanForm from '@/components/badan/BadanForm.vue'
+import BadanUpload from '@/components/badan/BadanUpload.vue'
 import '@/components/badan/badan.css'
 import { dLong, jam } from '@/lib/badanView.js'
 import { useMedia } from '@/lib/media.js'
@@ -78,6 +79,7 @@ onIonViewWillEnter(() => {
 
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate(BASE, 'back', 'replace'))
 const goEdit = () => ionRouter.navigate(`${BASE}/${id}/ubah`, 'forward', 'push')
+const goManual = () => ionRouter.navigate(`${BASE}/catat`, 'forward', 'replace')
 const goExisting = (existingId) => ionRouter.navigate(`${BASE}/${existingId}`, 'forward', 'push')
 
 async function onDone(message) {

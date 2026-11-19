@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @done="onPanelDone" />
+      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @done="onPanelDone" />
 
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="openPanel('upload')">
         Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>

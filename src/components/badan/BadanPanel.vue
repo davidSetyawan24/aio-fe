@@ -2,7 +2,7 @@
   <!-- Ke dalem ion-app (bukan body): action sheet Ionic (konfirmasi Hapus / Ganti) dipasang di ion-app, kalau panel di body ketutup scrim. -->
   <Teleport to="ion-app">
     <div class="bp-scrim" :class="{ show: open }" @click="requestClose" />
-    <aside class="bp-panel" :class="{ show: open }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
+    <aside class="bp-panel" :class="{ show: open, wide: view === 'upload' && stage !== 'pick' }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
       <div class="bp-head">
         <button v-if="view === 'edit'" type="button" class="bp-x" aria-label="Balik" data-test="panel-back" @click="$emit('detail', id)"><PhCaretLeft :size="18" weight="bold" /></button>
         <h2 data-test="panel-title">{{ title }}</h2>
@@ -13,17 +13,18 @@
         <BadanDetail v-if="view === 'detail'" ref="child" :key="`${formKey}d${id}`" :weighing-id="id" @edit="$emit('edit', id)" @done="(m) => $emit('done', m)" />
         <BadanForm v-else-if="view === 'manual'" ref="child" :key="`${formKey}m`" mode="manual" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
         <BadanForm v-else-if="view === 'edit' && weighing" ref="child" :key="`${formKey}e${id}`" mode="edit" :initial="weighing" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
-        <p v-else-if="view === 'upload'" class="bp-wait" data-test="upload-placeholder" />
+        <BadanUpload v-else-if="view === 'upload'" ref="child" :key="`${formKey}u`" @stage="(s) => (stage = s)" @manual="$emit('manual')" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
       </div>
     </aside>
   </Teleport>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { PhCaretLeft, PhX } from '@phosphor-icons/vue'
 import BadanDetail from '@/components/badan/BadanDetail.vue'
 import BadanForm from '@/components/badan/BadanForm.vue'
+import BadanUpload from '@/components/badan/BadanUpload.vue'
 import { dLong, jam } from '@/lib/badanView.js'
 import { useBadanStore } from '@/stores/badan.js'
 
@@ -35,10 +36,13 @@ const props = defineProps({
   /** Naikin tiap buka biar isinya mulai dari awal. */
   formKey: { type: Number, default: 0 },
 })
-const emit = defineEmits(['close', 'edit', 'done', 'detail'])
+const emit = defineEmits(['close', 'edit', 'done', 'detail', 'manual'])
 
 const store = useBadanStore()
 const child = ref(null)
+const stage = ref('pick')
+// Panel baru dibuka / isinya mulai dari awal → balik sempit.
+watch(() => [props.open, props.formKey, props.view], () => (stage.value = 'pick'))
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(props.id)) ?? null)
 
 const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', detail: 'Detail timbangan' }
