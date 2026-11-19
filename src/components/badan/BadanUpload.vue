@@ -23,11 +23,11 @@
     <div v-else class="bu-grid">
       <div class="bu-imgcol">
         <div class="b-core bu-strip">
-          <span class="bu-thumb"><img :src="url" alt="" /></span>
+          <span class="bu-thumb"><img v-if="url" :src="url" alt="" /></span>
           <div class="t"><b>{{ fileName }}</b><small>Gambar panjang dari Zepp Life</small></div>
           <button type="button" class="bu-lk" data-test="toggle-img" @click="showImg = !showImg">{{ showImg ? 'Tutup' : 'Liat gambar' }}</button>
         </div>
-        <div class="bu-imgfull" :class="{ show: showImg }" data-test="imgfull"><img :src="url" alt="Gambar timbangan" /></div>
+        <div class="bu-imgfull" :class="{ show: showImg }" data-test="imgfull"><img v-if="url" :src="url" alt="Gambar timbangan" /></div>
         <div v-if="stage === 'result'" class="bu-reread">
           <p><b>Ada yang beda sama gambar?</b>Kadang bacaan pertama meleset, coba sekali lagi.</p>
           <button type="button" class="pill small" data-test="reread" @click="reread"><PhArrowsClockwise :size="16" weight="bold" />&nbsp;Baca ulang</button>
@@ -55,7 +55,8 @@
             <p>{{ failText }}</p>
             <div class="bu-btnrow">
               <button v-if="canRetry" type="button" class="pill" data-test="reread" @click="reread"><PhArrowsClockwise :size="17" weight="bold" />&nbsp;Baca ulang</button>
-              <button type="button" class="pill ghost" :style="canRetry ? '' : 'grid-column: span 2'" data-test="manual" @click="$emit('manual')"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
+              <button v-else-if="failStatus === 422" type="button" class="pill" data-test="another" @click="another"><PhImage :size="17" />&nbsp;Pilih gambar lain</button>
+              <button type="button" class="pill ghost" :style="canRetry || failStatus === 422 ? '' : 'grid-column: span 2'" data-test="manual" @click="$emit('manual')"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
             </div>
           </div>
           <div class="bf-note"><PhEyeSlash :size="15" />Gambarnya nggak disimpen, cuma angkanya.</div>
@@ -100,10 +101,10 @@ let token = 0
 watch(stage, (s) => emit('stage', s), { immediate: true })
 
 const BLOCKED = (s) => s === 429 || s === 503
-const canRetry = computed(() => !BLOCKED(failStatus.value))
+const canRetry = computed(() => !BLOCKED(failStatus.value) && failStatus.value !== 422)
 const failTitle = computed(() => (BLOCKED(failStatus.value) ? 'Belum bisa baca gambar' : 'Nggak kebaca'))
 const failText = computed(() =>
-  BLOCKED(failStatus.value) || (failStatus.value && failStatus.value !== 502 && failMessage.value)
+  BLOCKED(failStatus.value) || failStatus.value === 422 || (failStatus.value && failStatus.value !== 502 && failMessage.value)
     ? failMessage.value
     : 'Coba Baca ulang atau isi manual. Pastiin gambarnya hasil Bagikan dari Zepp Life, bukan foto layar yang kepotong.',
 )
@@ -143,6 +144,15 @@ async function run(mine = ++token) {
     failMessage.value = err?.message ?? ''
     stage.value = 'fail'
   }
+}
+
+/** Gambarnya ditolak (422): kirim ulang blob yang sama percuma → balik pilih gambar. */
+function another() {
+  token += 1
+  revoke()
+  blob = null
+  result.value = null
+  stage.value = 'pick'
 }
 
 async function reread() {

@@ -45,9 +45,12 @@ const stage = ref('pick')
 watch(() => [props.open, props.formKey, props.view], () => (stage.value = 'pick'))
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(props.id)) ?? null)
 
+const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
 const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', detail: 'Detail timbangan' }
-const title = computed(() => TITLES[props.view] ?? '')
+const UP_TITLE = { result: 'Hasil bacaan' }
+const title = computed(() => (props.view === 'upload' ? UP_TITLE[stage.value] ?? TITLES.upload : TITLES[props.view] ?? ''))
 const subtitle = computed(() => {
+  if (props.view === 'upload') return UP_SUB[stage.value] ?? ''
   if (props.view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'
   if (props.view === 'edit' && weighing.value) return `${dLong(weighing.value.weighedOn)}, ${jam(weighing.value.weighedAt)}`
   return ''

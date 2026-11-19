@@ -122,4 +122,46 @@ describe('BadanUpload', () => {
     mounted = null
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:abc')
   })
+
+  it('422 offers another image (back to pick) instead of Baca ulang', async () => {
+    const w = make(async () => { throw new ApiError('Gambarnya nggak valid.', 422) })
+    await pick(w)
+    expect(w.find('[data-test="reread"]').exists()).toBe(false)
+    expect(w.text()).toContain('Gambarnya nggak valid.')
+    await w.find('[data-test="another"]').trigger('click')
+    expect(w.text()).toContain('Pilih gambar timbangan')
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:abc')
+  })
+
+  it('picking twice revokes the first object url', async () => {
+    URL.createObjectURL = vi.fn().mockReturnValueOnce('blob:1').mockReturnValueOnce('blob:2')
+    const w = make(async () => read)
+    await pick(w)
+    await pick(w)
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:1')
+    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:2')
+  })
+
+  it('a stale scan response does not overwrite a newer pick', async () => {
+    const releases = []
+    const w = make(() => new Promise((r) => releases.push(r)))
+    await pick(w)
+    await pick(w)
+    releases[0]({ ...read, weight: 11, check: [] })
+    await flushPromises()
+    expect(w.find('[data-test="form"]').exists()).toBe(false)
+    releases[1](read)
+    await flushPromises()
+    expect(w.find('[data-test="f-weight"]').element.value).toBe('74,90')
+  })
+
+  it('a scan resolving after unmount does not throw', async () => {
+    let release
+    const w = make(() => new Promise((r) => (release = r)))
+    await pick(w)
+    w.unmount()
+    mounted = null
+    release(read)
+    await expect(flushPromises()).resolves.not.toThrow()
+  })
 })

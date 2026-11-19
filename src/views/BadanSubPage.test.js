@@ -77,6 +77,12 @@ describe('BadanSubPage', () => {
   it('upload: registered with a placeholder and a back button', async () => {
     const w = await mountSub({ view: 'upload' })
     expect(w.find('[data-test="upload"]').exists()).toBe(true)
+    expect(w.find('h1').text()).toContain('Upload timbangan.')
+    expect(w.find('[data-test="sub"]').text()).toBe('Dari gambar Zepp Life.')
+    w.findComponent({ name: 'BadanUpload' }).vm.$emit('stage', 'result')
+    await flushPromises()
+    expect(w.find('h1').text()).toContain('Hasil bacaan.')
+    expect(w.find('[data-test="sub"]').text()).toBe('Cek dulu angkanya, terus Simpen.')
     await w.find('[data-test="back"]').trigger('click')
     expect(ionRouter.back).toHaveBeenCalled()
   })

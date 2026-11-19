@@ -16,7 +16,7 @@
           <BadanForm v-else-if="view === 'manual'" mode="manual" @done="onDone" @open="goExisting" />
           <BadanForm v-else-if="view === 'edit' && weighing" mode="edit" :initial="weighing" @done="onDone" @open="goExisting" />
           <p v-else-if="view === 'edit'" class="bd-gone" data-test="gone">Timbangannya nggak ketemu. Mungkin udah dihapus.</p>
-          <BadanUpload v-else-if="view === 'upload'" @manual="goManual" @done="onDone" @open="goExisting" />
+          <BadanUpload v-else-if="view === 'upload'" @stage="(s) => (stage = s)" @manual="goManual" @done="onDone" @open="goExisting" />
         </template>
       </div>
     </ion-content>
@@ -53,12 +53,14 @@ const id = route.params.id ?? null
 const failed = ref(false)
 
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(id)) ?? null)
+const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
 const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan' }
-const title = TITLES[view] ?? ''
+const stage = ref('pick')
+const title = computed(() => (view === 'upload' && stage.value === 'result' ? 'Hasil bacaan' : TITLES[view] ?? ''))
 const subtitle = computed(() => {
   if (view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'
   if (view === 'edit' && weighing.value) return `${dLong(weighing.value.weighedOn)}, ${jam(weighing.value.weighedAt)}`
-  if (view === 'upload') return 'Dari gambar Zepp Life.'
+  if (view === 'upload') return UP_SUB[stage.value] ?? ''
   return ''
 })
 
