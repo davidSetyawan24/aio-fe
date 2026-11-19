@@ -29,13 +29,14 @@ const homeStub = { render: () => null }
 const personalStub = { render: () => null }
 const personalSubStub = { render: () => null }
 const cctvStub = { render: () => null }
+const badanSubStub = { render: () => null }
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
-  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub, CctvPage: cctvStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub, CctvPage: cctvStub, BadanSubPage: badanSubStub,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -114,6 +115,14 @@ describe('buildTabRoutes', () => {
     }
     for (const [path, view] of Object.entries(expected)) {
       expect(find(path).component).toBe(personalSubStub)
+      expect(find(path).meta).toEqual({ view })
+    }
+  })
+
+  it('opens the Badan child pages as one wrapper, told apart by meta.view', () => {
+    const expected = { 'menu/badan/upload': 'upload', 'menu/badan/catat': 'manual', 'menu/badan/:id': 'detail', 'menu/badan/:id/ubah': 'edit' }
+    for (const [path, view] of Object.entries(expected)) {
+      expect(find(path).component).toBe(badanSubStub)
       expect(find(path).meta).toEqual({ view })
     }
   })

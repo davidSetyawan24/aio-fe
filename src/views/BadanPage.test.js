@@ -38,8 +38,14 @@ async function mountPage({ width = 390, data = { weighings, target: target() } }
   return w
 }
 
-beforeEach(() => ionRouter.push.mockReset())
-afterEach(() => mounted.splice(0).forEach((w) => w.unmount()))
+beforeEach(() => {
+  ionRouter.push.mockReset()
+  document.body.appendChild(document.createElement('ion-app'))
+})
+afterEach(() => {
+  mounted.splice(0).forEach((w) => w.unmount())
+  document.querySelectorAll('ion-app').forEach((e) => e.remove())
+})
 
 describe('BadanPage', () => {
   it('kosong: kartu "Belum ada timbangan", nggak nyuruh mulai, nggak ada isi lain', async () => {
@@ -161,5 +167,30 @@ describe('BadanPage', () => {
     await pc.find('[data-test="hrow"]').trigger('click')
     expect(pc.vm.panel).toMatchObject({ open: true, view: 'detail', id: 100 })
     expect(ionRouter.push).toHaveBeenCalledTimes(3)
+  })
+
+  it('PC: panel nampilin form isi manual; abis simpan panel nutup', async () => {
+    const w = await mountPage({ width: 1440 })
+    await w.find('[data-test="manual"]').trigger('click')
+    await flushPromises()
+    const panel = document.querySelector('[data-test="panel"]')
+    expect(panel.classList.contains('show')).toBe(true)
+    expect(panel.querySelector('[data-test="panel-title"]').textContent).toBe('Isi manual')
+    expect(panel.querySelector('[data-test="f-weight"]')).not.toBeNull()
+    w.findComponent({ name: 'BadanPanel' }).vm.$emit('done', 'Kesimpen ✓')
+    await flushPromises()
+    expect(w.vm.panel.open).toBe(false)
+  })
+
+  it('PC: Ubah di detail pindah ke form ubah, abis simpan balik ke detail', async () => {
+    const w = await mountPage({ width: 1440 })
+    w.vm.openPanel('detail', 100)
+    await flushPromises()
+    document.querySelector('[data-test="edit"]').click()
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'edit', id: 100 })
+    w.findComponent({ name: 'BadanPanel' }).vm.$emit('done', 'Perubahan kesimpen ✓')
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'detail', id: 100 })
   })
 })

@@ -102,7 +102,7 @@ export function errorLines(err) {
 
 /** Enter di kolom form → pindah ke kolom berikutnya (kolom terakhir: tutup keyboard). Tanpa ini Enter ngirim form. */
 export function focusNext(e) {
-  const fields = [...(e.target.closest('form')?.querySelectorAll('.pf-in') ?? [])]
+  const fields = [...(e.target.closest('form')?.querySelectorAll('.pf-in, .bf-in') ?? [])]
   const next = fields[fields.indexOf(e.target) + 1]
   if (next) next.focus()
   else e.target.blur()

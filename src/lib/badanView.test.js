@@ -23,3 +23,10 @@ describe('badanView', () => {
     expect(s.pos(72)).toBe(0)
   })
 })
+
+describe('dLong', () => {
+  it('writes weekday and the full month name', async () => {
+    const { dLong } = await import('./badanView.js')
+    expect(dLong('2026-11-19')).toBe('Kamis, 19 November')
+  })
+})

@@ -36,6 +36,8 @@
         </div>
       </div>
 
+      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @done="onPanelDone" />
+
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="openPanel('upload')">
         Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
       </button>
@@ -44,25 +46,30 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
+import { useRoute, useRouter } from 'vue-router'
 import BadanChart from '@/components/badan/BadanChart.vue'
 import BadanEmpty from '@/components/badan/BadanEmpty.vue'
 import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
 import BadanLast from '@/components/badan/BadanLast.vue'
+import BadanPanel from '@/components/badan/BadanPanel.vue'
 import BadanTarget from '@/components/badan/BadanTarget.vue'
 import '@/components/badan/badan.css'
 import { ARAH_INFO } from '@/lib/badan.js'
 import { headerSub } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { useMedia } from '@/lib/media.js'
+import { showToast } from '@/lib/personalForm.js'
 import { useBadanStore } from '@/stores/badan.js'
 
 const BASE = '/tabs/menu/badan'
 const store = useBadanStore()
 const ionRouter = useIonRouter()
+const route = useRoute()
+const router = useRouter()
 const wide = useMedia('(min-width: 768px)')
 const pc = useMedia('(min-width: 1100px)')
 const failed = ref(false)
@@ -87,7 +94,7 @@ async function load() {
   }
 }
 
-/** HP (<768px) = halaman anak, PC = panel (dipasang task berikutnya). */
+/** HP (<768px) = halaman anak, ≥768px = panel geser. */
 const panel = reactive({ open: false, view: 'detail', id: null, key: 0 })
 const PATHS = { upload: () => `${BASE}/upload`, manual: () => `${BASE}/catat`, detail: (id) => `${BASE}/${id}`, edit: (id) => `${BASE}/${id}/ubah` }
 function openPanel(view, id = null) {
@@ -97,7 +104,29 @@ function openPanel(view, id = null) {
   panel.key += 1
   panel.open = true
 }
+const closePanel = () => (panel.open = false)
+/** Abis simpan / hapus: ubah → balik ke detailnya, sisanya nutup panel. Toast tetep nongol. */
+function onPanelDone(message) {
+  if (panel.view === 'edit') openPanel('detail', panel.id)
+  else closePanel()
+  showToast(message)
+}
 defineExpose({ openPanel, panel })
+
+/**
+ * Lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>). Baru dijalanin abis datanya ke-muat; abis dipakai query dibuang.
+ */
+function followLink() {
+  if (!store.loaded || !route || route.path !== BASE) return
+  const { panel: wanted, id, ...rest } = route.query
+  if (wanted === undefined) return
+  router?.replace({ path: BASE, query: rest })
+  const num = Number(id)
+  if (!['detail', 'edit', 'manual', 'upload'].includes(wanted) || !wide.value) return
+  if ((wanted === 'detail' || wanted === 'edit') && (!Number.isInteger(num) || !store.weighings.some((w) => w.id === num))) return
+  openPanel(wanted, wanted === 'detail' || wanted === 'edit' ? num : null)
+}
+watch([() => store.loaded, () => route?.query, () => route?.path], followLink, { immediate: true })
 
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/menu', 'back', 'replace'))
 

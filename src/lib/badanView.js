@@ -1,5 +1,5 @@
 /** Teks tampilan halaman Badan (murni, gampang dites). Hitungan angka ada di badan.js. */
-import { BLN, HR, addDays, weekdayOf } from './agenda.js'
+import { BLN, BULAN, HARI, HR, addDays, weekdayOf } from './agenda.js'
 import { fmt } from './badan.js'
 
 /** "17 Nov" */
@@ -7,6 +7,9 @@ export const dShort = (date) => `${Number(date.slice(8))} ${BLN[Number(date.slic
 
 /** "Sen, 17 Nov" */
 export const dDay = (date) => `${HR[weekdayOf(date)]}, ${dShort(date)}`
+
+/** "Senin, 17 November" */
+export const dLong = (date) => `${HARI[weekdayOf(date)]}, ${Number(date.slice(8))} ${BULAN[Number(date.slice(5, 7)) - 1]}`
 
 /** "06:42" → "06.42" */
 export const jam = (hhmm) => (hhmm ? hhmm.replace(':', '.') : '')

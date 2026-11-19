@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage, BadanSubPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage, 'data-pribadi': PersonalPage, cctv: CctvPage, badan: BadanPage }
   const moduleRoutes = modules.map((m) => {
@@ -44,6 +44,11 @@ export function buildTabRoutes(pages) {
     { path: 'menu/data-pribadi/alamat/baru', component: PersonalSubPage, meta: { view: 'addr-new' } },
     { path: 'menu/data-pribadi/alamat/:id/ubah', component: PersonalSubPage, meta: { view: 'addr-edit' } },
     { path: 'menu/data-pribadi/biodata/ubah', component: PersonalSubPage, meta: { view: 'bio' } },
+    // Rute anak Badan (HP): satu halaman pembungkus, `meta.view` yang nentuin isinya.
+    { path: 'menu/badan/upload', component: BadanSubPage, meta: { view: 'upload' } },
+    { path: 'menu/badan/catat', component: BadanSubPage, meta: { view: 'manual' } },
+    { path: 'menu/badan/:id', component: BadanSubPage, meta: { view: 'detail' } },
+    { path: 'menu/badan/:id/ubah', component: BadanSubPage, meta: { view: 'edit' } },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },
