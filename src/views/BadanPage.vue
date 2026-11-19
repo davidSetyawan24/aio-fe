@@ -3,8 +3,7 @@
     <ion-content :fullscreen="true">
       <div class="page b-page">
         <div class="b-toprow">
-          <button v-if="!wide" type="button" class="b-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
-          <span v-else />
+          <button type="button" class="b-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
           <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="openPanel('manual')"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
         </div>
         <span class="eyebrow rise"><span class="dot" />Badan</span>
@@ -41,7 +40,7 @@
       <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" @close="targetOpen = false" />
 
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="openPanel('upload')">
-        Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
+        Upload timbangan <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
       </button>
     </ion-content>
   </ion-page>
@@ -49,7 +48,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
 import BadanChart from '@/components/badan/BadanChart.vue'
@@ -62,7 +61,7 @@ import BadanTargetSheet from '@/components/badan/BadanTargetSheet.vue'
 import BadanTarget from '@/components/badan/BadanTarget.vue'
 import '@/components/badan/badan.css'
 import { ARAH_INFO } from '@/lib/badan.js'
-import { headerSub } from '@/lib/badanView.js'
+import { headerSub, isBadanChild } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
@@ -77,8 +76,10 @@ const wide = useMedia('(min-width: 768px)')
 const pc = useMedia('(min-width: 1100px)')
 const failed = ref(false)
 const today = ref(wibNow().date)
-/** Naik tiap halaman dibuka lagi → grafik di-remount (balik ke pilihan bawaan). */
+/** Naik tiap Badan dibuka lagi dari luar → grafik di-remount (balik ke pilihan bawaan). */
 const chartKey = ref(0)
+/** Keluar ke halaman anak Badan (detail / catat / ubah / upload di HP) → pas balik pilihan grafik tetep. */
+let toChild = false
 
 const isEmpty = computed(() => store.loaded && store.weighings.length === 0)
 const subText = computed(() => {
@@ -140,8 +141,11 @@ const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navig
 
 let entered = false
 onMounted(load)
+// Pas ini jalan rute global udah pindah ke tujuan.
+onIonViewWillLeave(() => (toChild = isBadanChild(route?.path)))
 onIonViewWillEnter(() => {
-  chartKey.value += 1
+  if (!toChild) chartKey.value += 1
+  toChild = false
   today.value = wibNow().date
   if (entered) load()
   entered = true
@@ -152,6 +156,11 @@ onIonViewWillEnter(() => {
 .b-toprow { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
 .b-back { display: inline-flex; align-items: center; gap: 2px; height: 44px; margin-left: -6px; padding: 0 8px 0 6px; border: 0; background: none; color: var(--muted); font: 700 14.5px var(--ion-font-family); cursor: pointer; }
 .b-headrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+/* iPad (768–1099): sub-judul dapet lebar penuh, tombol turun ke baris sendiri. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .b-headrow { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .b-hact { margin-bottom: 0; }
+}
 .b-h1 { margin-bottom: 4px; }
 .b-sub { display: block; font-size: 15px; letter-spacing: -0.01em; margin-top: 8px; line-height: 1.4; }
 .b-hact { display: flex; gap: 8px; flex-shrink: 0; margin-bottom: 6px; }

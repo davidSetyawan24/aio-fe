@@ -233,4 +233,13 @@ describe('BadanPage', () => {
     expect(row).toContain('0% jalan · kurang 2,0 kg lagi')
     expect(row).not.toContain('100%')
   })
+
+  it('link "Semua menu" ada juga di PC/iPad; FAB HP "Upload timbangan"', async () => {
+    const pc = await mountPage({ width: 1440 })
+    expect(pc.find('[data-test="back"]').text()).toBe('Semua menu')
+    const ipad = await mountPage({ width: 820 })
+    expect(ipad.find('[data-test="back"]').exists()).toBe(true)
+    const hp = await mountPage()
+    expect(hp.find('[data-test="fab"]').text()).toBe('Upload timbangan')
+  })
 })

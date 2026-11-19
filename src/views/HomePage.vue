@@ -18,8 +18,10 @@
             <HomeToday :events="store.data.agenda.events" :todos="store.data.agenda.todos" :today="store.data.today" :minutes="now.minutes" />
           </section>
           <section class="h-side" data-test="slot-side">
-            <div v-if="store.data.body" class="h-bodywrap"><HomeBody :body="store.data.body ?? null" :today="store.data.today" /></div>
-            <HomeMoney :money="store.data.money" :owed="store.data.owed" :today="store.data.today" />
+            <div v-if="store.data.body && !pc" class="h-bodywrap"><HomeBody :body="store.data.body" :today="store.data.today" /></div>
+            <HomeMoney :money="store.data.money" :owed="store.data.owed" :today="store.data.today">
+              <template v-if="store.data.body && pc" #afterHero><div class="h-bodywrap"><HomeBody :body="store.data.body" :today="store.data.today" /></div></template>
+            </HomeMoney>
           </section>
         </div>
       </div>
@@ -36,12 +38,15 @@ import HomeMoney from '@/components/HomeMoney.vue'
 import HomeToday from '@/components/HomeToday.vue'
 import NotifBell from '@/components/NotifBell.vue'
 import { startBellPolling } from '@/lib/bellPolling.js'
+import { useMedia } from '@/lib/media.js'
 import { dateLine, greeting, wibNow } from '@/lib/home.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useHomeStore } from '@/stores/home.js'
 
 const auth = useAuthStore()
+/** PC (≥1100): kartu Badan pas di bawah "Duit hari ini"; HP/iPad: di atas Duit, abis Hari ini. */
+const pc = useMedia('(min-width: 1100px)')
 const store = useHomeStore()
 const now = ref(wibNow())
 const error = ref('')
@@ -103,7 +108,6 @@ onBeforeUnmount(() => {
 
 .h-grid { display: block; margin-top: 8px; }
 .h-side { display: flex; flex-direction: column; }
-.h-bodywrap { order: -1; }
 
 @media (min-width: 1100px) {
   .h-page { max-width: none; margin: 0; padding: 64px 48px 48px; }
@@ -111,7 +115,6 @@ onBeforeUnmount(() => {
   .h-attn { grid-area: attn; }
   .h-today { grid-area: today; }
   .h-side { grid-area: side; }
-  .h-bodywrap { order: 1; }
 }
 @media (min-width: 1600px) {
   .h-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 420px; grid-template-areas: 'attn today side'; }

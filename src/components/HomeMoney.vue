@@ -18,6 +18,9 @@
       </div>
     </template>
 
+    <!-- Nyelip pas di bawah "Duit hari ini" (kartu Badan di PC). -->
+    <slot name="afterHero" />
+
     <template v-if="owed">
       <div class="h-label rise"><span>Duit yang belum balik</span></div>
       <div class="h-pair rise">

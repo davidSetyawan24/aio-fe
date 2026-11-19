@@ -79,6 +79,27 @@ describe('HomePage', () => {
     expect(w2.find('[data-test="home-body"]').exists()).toBe(false)
   })
 
+  it('PC ≥1100: kartu Badan pas di bawah "Duit hari ini" (sebelum Duit yang belum balik)', async () => {
+    const orig = window.matchMedia
+    window.matchMedia = (q) => ({ matches: /min-width:\s*(1100|768)px/.test(q), addEventListener: () => {}, removeEventListener: () => {} })
+    try {
+      const body = { lastOn: '2026-11-16', lastAt: '06:42', from: '2026-11-10', to: '2026-11-16', count: 3, arah: null, fat: 21, muscle: 33, weight: 74, deltas: { fat: null, muscle: null, weight: null }, tones: { fat: 'neutral', muscle: 'neutral', weight: 'neutral' }, weightGoal: null, spark: [] }
+      const money = { month: '2026-11', total: 2_140_000, todaySpent: 35_000, budget: { total: 4_000_000, left: 1_860_000 }, todayBudget: { jatah: 177_500, spent: 35_000, left: 142_500, monthLeft: 1_860_000, daysLeft: 15 } }
+      const owed = { invoices: { total: 0, count: 0, lateCount: 0, nearestDue: null }, split: { total: 0, people: 0 } }
+      const w = await mountPage(async () => ({ ...data(), money, owed, body }))
+      const html = w.find('[data-test="money"]').html()
+      expect(w.findAll('[data-test="home-body"]')).toHaveLength(1)
+      const hero = html.indexOf('data-test="hero"')
+      const card = html.indexOf('data-test="home-body"')
+      const owedAt = html.indexOf('data-test="owed-invoice"')
+      expect(hero).toBeGreaterThan(-1)
+      expect(card).toBeGreaterThan(hero)
+      expect(owedAt).toBeGreaterThan(card)
+    } finally {
+      window.matchMedia = orig
+    }
+  })
+
   it('gagal muat pertama → pesan + Coba lagi', async () => {
     vi.setSystemTime(new Date('2026-11-16T01:12:00Z'))
     let fail = true
