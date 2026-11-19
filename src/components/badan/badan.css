@@ -182,7 +182,8 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bd-t3 .rd, .bd-list .rd { color: var(--red); }
 .bd-list .r { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 16px; }
 .bd-list .r + .r { box-shadow: inset 0 1px 0 var(--hair); }
-.bd-list .r .k { flex: 1; font-size: 14px; font-weight: 700; }
+.core.bd-list { padding: 4px 0; }
+.bd-list .r .k { flex: 1; font-size: 14px; font-weight: 700; white-space: nowrap; }
 .bd-list .r .a { font-size: 12px; font-weight: 600; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .bd-list .r .v { font-size: 15px; font-weight: 800; min-width: 92px; text-align: right; font-variant-numeric: tabular-nums; }
 .bd-list .r .v small { font-size: 11.5px; color: var(--muted); font-weight: 700; margin-left: 2px; }
@@ -261,13 +262,16 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bu-fail h3 { margin: 8px 0 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
 .bu-fail p { margin: 6px auto 0; font-size: 13.5px; font-weight: 600; color: var(--muted); line-height: 1.5; max-width: 300px; }
 .bu-btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
-.bu-btnrow .pill { justify-content: center; padding: 0 16px; }
+.bu-btnrow .pill { justify-content: center; height: 46px; padding: 0 16px; }
+.bu-reread .pill { height: 36px; padding: 0 14px; flex-shrink: 0; }
 @media (min-width: 768px) {
   .bp-panel.wide { width: min(1000px, 100vw); }
   .bu-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
-  .bu-imgcol { position: sticky; top: 84px; }
+  /* Kolom gambar setinggi layar: gambar Zepp yang panjang di-scroll di dalemnya, "Baca ulang" tetep keliatan di bawahnya. */
+  .bu-imgcol { position: sticky; top: 84px; display: flex; flex-direction: column; max-height: calc(100vh - 108px); max-height: calc(100dvh - 108px); }
   .bu-imgcol .bu-strip { display: none; }
-  .bu-imgcol .bu-imgfull { display: block; margin-top: 14px; }
+  .bu-imgcol .bu-imgfull { display: block; margin-top: 14px; flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-radius: 18px; }
+  .bu-imgcol .bu-reread { flex-shrink: 0; }
   .bu-sk3.lain { grid-template-columns: 1fr 1fr 1fr; }
   .bu-grid .bf-grid.lain { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

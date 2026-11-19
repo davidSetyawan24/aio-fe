@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content ref="content" :fullscreen="true">
       <div class="page b-page b-sub">
         <div class="b-toprow">
           <button type="button" class="bs-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />{{ view === 'edit' ? 'Detail' : 'Badan' }}</button>
@@ -16,7 +16,7 @@
           <BadanForm v-else-if="view === 'manual'" mode="manual" @done="onDone" @open="goExisting" />
           <BadanForm v-else-if="view === 'edit' && weighing" mode="edit" :initial="weighing" @done="onDone" @open="goExisting" />
           <p v-else-if="view === 'edit'" class="bd-gone" data-test="gone">Timbangannya nggak ketemu. Mungkin udah dihapus.</p>
-          <BadanUpload v-else-if="view === 'upload'" @stage="(s) => (stage = s)" @manual="goManual" @done="onDone" @open="goExisting" />
+          <BadanUpload v-else-if="view === 'upload'" @stage="onStage" @manual="goManual" @done="onDone" @open="goExisting" />
         </template>
       </div>
     </ion-content>
@@ -56,6 +56,12 @@ const weighing = computed(() => store.weighings.find((w) => w.id === Number(id))
 const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
 const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan' }
 const stage = ref('pick')
+const content = ref(null)
+/** Ganti tahap upload → balik ke atas biar status barunya kebaca. */
+function onStage(s) {
+  stage.value = s
+  content.value?.$el?.scrollToTop?.(0)
+}
 const title = computed(() => (view === 'upload' && stage.value === 'result' ? 'Hasil bacaan' : TITLES[view] ?? ''))
 const subtitle = computed(() => {
   if (view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'

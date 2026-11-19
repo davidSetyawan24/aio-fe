@@ -2,7 +2,7 @@
   <!-- Ke dalem ion-app (bukan body): action sheet Ionic (konfirmasi Hapus / Ganti) dipasang di ion-app, kalau panel di body ketutup scrim. -->
   <Teleport to="ion-app">
     <div class="bp-scrim" :class="{ show: open }" @click="requestClose" />
-    <aside class="bp-panel" :class="{ show: open, wide: view === 'upload' && stage !== 'pick' }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
+    <aside ref="panelEl" class="bp-panel" :class="{ show: open, wide: view === 'upload' && stage !== 'pick' }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
       <div class="bp-head">
         <button v-if="view === 'edit'" type="button" class="bp-x" aria-label="Balik" data-test="panel-back" @click="$emit('detail', id)"><PhCaretLeft :size="18" weight="bold" /></button>
         <h2 data-test="panel-title">{{ title }}</h2>
@@ -13,7 +13,7 @@
         <BadanDetail v-if="view === 'detail'" ref="child" :key="`${formKey}d${id}`" :weighing-id="id" @edit="$emit('edit', id)" @done="(m) => $emit('done', m)" />
         <BadanForm v-else-if="view === 'manual'" ref="child" :key="`${formKey}m`" mode="manual" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
         <BadanForm v-else-if="view === 'edit' && weighing" ref="child" :key="`${formKey}e${id}`" mode="edit" :initial="weighing" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
-        <BadanUpload v-else-if="view === 'upload'" ref="child" :key="`${formKey}u`" @stage="(s) => (stage = s)" @manual="$emit('manual')" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
+        <BadanUpload v-else-if="view === 'upload'" ref="child" :key="`${formKey}u`" @stage="onStage" @manual="$emit('manual')" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
       </div>
     </aside>
   </Teleport>
@@ -41,6 +41,12 @@ const emit = defineEmits(['close', 'edit', 'done', 'detail', 'manual'])
 const store = useBadanStore()
 const child = ref(null)
 const stage = ref('pick')
+const panelEl = ref(null)
+/** Ganti tahap upload (baca / hasil / nggak kebaca) → panel balik ke atas biar status barunya kebaca. */
+function onStage(s) {
+  stage.value = s
+  if (panelEl.value) panelEl.value.scrollTop = 0
+}
 // Panel baru dibuka / isinya mulai dari awal → balik sempit.
 watch(() => [props.open, props.formKey, props.view], () => (stage.value = 'pick'))
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(props.id)) ?? null)

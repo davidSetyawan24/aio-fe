@@ -159,8 +159,9 @@ async function reread() {
   if (!blob) return
   reads.value += 1
   await run()
+  if (stage.value !== 'result') return
   const n = result.value?.check?.length ?? 0
-  if (stage.value === 'result' && n) showToast(`Dibaca ulang · tinggal ${n} angka yang perlu dicek`)
+  showToast(n ? `Dibaca ulang · tinggal ${n} angka yang perlu dicek` : 'Dibaca ulang ✓')
 }
 
 onBeforeUnmount(() => {

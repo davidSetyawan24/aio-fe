@@ -96,6 +96,24 @@ describe('BadanUpload', () => {
     expect(toast).toHaveBeenCalledWith('Dibaca ulang · tinggal 1 angka yang perlu dicek')
   })
 
+  it('Baca ulang yang hasilnya jelas semua tetep ngasih toast "Dibaca ulang ✓"', async () => {
+    const w = make(vi.fn().mockResolvedValueOnce(read).mockResolvedValueOnce({ ...read, check: [] }))
+    await pick(w)
+    await w.find('[data-test="reread"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-test="oksum"]').exists()).toBe(true)
+    expect(toast).toHaveBeenCalledWith('Dibaca ulang ✓')
+  })
+
+  it('Baca ulang yang gagal: nggak ada toast (layar Nggak kebaca yang ngomong)', async () => {
+    const w = make(vi.fn().mockResolvedValueOnce(read).mockRejectedValueOnce(new ApiError('x', 502)))
+    await pick(w)
+    await w.find('[data-test="reread"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-test="fail"]').exists()).toBe(true)
+    expect(toast).not.toHaveBeenCalled()
+  })
+
   it('shows reading number on the second read while loading', async () => {
     let release
     const w = make(vi.fn().mockResolvedValueOnce(read).mockImplementationOnce(() => new Promise((r) => (release = r))))
