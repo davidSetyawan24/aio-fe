@@ -1,5 +1,5 @@
 /** Badan: data garis grafik (hitungan murni). Rata-rata 7 hari pakai badan.js. */
-import { addDays } from './agenda.js'
+import { addDays, daysBetween } from './agenda.js'
 import { avg7, count7 } from './badan.js'
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
@@ -20,6 +20,17 @@ export function chartSeries(rows, keys, range, lastOn) {
       if (v != null) avg.push({ d, v })
     }
     out[key] = { daily, avg }
+  }
+  return out
+}
+
+/** Titik rata-rata → potongan garis; bolong > `maxGap` hari = garis putus (nggak ditarik lurus nyebrangin). */
+export function gapSegments(pts, maxGap = 7) {
+  const out = []
+  for (const p of pts) {
+    const seg = out.at(-1)
+    if (seg && daysBetween(seg.at(-1).d, p.d) <= maxGap) seg.push(p)
+    else out.push([p])
   }
   return out
 }

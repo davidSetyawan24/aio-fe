@@ -24,7 +24,7 @@
           <div class="b-ptop"><span class="k">{{ r.label }}</span><span class="v">{{ fmt(r.now, r.dec) }}{{ r.unit }} → <b>{{ fmtGoal(r.goal, r.dec) }}{{ r.unit }}</b></span></div>
           <div class="b-pbar"><i :style="{ width: `${r.pct}%` }" /></div>
           <div class="b-psub">
-            <span>awal {{ fmt(r.start, r.dec) }}{{ r.unit }} ({{ dShort(target.startedOn) }})</span>
+            <span>awal {{ fmt(r.start, r.dec) }}{{ r.unit }} ({{ dShort(startDate) }})</span>
             <span v-if="r.reached">udah nyampe 🎉</span>
             <span v-else><b>{{ r.pct }}%</b> jalan · kurang {{ fmt(r.left, r.dec) }}</span>
           </div>
@@ -43,7 +43,7 @@
             <div class="b-ptop"><span class="k">Berat</span><span class="v">{{ fmt(weightNow, 1) }} → <b>{{ fmt(goal.goal, 0) }} kg</b></span></div>
             <div class="b-pbar"><i :style="{ width: `${goal.state === 'in' ? 100 : goal.pct}%` }" /></div>
             <div class="b-psub">
-              <span>awal {{ fmt(weightStart, 1) }} kg ({{ dShort(target.startedOn) }})</span>
+              <span>awal {{ fmt(weightStart, 1) }} kg ({{ dShort(startDate) }})</span>
               <span v-if="goal.state === 'in'" class="b-chip green">✓ udah masuk kisaran</span>
               <span v-else-if="goal.state === 'below'" class="b-chip amber">di bawah kisaran {{ range }}</span>
               <span v-else-if="goal.state === 'above'" class="b-chip amber">di atas kisaran {{ range }}</span>
@@ -65,7 +65,7 @@
 import { computed } from 'vue'
 import { PhCaretRight, PhCheck, PhTarget } from '@phosphor-icons/vue'
 import { ARAH_INFO, avg7, etaFor, fmt, monthLabel, progress, startValue } from '@/lib/badan.js'
-import { dShort, rangeScale } from '@/lib/badanView.js'
+import { dShort, rangeScale, reachView, startOn } from '@/lib/badanView.js'
 import './badan.css'
 
 const props = defineProps({
@@ -79,8 +79,10 @@ defineEmits(['edit'])
 /** Angka target: tanpa nol di belakang koma (20%, 55 kg). */
 const fmtGoal = (v, dec) => v.toLocaleString('id-ID', { maximumFractionDigits: dec })
 
-const goal = computed(() => props.summary?.weightGoal ?? null)
 const weightNow = computed(() => props.summary?.weight ?? null)
+const goal = computed(() => reachView(props.summary?.weightGoal ?? null, weightNow.value))
+/** Tanggal timbangan yang jadi nilai "awal" (bukan tanggal target dipasang). */
+const startDate = computed(() => startOn(props.rows, props.target.startedOn))
 const weightStart = computed(() => startValue(props.rows, 'weight', props.target.startedOn) ?? weightNow.value)
 const range = computed(() => `${fmt(goal.value.min, 0)}–${fmt(goal.value.max, 0)}`)
 const scale = computed(() => (goal.value && weightNow.value != null ? rangeScale(goal.value.min, goal.value.max, weightNow.value) : null))

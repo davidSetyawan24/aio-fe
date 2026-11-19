@@ -9,7 +9,7 @@
           </button>
         </div>
         <div class="b-lhead">
-          <span>Rata-rata 7 hari · perubahan {{ since }}</span>
+          <span data-test="lhead">{{ avgLabel(count7(rows, lastOn)) }} · perubahan {{ since }}</span>
           <div class="b-seg" role="group">
             <button v-for="[v, l] in RANGES" :key="v" type="button" :class="{ on: range === v }" :data-test="`range-${v}`" @click="range = v">{{ l }}</button>
           </div>
@@ -47,9 +47,9 @@
                 <circle v-for="p in series[k].daily" :key="p.d" class="dot" :cx="X(p.d)" :cy="Y[k](p.v)" r="2.4" :style="{ fill: `var(--b-c-${k})` }" />
               </template>
             </template>
-            <path v-if="single && series[single].avg.length > 1" class="area" :d="areaPath" :style="{ fill: `var(--b-c-${single})` }" />
+            <path v-if="single && areaPath" class="area" :d="areaPath" :style="{ fill: `var(--b-c-${single})` }" />
             <template v-for="k in [...onKeys].reverse()" :key="`a${k}`">
-              <path v-if="series[k].avg.length > 1" class="avg" :d="pathOf(series[k].avg, k)" :style="{ stroke: `var(--b-c-${k})` }" />
+              <path v-if="series[k].avg.length > 1" class="avg" :d="pathOf(series[k].avg, k)" :style="{ stroke: `var(--b-c-${k})` }" data-test="avg-path" />
             </template>
             <template v-for="k in onKeys" :key="`l${k}`">
               <circle v-if="series[k].avg.length" class="last" :cx="X(series[k].avg.at(-1).d)" :cy="Y[k](series[k].avg.at(-1).v)" r="4.5" :style="{ fill: `var(--b-c-${k})` }" />
@@ -65,7 +65,7 @@
           <div v-if="cursor" ref="tipEl" class="b-tip" data-test="tip" :style="{ left: `${tipLeft}px` }">
             <b>{{ dDay(cursor.row.weighedOn) }}<template v-if="cursor.row.weighedAt"> · {{ jam(cursor.row.weighedAt) }}</template></b>
             <div v-for="k in onKeys" :key="k" class="tr">
-              <i :style="{ background: `var(--b-c-${k})` }" /><span>{{ METRIC_LABEL[k][1] }}</span><em>{{ fmt(cursor.row[k], METRICS[k].dec) }}{{ unitOf(k) }}</em>
+              <i :style="{ background: `var(--b-c-${k})` }" /><span>{{ METRIC_LABEL[k][1] }}</span><em>{{ fmtU(cursor.row[k], METRICS[k].dec, unitOf(k)) }}</em>
             </div>
             <small>angka timbangan hari itu</small>
           </div>
@@ -84,9 +84,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BLN, addDays, daysBetween } from '@/lib/agenda.js'
-import { CHART_ORDER, DEFAULT_ON, METRICS, METRIC_LABEL, UNIT, avg7, fmt, tone } from '@/lib/badan.js'
-import { chartSeries, niceStep, scaleFor } from '@/lib/badanChart.js'
-import { dDay, dShort, jam } from '@/lib/badanView.js'
+import { ADEC, CHART_ORDER, DEFAULT_ON, METRICS, METRIC_LABEL, UNIT, avg7, count7, fmt, tone } from '@/lib/badan.js'
+import { chartSeries, gapSegments, niceStep, scaleFor } from '@/lib/badanChart.js'
+import { avgLabel, dDay, dShort, fmtU, jam } from '@/lib/badanView.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
 import './badan.css'
@@ -199,12 +199,16 @@ const xTicks = computed(() => {
 const firstOn = computed(() => (props.rows.length ? props.rows.reduce((m, r) => (r.weighedOn < m ? r.weighedOn : m), props.rows[0].weighedOn) : null))
 const noData = computed(() => (firstOn.value && daysBetween(x0.value, firstOn.value) > 3 ? { x: (L.value + X(firstOn.value)) / 2 } : null))
 
-const pathOf = (pts, k) => pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.d).toFixed(1)},${Y.value[k](p.v).toFixed(1)}`).join('')
+/** Garis rata-rata; bolong > 7 hari = garisnya putus (titik sendirian nggak kegambar garis, cuma titik terakhir yang dibuletin). */
+const segPath = (seg, k) => seg.map((p, i) => `${i ? 'L' : 'M'}${X(p.d).toFixed(1)},${Y.value[k](p.v).toFixed(1)}`).join('')
+const pathOf = (pts, k) => gapSegments(pts).filter((seg) => seg.length > 1).map((seg) => segPath(seg, k)).join('')
 const areaPath = computed(() => {
   const k = single.value
-  const a = k ? series.value[k].avg : []
-  if (a.length < 2) return ''
-  return `${pathOf(a, k)}L${X(a.at(-1).d)},${H.value - B}L${X(a[0].d)},${H.value - B}Z`
+  if (!k) return ''
+  return gapSegments(series.value[k].avg)
+    .filter((seg) => seg.length > 1)
+    .map((seg) => `${segPath(seg, k)}L${X(seg.at(-1).d)},${H.value - B}L${X(seg[0].d)},${H.value - B}Z`)
+    .join('')
 })
 
 /* legenda */
@@ -215,7 +219,7 @@ const since = computed(() => {
 })
 const legend = computed(() =>
   onKeys.value.map((key) => {
-    const dec = METRICS[key].dec
+    const dec = ADEC[key]
     const a1 = avg7(props.rows, key, props.lastOn)
     const a0 = series.value[key].avg[0]?.v
     const dv = a1 == null || a0 == null ? null : +(a1 - a0).toFixed(dec)

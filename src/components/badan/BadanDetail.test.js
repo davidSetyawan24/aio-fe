@@ -40,6 +40,15 @@ beforeEach(() => {
 afterEach(() => mounted.splice(0).forEach((w) => w.unmount()))
 
 describe('BadanDetail', () => {
+  it('angka kosong (isi manual cuma berat): "–" tanpa satuan', async () => {
+    const w = await mountDetail(3)
+    const row = useBadanStore().weighings.find((r) => r.id === 3)
+    row.fat = null
+    row.water = null
+    await flushPromises()
+    expect(w.find('[data-test="main"]').text()).not.toContain('–%')
+    expect(w.find('[data-test="list"]').text()).not.toContain('–%')
+  })
   it('shows the long date, source chip, 3 main numbers with the 7-day comparison', async () => {
     const w = await mountDetail(3)
     expect(w.find('[data-test="title"]').text()).toMatch(/^(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu), \d{1,2} \w+$/)

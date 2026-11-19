@@ -1,5 +1,5 @@
 import { addDays } from './agenda.js'
-import { chartSeries, niceStep, scaleFor } from './badanChart.js'
+import { chartSeries, gapSegments, niceStep, scaleFor } from './badanChart.js'
 
 const LAST = '2026-11-30'
 /** 30 hari, satu timbangan per hari, berat 80 → 77 (terbaru paling ringan). */
@@ -52,4 +52,15 @@ describe('niceStep', () => {
     expect(niceStep(8)).toBe(10)
     expect(niceStep(0.04)).toBeCloseTo(0.05)
   })
+})
+
+describe('gapSegments (garis rata-rata putus di bolong panjang)', () => {
+  it('jarak > 7 hari → potongan baru; ≤ 7 hari nyambung', () => {
+    const pts = [{ d: '2026-11-01' }, { d: '2026-11-03' }, { d: '2026-11-10' }, { d: '2026-11-18' }, { d: '2026-11-19' }]
+    expect(gapSegments(pts).map((s) => s.map((p) => p.d))).toEqual([
+      ['2026-11-01', '2026-11-03', '2026-11-10'],
+      ['2026-11-18', '2026-11-19'],
+    ])
+  })
+  it('kosong → []', () => expect(gapSegments([])).toEqual([]))
 })

@@ -167,6 +167,7 @@ export function bodySummary(rows, target) {
     lastAt: last.weighedAt ?? null,
     from: addDays(D, -6),
     to: D,
+    count: count7(rows, D),
     arah,
     fat: avg7(rows, 'fat', D),
     muscle: avg7(rows, 'muscle', D),
@@ -191,6 +192,9 @@ export const METRIC_LABEL = {
   bmi: ['BMI', 'BMI'],
   score: ['Skor badan', 'Skor badan'],
 }
+
+/** Desimal angka rata-rata (hero, legenda, detail): tulang 2, BMR & skor 0, sisanya 1. */
+export const ADEC = { weight: 1, fat: 1, muscle: 1, water: 1, visceral: 1, bone: 2, protein: 1, bmr: 0, bmi: 1, score: 0 }
 
 export const UNIT = { weight: 'kg', fat: '%', muscle: 'kg', water: '%', visceral: '', bone: 'kg', protein: '%', bmr: 'kkal', bmi: '', score: '' }
 

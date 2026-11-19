@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { addDays } from '@/lib/agenda.js'
+import { dShort } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { setBadanApi } from '@/stores/badan.js'
 import BadanPage from './BadanPage.vue'
@@ -192,5 +193,44 @@ describe('BadanPage', () => {
     w.findComponent({ name: 'BadanPanel' }).vm.$emit('done', 'Perubahan kesimpen ✓')
     await flushPromises()
     expect(w.vm.panel).toMatchObject({ open: true, view: 'detail', id: 100 })
+  })
+
+  it('hero: 7 hari penuh → "Rata-rata 7 hari" + "vs minggu lalu"', async () => {
+    const w = await mountPage()
+    expect(w.find('[data-test="hero-label"]').text()).toBe('Rata-rata 7 hari')
+    expect(w.find('[data-test="raw-fat"]').text()).toContain('vs minggu lalu')
+    expect(w.find('[data-test="lhead"]').text()).toBe('Rata-rata 7 hari · perubahan 30 hari')
+  })
+
+  it('timbangan pertama: nggak ngaku rata-rata 7 hari, caption "vs minggu lalu" ilang', async () => {
+    const w = await mountPage({ data: { weighings: [weighings[0]], target: null } })
+    expect(w.find('[data-test="hero-label"]').text()).toBe('Timbangan terakhir')
+    expect(w.find('[data-test="hero"]').text()).not.toContain('vs minggu lalu')
+    expect(w.find('[data-test="raw-fat"]').text()).toBe('hari ini 28,0%')
+    expect(w.find('[data-test="lhead"]').text()).toBe('Timbangan terakhir · perubahan 30 hari')
+    const two = await mountPage({ data: { weighings: weighings.slice(0, 2), target: null } })
+    expect(two.find('[data-test="hero-label"]').text()).toBe('Rata-rata 2 timbangan')
+  })
+
+  it('isi manual cuma berat: angka kosong "–" tanpa "%"', async () => {
+    const only = [{ ...weighings[0], fat: null, muscle: null }]
+    const w = await mountPage({ data: { weighings: only, target: null } })
+    expect(w.find('[data-test="hero"]').text()).not.toContain('–%')
+    expect(w.find('[data-test="raw-fat"]').text()).toBe('hari ini –')
+  })
+
+  it('"awal … (tanggal)" = tanggal timbangan yang dipakai, bukan tanggal target dipasang', async () => {
+    const older = weighings.slice(1)
+    const w = await mountPage({ data: { weighings: older, target: target({ arah: 'recomp', fat: 20, startedOn: TODAY }) } })
+    expect(w.find('[data-test="row-fat"]').text()).toContain(`(${dShort(addDays(TODAY, -1))})`)
+  })
+
+  it('cutting yang awalnya udah di bawah goal lalu naik lagi: 0% · kurang 2,0 kg, bukan 100% · 0,0', async () => {
+    const rows = weighings.map((r, i) => ({ ...r, weight: i < 7 ? 71 : 68 }))
+    const w = await mountPage({ data: { weighings: rows, target: target({ startedOn: addDays(TODAY, -8) }) } })
+    expect(w.find('[data-test="weight-note"]').text()).toBe('kurang 2,0 kg ke 69')
+    const row = w.find('[data-test="row-weight"]').text()
+    expect(row).toContain('0% jalan · kurang 2,0 kg lagi')
+    expect(row).not.toContain('100%')
   })
 })

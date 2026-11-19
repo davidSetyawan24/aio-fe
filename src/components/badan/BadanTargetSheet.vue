@@ -22,18 +22,18 @@
           <label class="bf-nf" :class="{ bad: errors.fat }">
             <span class="lb">Target lemak</span>
             <span class="iw"><input v-model="form.fat" class="bf-in" inputmode="decimal" placeholder="–" aria-label="Target lemak" data-test="t-fat" autocomplete="off" @input="clear('fat')" @keydown.enter.prevent="focusNext" /><em>%</em></span>
-            <span class="orig">sekarang {{ now('fat') }}%</span>
+            <span class="orig">sekarang {{ now('fat', '%') }}</span>
             <span v-if="errors.fat" class="em-err" data-test="err-fat">{{ errors.fat }}</span>
           </label>
           <label class="bf-nf" :class="{ bad: errors.muscle }">
             <span class="lb">Target otot</span>
             <span class="iw"><input v-model="form.muscle" class="bf-in" inputmode="decimal" placeholder="–" aria-label="Target otot" data-test="t-muscle" autocomplete="off" @input="clear('muscle')" @keydown.enter.prevent="focusNext" /><em>kg</em></span>
-            <span class="orig">sekarang {{ now('muscle') }} kg</span>
+            <span class="orig">sekarang {{ now('muscle', ' kg') }}</span>
             <span v-if="errors.muscle" class="em-err" data-test="err-muscle">{{ errors.muscle }}</span>
           </label>
         </div>
 
-        <div class="bf-group"><span>Kisaran berat</span><small>sekarang {{ now('weight') }} kg</small></div>
+        <div class="bf-group"><span>Kisaran berat</span><small>sekarang {{ now('weight', ' kg') }}</small></div>
         <div class="bt-rng">
           <label class="bf-nf" :class="{ bad: errors.weightMin }">
             <span class="lb">Paling ringan</span>
@@ -61,7 +61,8 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { PhCheck, PhX } from '@phosphor-icons/vue'
-import { ARAH, ARAH_INFO, fmt } from '@/lib/badan.js'
+import { ARAH, ARAH_INFO } from '@/lib/badan.js'
+import { fmtU } from '@/lib/badanView.js'
 import { errorLines, focusNext, showToast, useShake } from '@/lib/personalForm.js'
 import { targetErrors, targetPayload, targetToForm } from '@/lib/badanTarget.js'
 import { useBadanStore } from '@/stores/badan.js'
@@ -84,7 +85,7 @@ const { shake, doShake } = useShake()
 
 const info = computed(() => ARAH_INFO[form.arah])
 const changed = computed(() => Boolean(props.target) && form.arah !== props.target.arah)
-const now = (k) => fmt(props.summary?.[k] ?? null, 1)
+const now = (k, unit) => fmtU(props.summary?.[k] ?? null, 1, unit)
 const clear = (k) => {
   delete errors[k]
   lines.value = []

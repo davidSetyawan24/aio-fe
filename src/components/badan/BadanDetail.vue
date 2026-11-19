@@ -9,7 +9,7 @@
       <div class="bd-main" data-test="main">
         <div v-for="k in MAIN" :key="k" class="bd-t3">
           <div class="k">{{ METRIC_LABEL[k][1] }}</div>
-          <div class="v">{{ fmt(row[k], METRICS[k].dec) }}<small v-if="UNIT[k]">{{ UNIT[k] }}</small></div>
+          <div class="v">{{ fmt(row[k], METRICS[k].dec) }}<small v-if="UNIT[k] && row[k] != null">{{ UNIT[k] }}</small></div>
           <div class="c">
             <template v-if="cmp(k)">
               <template v-if="cmp(k).same">sama kayak rata-rata 7 hari</template>
@@ -23,7 +23,7 @@
         <div v-for="k in SUBS" :key="k" class="r">
           <span class="k">{{ METRIC_LABEL[k][0] }}</span>
           <span class="a">rata-rata {{ fmt(avg7(store.weighings, k, row.weighedOn), ADEC[k]) }}</span>
-          <span class="v">{{ fmt(row[k], METRICS[k].dec) }}<small v-if="UNIT[k]">{{ UNIT[k] }}</small></span>
+          <span class="v">{{ fmt(row[k], METRICS[k].dec) }}<small v-if="UNIT[k] && row[k] != null">{{ UNIT[k] }}</small></span>
         </div>
         <div class="r">
           <span class="k">Tipe badan</span>
@@ -42,7 +42,7 @@
 import { computed, ref, watch } from 'vue'
 import { actionSheetController } from '@ionic/vue'
 import { PhPencilSimple, PhTrash } from '@phosphor-icons/vue'
-import { BODY_TYPES, METRICS, METRIC_LABEL, UNIT, avg7, fmt, tone } from '@/lib/badan.js'
+import { ADEC, BODY_TYPES, METRICS, METRIC_LABEL, UNIT, avg7, fmt, tone } from '@/lib/badan.js'
 import { dLong, dShort, jam } from '@/lib/badanView.js'
 import { errorLines, showToast } from '@/lib/personalForm.js'
 import { useBadanStore } from '@/stores/badan.js'
@@ -53,8 +53,6 @@ const emit = defineEmits(['edit', 'done'])
 
 const MAIN = ['weight', 'fat', 'muscle']
 const SUBS = ['water', 'visceral', 'bone', 'protein', 'bmr', 'bmi', 'score']
-/** Desimal rata-rata (sama kayak mockup: tulang 2, BMR & skor 0, sisanya 1). */
-const ADEC = { weight: 1, fat: 1, muscle: 1, water: 1, visceral: 1, bone: 2, protein: 1, bmr: 0, bmi: 1, score: 0 }
 
 const store = useBadanStore()
 const busy = ref(false)

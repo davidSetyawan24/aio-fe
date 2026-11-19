@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   METRIC_KEYS, METRICS, BODY_TYPES, ARAH, bodyTypeFromZepp,
   avg7, count7, weekDelta, tone, startValue, progress, weightGoal, eta, etaFor,
-  checkFlags, bodySummary, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
+  checkFlags, bodySummary, ADEC, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
 } from './badan.js'
 
 const F = [
@@ -23,6 +23,7 @@ describe('konstanta', () => {
     expect(DEFAULT_ON).toEqual(['fat', 'muscle', 'weight'])
     expect(METRIC_LABEL.fat).toEqual(['Lemak tubuh', 'Lemak'])
     expect(UNIT.bmr).toBe('kkal')
+    expect(ADEC).toEqual({ weight: 1, fat: 1, muscle: 1, water: 1, visceral: 1, bone: 2, protein: 1, bmr: 0, bmi: 1, score: 0 })
     expect(ARAH_INFO.jaga.t).toBe('Pertahanin badan yang sekarang.')
   })
   it('bodyTypeFromZepp', () => {
@@ -140,5 +141,10 @@ describe('bodySummary', () => {
     expect(s.tones).toMatchObject({ weight: 'good', fat: 'good', muscle: 'good' })
     expect(s.spark).toHaveLength(5)
     expect(s.spark.at(-1)).toBeCloseTo(29.2, 4)
+    expect(s.count).toBe(3)
+  })
+  it('count = banyaknya timbangan di 7 hari terakhir (1 timbangan → 1)', () => {
+    expect(bodySummary([F[0]], null).count).toBe(1)
+    expect(bodySummary(F.slice(0, 2), null).count).toBe(2)
   })
 })

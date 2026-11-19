@@ -1,31 +1,33 @@
 <template>
   <div v-if="body" data-test="home-body">
-    <div class="h-label rise"><span>Badan</span></div>
+    <div class="h-label rise"><span>Badan</span><button type="button" class="h-lk" data-test="home-body-link" @click="go">Badan <PhCaretRight :size="14" weight="bold" /></button></div>
     <div class="shell rise">
       <div class="core hb-card" data-test="home-body-card" @click="go">
         <div class="hb-top">
           <span class="hb-ic">⚖️</span>
-          <div class="hb-grow"><b>Rata-rata 7 hari</b><small>{{ sub }}</small></div>
+          <div class="hb-grow"><b data-test="hb-label">{{ avgLabel(body.count) }}</b><small>{{ sub }}</small></div>
         </div>
         <div class="hb-3">
           <div>
             <div class="hb-k">Lemak</div>
-            <div class="hb-v">{{ fmt(body.fat, 1) }}<small>%</small></div>
+            <div class="hb-v">{{ fmt(body.fat, 1) }}<small v-if="body.fat != null">%</small></div>
             <div v-if="fatD" class="hb-d" :class="body.tones.fat" data-test="hb-fat">{{ arrow(fatD) }}{{ fatD.text }}</div>
           </div>
           <div>
             <div class="hb-k">Otot</div>
-            <div class="hb-v">{{ fmt(body.muscle, 1) }}<small>kg</small></div>
+            <div class="hb-v">{{ fmt(body.muscle, 1) }}<small v-if="body.muscle != null">kg</small></div>
             <div v-if="muscleD" class="hb-d" :class="body.tones.muscle" data-test="hb-muscle">{{ arrow(muscleD) }}{{ muscleD.text }}</div>
           </div>
           <div>
             <div class="hb-k">Berat</div>
-            <div class="hb-v">{{ fmt(body.weight, 1) }}<small>kg</small></div>
+            <div class="hb-v">{{ fmt(body.weight, 1) }}<small v-if="body.weight != null">kg</small></div>
             <div v-if="note" class="hb-d" :class="note.tone" data-test="hb-weight">{{ note.text }}</div>
           </div>
         </div>
-        <svg v-if="path" class="hb-spark" viewBox="0 0 300 36" preserveAspectRatio="none" data-test="hb-spark"><path :d="path" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" /></svg>
-        <div class="hb-cap">lemak · rata-rata 7 hari · 30 hari terakhir</div>
+        <template v-if="path">
+          <svg class="hb-spark" viewBox="0 0 300 36" preserveAspectRatio="none" data-test="hb-spark"><path :d="path" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" /></svg>
+          <div class="hb-cap">lemak · rata-rata 7 hari · 30 hari terakhir</div>
+        </template>
       </div>
     </div>
   </div>
@@ -34,8 +36,9 @@
 <script setup>
 import { computed } from 'vue'
 import { useIonRouter } from '@ionic/vue'
+import { PhCaretRight } from '@phosphor-icons/vue'
 import { fmt } from '@/lib/badan.js'
-import { deltaView, headerSub } from '@/lib/badanView.js'
+import { avgLabel, deltaView, headerSub, reachView } from '@/lib/badanView.js'
 
 const props = defineProps({
   body: { type: Object, default: null },
@@ -52,7 +55,7 @@ const arrow = (d) => (d.dir === 'down' ? '↓' : d.dir === 'up' ? '↑' : '')
 const note = computed(() => {
   const b = props.body
   if (!b) return null
-  const g = b.weightGoal
+  const g = reachView(b.weightGoal, b.weight)
   if (!g) {
     const d = deltaView(b.deltas.weight, 1)
     return d ? { tone: 'neutral', text: `${arrow(d)}${d.text}` } : null
@@ -77,7 +80,7 @@ const path = computed(() => {
 
 <style scoped>
 .h-label { display: flex; justify-content: space-between; align-items: center; min-height: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; }
-@media (min-width: 1100px) { .h-label { margin-top: 12px; } }
+.h-lk { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0; border: 0; background: none; color: var(--text); font: 700 13px var(--ion-font-family); letter-spacing: 0; text-transform: none; cursor: pointer; }
 .hb-card { padding: 14px 14px 12px; cursor: pointer; }
 .hb-top { display: flex; align-items: center; gap: 12px; }
 .hb-ic { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; font-size: 20px; background: #E4F7C4; flex-shrink: 0; }

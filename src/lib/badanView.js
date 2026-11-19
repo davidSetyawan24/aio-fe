@@ -48,3 +48,30 @@ export function rangeScale(min, max, now) {
   const pos = (v) => Math.min(100, Math.max(0, ((v - lo) / (hi - lo)) * 100))
   return { lo, hi, pos }
 }
+
+/** Judul angka rata-rata: dari < 3 timbangan nggak boleh ngaku "Rata-rata 7 hari". `count` = `summary.count`. */
+export function avgLabel(count) {
+  if (count >= 3) return 'Rata-rata 7 hari'
+  return count === 2 ? 'Rata-rata 2 timbangan' : 'Timbangan terakhir'
+}
+
+/** Angka + satuan; kosong cuma "–" (tanpa satuan). `unit` udah sama spasinya ('%' / ' kg'). */
+export const fmtU = (v, dec, unit) => (v == null || !Number.isFinite(v) ? '–' : `${fmt(v, dec)}${unit}`)
+
+/** Tanggal timbangan yang dipakai buat nilai awal target (aturan sama kayak `startValue`): terakhir sebelum/pas mulai, kalau nggak ada → pertama sesudahnya. */
+export function startOn(rows, startedOn) {
+  const dates = rows.map((r) => r.weighedOn).sort()
+  return dates.filter((d) => d <= startedOn).at(-1) ?? dates.find((d) => d > startedOn) ?? startedOn
+}
+
+/**
+ * Cutting/Bulking yang pas pasang target udah lewat goal, terus balik keluar kisaran: hitungan kembar ngasih 100% · kurang 0.
+ * Buat tampilan: progresnya mulai dari 0 & kurangnya = jarak sekarang ke goal.
+ */
+export function reachView(g, now) {
+  if (!g || g.mode !== 'reach' || g.state !== 'progress' || g.left !== 0 || now == null) return g
+  return { ...g, pct: 0, left: Math.abs(now - g.goal) }
+}
+
+/** Halaman anak Badan (detail / catat / ubah / upload) — balik dari sini nggak nge-reset grafik. */
+export const isBadanChild = (path) => typeof path === 'string' && path.startsWith('/tabs/menu/badan/')
