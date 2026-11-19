@@ -1,7 +1,7 @@
 <template>
   <div class="b-empty-grid">
     <div>
-      <div class="b-label rise">Belum ada timbangan</div>
+      <div class="b-label rise">Mulai</div>
       <div class="shell rise">
         <div class="b-core b-empty">
           <div class="em">⚖️</div>

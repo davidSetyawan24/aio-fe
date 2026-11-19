@@ -120,6 +120,7 @@
   .b-hv { font-size: 50px; }
   .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 70px 60px 70px 18px; }
   .b-rrow .x, .b-rhead .x { display: none; }
+  .b-rrow .x.w2, .b-rhead .x.w2 { display: none; }
 }
 @media (min-width: 2200px) {
   .b-hv { font-size: 54px; }

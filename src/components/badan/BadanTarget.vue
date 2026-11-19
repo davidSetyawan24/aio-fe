@@ -21,7 +21,7 @@
     <div class="shell rise" style="--i: 1">
       <div class="b-core b-pad" data-test="target">
         <div v-for="r in goalRows" :key="r.key" class="b-prow" :data-test="`row-${r.key}`">
-          <div class="b-ptop"><span class="k">{{ r.label }}</span><span class="v">{{ fmt(r.now, r.dec) }}{{ r.unit }} → <b>{{ fmt(r.goal, r.dec) }}{{ r.unit }}</b></span></div>
+          <div class="b-ptop"><span class="k">{{ r.label }}</span><span class="v">{{ fmt(r.now, r.dec) }}{{ r.unit }} → <b>{{ fmtGoal(r.goal, r.dec) }}{{ r.unit }}</b></span></div>
           <div class="b-pbar"><i :style="{ width: `${r.pct}%` }" /></div>
           <div class="b-psub">
             <span>awal {{ fmt(r.start, r.dec) }}{{ r.unit }} ({{ dShort(target.startedOn) }})</span>
@@ -44,7 +44,7 @@
             <div class="b-pbar"><i :style="{ width: `${goal.state === 'in' ? 100 : goal.pct}%` }" /></div>
             <div class="b-psub">
               <span>awal {{ fmt(weightStart, 1) }} kg ({{ dShort(target.startedOn) }})</span>
-              <span v-if="goal.state === 'in'" class="b-chip green"><PhCheck :size="12" weight="bold" /> udah masuk kisaran</span>
+              <span v-if="goal.state === 'in'" class="b-chip green">✓ udah masuk kisaran</span>
               <span v-else-if="goal.state === 'below'" class="b-chip amber">di bawah kisaran {{ range }}</span>
               <span v-else-if="goal.state === 'above'" class="b-chip amber">di atas kisaran {{ range }}</span>
               <span v-else><b>{{ goal.pct }}%</b> jalan · kurang {{ fmt(goal.left, 1) }} kg lagi</span>
@@ -76,6 +76,9 @@ const props = defineProps({
 })
 defineEmits(['edit'])
 
+/** Angka target: tanpa nol di belakang koma (20%, 55 kg). */
+const fmtGoal = (v, dec) => v.toLocaleString('id-ID', { maximumFractionDigits: dec })
+
 const goal = computed(() => props.summary?.weightGoal ?? null)
 const weightNow = computed(() => props.summary?.weight ?? null)
 const weightStart = computed(() => startValue(props.rows, 'weight', props.target.startedOn) ?? weightNow.value)
@@ -106,6 +109,6 @@ const etaText = computed(() => {
   if (!e) return null
   const month = monthLabel(`${e.month}-01`)
   if (e.key === 'weight') return { before: `nyampe ${fmt(goal.value.goal, 0)} kg kira-kira`, month }
-  return { before: `lemak ${fmt(props.target.fat, 0)}% kira-kira`, month }
+  return { before: `lemak ${fmtGoal(props.target.fat, 1)}% kira-kira`, month }
 })
 </script>

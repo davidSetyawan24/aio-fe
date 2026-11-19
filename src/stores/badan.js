@@ -24,7 +24,11 @@ export const useBadanStore = defineStore('badan', {
 
   getters: {
     rows: (state) => state.weighings,
-    last: (state) => (state.weighings.length ? [...state.weighings].sort((a, b) => stamp(b).localeCompare(stamp(a)))[0] : null),
+    /** Terbaru dulu (tanggal + jam). */
+    sorted: (state) => [...state.weighings].sort((a, b) => stamp(b).localeCompare(stamp(a))),
+    last() {
+      return this.sorted[0] ?? null
+    },
     summary: (state) => bodySummary(state.weighings, state.target),
   },
 

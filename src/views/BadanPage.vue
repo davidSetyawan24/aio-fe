@@ -5,12 +5,12 @@
         <div class="b-toprow">
           <button v-if="!wide" type="button" class="b-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
           <span v-else />
-          <button v-if="!wide && !isEmpty" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="openPanel('manual')"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
+          <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="openPanel('manual')"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
         </div>
         <span class="eyebrow rise"><span class="dot" />Badan</span>
         <div class="b-headrow">
           <h1 class="h1 rise b-h1" style="--i: 1">Badan.<span class="b-sub" data-test="sub">{{ subText }}</span></h1>
-          <div v-if="wide && !isEmpty" class="b-hact">
+          <div v-if="wide" class="b-hact">
             <button type="button" class="pill ghost" data-test="manual" @click="openPanel('manual')"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
             <button type="button" class="pill" data-test="upload" @click="openPanel('upload')">Upload timbangan <span class="ic"><PhUploadSimple :size="17" weight="bold" /></span></button>
           </div>
@@ -32,7 +32,7 @@
             <BadanLast :last="store.last" :today="today" @open="(id) => openPanel('detail', id)" />
           </section>
           <section class="b-rw">
-            <BadanHistory :rows="sortedRows" :today="today" :all="pc" @open="(id) => openPanel('detail', id)" />
+            <BadanHistory :rows="store.sorted" :today="today" :all="pc" @open="(id) => openPanel('detail', id)" />
           </section>
         </div>
       </div>
@@ -71,7 +71,6 @@ const today = ref(wibNow().date)
 const chartKey = ref(0)
 
 const isEmpty = computed(() => store.loaded && store.weighings.length === 0)
-const sortedRows = computed(() => [...store.rows].sort((a, b) => `${b.weighedOn} ${b.weighedAt ?? ''}`.localeCompare(`${a.weighedOn} ${a.weighedAt ?? ''}`)))
 const subText = computed(() => {
   if (isEmpty.value) return 'Belum ada timbangan yang masuk.'
   const s = store.summary
