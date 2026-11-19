@@ -66,6 +66,11 @@ describe('BadanPage', () => {
     expect(w.find('[data-test="weight-note"]').classes()).not.toContain('warn')
   })
 
+  it('grafik kepasang dengan chip bawaan Lemak, Otot, Berat', async () => {
+    const w = await mountPage()
+    expect(w.findAll('.b-mc.on').map((c) => c.text())).toEqual(['Lemak', 'Otot', 'Berat'])
+  })
+
   it('target di bawah kisaran (cutting kebablasan) → kuning', async () => {
     const w = await mountPage({ data: { weighings, target: target({ weightMin: 75, weightMax: 79 }) } })
     expect(w.find('[data-test="row-weight"]').text()).toContain('di bawah kisaran 75–79')

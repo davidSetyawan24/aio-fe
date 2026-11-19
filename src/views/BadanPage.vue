@@ -27,8 +27,7 @@
             <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" @edit="openPanel('target')" />
           </section>
           <section class="b-mid">
-            <!-- Task grafik dipasang di sini, di-remount (key) tiap halaman dibuka lagi. -->
-            <div data-test="chart-slot" :data-key="chartKey" />
+            <BadanChart :key="chartKey" :rows="store.sorted" :target="store.target" :last-on="store.summary.lastOn" />
             <BadanLast :last="store.last" :today="today" @open="(id) => openPanel('detail', id)" />
           </section>
           <section class="b-rw">
@@ -48,6 +47,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
+import BadanChart from '@/components/badan/BadanChart.vue'
 import BadanEmpty from '@/components/badan/BadanEmpty.vue'
 import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
