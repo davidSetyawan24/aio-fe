@@ -75,4 +75,70 @@ describe('badan store', () => {
     expect(form.get('photo')).toBeTruthy()
     expect(opts.timeout).toBe(60000)
   })
+
+  it('load: isi aktivitas + tidur; kosong = null / []', async () => {
+    await store.load()
+    expect(store.activity).toBeNull()
+    expect(store.sleeps).toEqual([])
+    expect(store.lastSleep).toBeNull()
+    expect(store.sleepSum).toBeNull()
+    expect(store.food).toEqual({ state: 'needTarget' })
+    expect(store.pace).toBeNull()
+    expect(store.paceEtaInfo).toBeNull()
+  })
+
+  it('getter tidur, makan, kecepatan dari data David', async () => {
+    const days = ['2026-11-14', '2026-11-15', '2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20']
+    const weighings = days.map((d, i) => w(i + 1, d, '06:40', { weight: 74.9, fat: 25.6, muscle: null, bmr: 1650 }))
+    const activity = { workType: 'stand_walk', workHours: 10, workDays: 7, gymPerWeek: 5, gymMinutes: 75, otherSport: null, notes: null, level: 'active', levelManual: false }
+    const target = { arah: 'cutting', pace: 'normal', fat: 20, muscle: 55, weightMin: 65, weightMax: 69, startedOn: '2026-11-14' }
+    const s = (id, sleptOn, totalMin) => ({ id, sleptOn, bedAt: '23:30', wakeAt: '06:10', totalMin, deepMin: null, lightMin: null, remMin: null, score: 80, awakeCount: null, avgHr: null, avgHrv: null, source: 'manual' })
+    api.get.mockResolvedValue({ weighings, target, activity, sleeps: [s(1, '2026-11-18', 400), s(2, '2026-11-20', 420)] })
+    await store.load()
+    expect(store.activity.level).toBe('active')
+    expect(store.sleepsSorted.map((x) => x.id)).toEqual([2, 1])
+    expect(store.lastSleep.id).toBe(2)
+    expect(store.sleepSum).toMatchObject({ lastOn: '2026-11-20', totalMin: 420, avg7Min: 410, nights: 2 })
+    expect(store.food).toMatchObject({ state: 'ok', kcal: 2050 })
+    expect(store.pace).toMatchObject({ actual: null, state: null })
+    expect(store.pace.lo).toBeCloseTo(0.3745, 4)
+    expect(store.paceEtaInfo).toEqual({ goal: 69, now: null, plan: '2027-02' })
+  })
+
+  it('saveActivity: PUT tanpa muat ulang', async () => {
+    await store.saveActivity({ workType: 'sit' })
+    expect(api.put).toHaveBeenCalledWith('/body/activity', { workType: 'sit' })
+    expect(api.get).not.toHaveBeenCalled()
+  })
+
+  it('tidur: simpen / ubah (replace) / hapus lalu muat ulang', async () => {
+    api.post.mockResolvedValue({ sleep: { id: 5 } })
+    const res = await store.saveSleep({ sleptOn: '2026-11-20', totalMin: 400 }, { replace: true })
+    expect(api.post).toHaveBeenCalledWith('/body/sleeps', { sleptOn: '2026-11-20', totalMin: 400, replace: true })
+    expect(res.sleep.id).toBe(5)
+    api.patch.mockResolvedValue({ id: 5 })
+    const up = await store.updateSleep(5, { totalMin: 410 })
+    expect(api.patch).toHaveBeenCalledWith('/body/sleeps/5', { totalMin: 410 })
+    expect(up.sleep.id).toBe(5)
+    await store.removeSleep(5)
+    expect(api.del).toHaveBeenCalledWith('/body/sleeps/5')
+    expect(api.get).toHaveBeenCalledTimes(3)
+  })
+
+  it('tidur 409 dilempar apa adanya tanpa muat ulang', async () => {
+    api.post.mockRejectedValue(new ApiError('Udah ada', 409, { reason: 'sameDay', existing: { id: 9 } }))
+    const err = await store.saveSleep({ totalMin: 400 }).catch((e) => e)
+    expect(err.status).toBe(409)
+    expect(err.fields.existing.id).toBe(9)
+    expect(api.get).not.toHaveBeenCalled()
+  })
+
+  it('scanSleep: FormData photo tidur.jpg + timeout panjang', async () => {
+    api.post.mockResolvedValue({ read: {} })
+    await store.scanSleep(new Blob(['x'], { type: 'image/jpeg' }))
+    const [url, form, opts] = api.post.mock.calls[0]
+    expect(url).toBe('/body/sleeps/scan')
+    expect(form.get('photo').name).toBe('tidur.jpg')
+    expect(opts.timeout).toBe(60000)
+  })
 })

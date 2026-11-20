@@ -303,3 +303,23 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bt-dash { font-weight: 800; color: var(--muted); align-self: center; text-align: center; }
 .bt-link { display: block; margin: 14px auto 0; border: 0; background: none; color: var(--red); font: 700 13.5px var(--ion-font-family); cursor: pointer; min-height: 40px; padding: 0 12px; }
 .bt-link:disabled { opacity: .5; }
+.bt-seg { display: flex; padding: 4px; border-radius: 99px; background: var(--soft); }
+.bt-seg button { flex: 1; height: 36px; border: 0; border-radius: 99px; background: transparent; font: 700 13px var(--ion-font-family); color: var(--muted); cursor: pointer; white-space: nowrap; padding: 0 8px; transition: background .25s var(--spring), color .2s; }
+.bt-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 14px -6px rgba(0, 0, 0, .18); }
+.bt-seg.wrap3 button { padding: 0 6px; font-size: 12.5px; }
+.bt-spdx { margin-top: 10px; padding: 12px 14px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); font-size: 13px; font-weight: 600; line-height: 1.55; font-variant-numeric: tabular-nums; }
+.bt-spdx b { font-weight: 800; }
+.bt-spdx small { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+.bt-ferr { margin: 6px 8px 0; font-size: 11px; font-weight: 700; color: var(--red); line-height: 1.3; }
+.bt-asub { font-size: 13px; font-weight: 800; margin: 14px 8px 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.bt-asub small { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.bf-in.bt-txt { font-size: 15px; font-weight: 600; }
+textarea.bt-ta { display: block; min-height: 64px; resize: none; font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: 0; }
+.bt-mults { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 22px; background: var(--soft); }
+.bt-mults button { position: relative; min-height: 56px; border: 0; border-radius: 18px; background: transparent; font: 700 13px var(--ion-font-family); color: var(--muted); cursor: pointer; padding: 8px 10px; text-align: left; }
+.bt-mults button b { display: block; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.bt-mults button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 14px -6px rgba(0, 0, 0, .18); }
+.bt-rec { position: absolute; top: 8px; right: 8px; height: 20px; padding: 0 7px; border-radius: 99px; background: var(--lime); color: var(--lime-ink); font-size: 10.5px; font-weight: 800; display: inline-flex; align-items: center; }
+.bt-sugg { border: 0; background: none; padding: 0; color: var(--text); font: 800 12px var(--ion-font-family); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.bt-tdee { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: 18px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); font-size: 13px; font-weight: 600; color: var(--muted); }
+.bt-tdee b { color: var(--text); font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
