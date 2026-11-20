@@ -299,8 +299,9 @@ export function foodPlan(rows, target, activity) {
   const w = avg7(rows, 'weight', D)
   let adjust = 0
   if (moving) {
-    const { mid } = paceRange(target.arah, target.pace, w)
-    adjust = Math.round((mid * KCAL_PER_KG) / 7) * (target.arah === 'cutting' ? -1 : 1)
+    const range = paceRange(target.arah, target.pace, w)
+    if (!range) return { state: 'needPace' }
+    adjust = Math.round((range.mid * KCAL_PER_KG) / 7) * (target.arah === 'cutting' ? -1 : 1)
   }
   const kcal = Math.round((tdee + adjust) / 50) * 50
   const fat = avg7(rows, 'fat', D)

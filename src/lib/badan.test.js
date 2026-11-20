@@ -199,6 +199,8 @@ describe('foodPlan', () => {
     expect(foodPlan([], DT, ACT).state).toBe('needWeighing')
     expect(foodPlan(DAVID, null, ACT).state).toBe('needTarget')
     expect(foodPlan(DAVID, { ...DT, pace: null }, ACT).state).toBe('needPace')
+    expect(foodPlan(DAVID, { ...DT, arah: 'bulking', pace: 'agresif' }, ACT).state).toBe('needPace')
+    expect(foodPlan(DAVID, { ...DT, pace: 'ngebut' }, ACT).state).toBe('needPace')
     expect(foodPlan(DAVID, DT, null).state).toBe('needActivity')
     expect(foodPlan(DAVID.map((r) => ({ ...r, bmr: null })), DT, ACT).state).toBe('needBmr')
   })
