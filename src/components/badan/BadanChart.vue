@@ -44,7 +44,7 @@
             <text v-if="noData" class="nodata" :x="noData.x" :y="(Tp + H - B) / 2" text-anchor="middle">{{ noData.text }}</text>
             <template v-if="range === 30">
               <template v-for="k in onKeys" :key="`d${k}`">
-                <circle v-for="p in series[k].daily" :key="p.d" class="dot" :cx="X(p.d)" :cy="Y[k](p.v)" r="2.4" :style="{ fill: `var(--b-c-${k})` }" />
+                <circle v-for="p in series[k].daily" :key="p.d" class="dot" :data-k="k" :cx="X(p.d)" :cy="Y[k](p.v)" r="2.4" :style="{ fill: `var(--b-c-${k})` }" />
               </template>
             </template>
             <path v-if="single && areaPath" class="area" :d="areaPath" :style="{ fill: `var(--b-c-${single})` }" />
@@ -136,8 +136,8 @@ const WEIGH_KEYS = CHART_ORDER.filter((k) => k !== 'sleep')
  */
 const end = computed(() => props.sleeps.reduce((m, s) => (s.sleptOn > m ? s.sleptOn : m), props.lastOn))
 const series = computed(() => ({ ...chartSeries(props.rows, WEIGH_KEYS, range.value, end.value), sleep: sleepSeries(props.sleeps, range.value, end.value) }))
-/** Garis yang digambar: rata-rata 7 hari; tidur garis harian (jam per malam). */
-const lineOf = (k) => (k === 'sleep' ? series.value.sleep.daily : series.value[k].avg)
+/** Garis yang digambar: rata-rata 7 hari (tidur juga, dalam jam). */
+const lineOf = (k) => series.value[k].avg
 const sleepOn = computed(() => new Map(props.sleeps.map((s) => [s.sleptOn, s])))
 const x0 = computed(() => addDays(end.value, -(range.value - 1)))
 const inRange = computed(() => props.rows.filter((r) => r.weighedOn >= x0.value && r.weighedOn <= end.value))
@@ -248,8 +248,8 @@ function sleepAvg(date) {
 }
 function sleepLegend() {
   const a1 = sleepAvg(end.value)
-  const first = series.value.sleep.daily[0]?.d
-  const a0 = first ? sleepAvg(first) : null
+  const first = series.value.sleep.avg[0]
+  const a0 = first ? Math.round(first.v * 60) : null
   const dv = a1 == null || a0 == null ? null : a1 - a0
   return {
     key: 'sleep',

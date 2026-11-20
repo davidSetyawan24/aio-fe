@@ -67,17 +67,32 @@ describe('gapSegments (garis rata-rata putus di bolong panjang)', () => {
 
 describe('sleepSeries', () => {
   const sl = (d, totalMin) => ({ id: d, sleptOn: d, totalMin })
-  it('jam per malam (lama → baru), cuma di rentang, avg kosong', () => {
+  it('daily = jam per malam (lama → baru), cuma di rentang', () => {
     const sleeps = [sl(LAST, 403), sl(addDays(LAST, -1), 360), sl(addDays(LAST, -40), 420), sl(addDays(LAST, 1), 500)]
     const s = sleepSeries(sleeps, 30, LAST)
     expect(s.daily).toEqual([{ d: addDays(LAST, -1), v: 6 }, { d: LAST, v: 403 / 60 }])
-    expect(s.avg).toEqual([])
     expect(sleepSeries(sleeps, 90, LAST).daily).toHaveLength(3)
     expect(sleepSeries([], 30, LAST)).toEqual({ daily: [], avg: [] })
   })
-  it('bolong > 7 hari → garisnya putus', () => {
-    const sleeps = [sl(LAST, 400), sl(addDays(LAST, -2), 400), sl(addDays(LAST, -12), 400), sl(addDays(LAST, -13), 400)]
-    const segs = gapSegments(sleepSeries(sleeps, 30, LAST).daily)
+  it('avg = rata-rata malam yang ada di d−6…d, cuma kalau ≥ 3 malam', () => {
+    // malam: −9, −6, −4, −3, 0 (bolong di antaranya)
+    const sleeps = [sl(addDays(LAST, -9), 300), sl(addDays(LAST, -6), 360), sl(addDays(LAST, -4), 420), sl(addDays(LAST, -3), 480), sl(LAST, 400)]
+    const s = sleepSeries(sleeps, 30, LAST)
+    // −9: 1 malam, −6: 2 malam → nggak ada. −4: (300+360+420)/3, −3: 4 malam (−9..−3), 0: −6..0 = 360,420,480,400
+    expect(s.avg).toEqual([
+      { d: addDays(LAST, -4), v: 360 / 60 },
+      { d: addDays(LAST, -3), v: 390 / 60 },
+      { d: LAST, v: 415 / 60 },
+    ])
+  })
+  it('avg ngitung malam sebelum awal rentang juga', () => {
+    const sleeps = [sl(addDays(LAST, -31), 300), sl(addDays(LAST, -30), 300), sl(addDays(LAST, -29), 420)]
+    expect(sleepSeries(sleeps, 30, LAST).avg).toEqual([{ d: addDays(LAST, -29), v: 340 / 60 }])
+  })
+  it('bolong > 7 hari → garis rata-ratanya putus', () => {
+    const run = (end) => [0, 1, 2, 3].map((i) => sl(addDays(end, -i), 400))
+    const sleeps = [...run(LAST), ...run(addDays(LAST, -15))]
+    const segs = gapSegments(sleepSeries(sleeps, 30, LAST).avg)
     expect(segs.map((g) => g.length)).toEqual([2, 2])
   })
 })

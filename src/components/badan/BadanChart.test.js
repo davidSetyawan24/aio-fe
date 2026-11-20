@@ -118,12 +118,16 @@ describe('BadanChart', () => {
       expect(on(w)).toEqual(['fat', 'muscle', 'weight'])
       expect(w.find('[data-test="sleep-path"]').exists()).toBe(false)
     })
-    it('nyalain Tidur → garis harian + legenda jam + catatan', async () => {
+    it('nyalain Tidur → garis rata-rata 7 hari + titik harian + legenda jam + catatan', async () => {
       const w = mkS()
       await chip(w, 'sleep').trigger('click')
       expect(on(w)).toEqual(['fat', 'muscle', 'weight', 'sleep'])
+      // 10 malam berturut-turut → rata-rata mulai malam ke-3 → 8 titik garis
       const d = w.find('[data-test="sleep-path"]').attributes('d')
-      expect(d.match(/L/g)).toHaveLength(9)
+      expect(d.match(/L/g)).toHaveLength(7)
+      expect(w.findAll('circle.dot[data-k="sleep"]')).toHaveLength(10)
+      expect(w.find('.b-legend').text()).toContain('rata-rata 7 hari')
+      expect(w.find('.b-legend').text()).toContain('harian')
       expect(w.find('[data-test="lrow-sleep"]').exists()).toBe(true)
       expect(w.text()).toContain('tidur = total jam per malam')
     })
@@ -157,17 +161,18 @@ describe('BadanChart', () => {
     window.matchMedia = () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} })
     const W19 = '2026-11-19'
     const wrows = Array.from({ length: 10 }, (_, i) => ({ id: i, weighedOn: addDays(W19, -i), weighedAt: '06:00', weight: 77, fat: 25, muscle: 52 }))
-    const sleeps = [{ id: 1, sleptOn: '2026-11-20', totalMin: 403 }, { id: 2, sleptOn: W19, totalMin: 380 }]
+    const sleeps = [{ id: 1, sleptOn: '2026-11-20', totalMin: 403 }, { id: 2, sleptOn: W19, totalMin: 380 }, { id: 3, sleptOn: '2026-11-18', totalMin: 390 }, { id: 4, sleptOn: '2026-11-17', totalMin: 400 }]
     const w = mount(BadanChart, { props: { rows: wrows, target: null, lastOn: W19, sleeps }, attachTo: document.body })
     const ticks = w.findAll('text.ax').map((t) => t.text())
     expect(ticks).toContain('20 Nov')
     expect(ticks).not.toContain('19 Nov')
     await chip(w, 'sleep').trigger('click')
-    // garis tidur 19 → 20 Nov, titik terakhirnya mepet kanan (W − R)
+    // garis rata-rata tidur 19 → 20 Nov (≥ 3 malam), titik terakhirnya mepet kanan (W − R); titik harian 20/11 juga
     const d = w.find('[data-test="sleep-path"]').attributes('d')
     expect(d.match(/L/g)).toHaveLength(1)
     const lastX = Number(/L([\d.]+),/.exec(d)[1])
     expect(lastX).toBeCloseTo(260 - 10, 0)
+    expect(w.findAll('circle.dot[data-k="sleep"]').map((c) => Math.round(Number(c.attributes('cx'))))).toContain(250)
     // berat: titik terakhir 19 Nov, sebelum ujung kanan
     const weightLast = w.findAll('circle.last')[2]
     expect(Number(weightLast.attributes('cx'))).toBeLessThan(lastX)

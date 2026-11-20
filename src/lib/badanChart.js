@@ -24,14 +24,24 @@ export function chartSeries(rows, keys, range, lastOn) {
   return out
 }
 
-/** Tidur per malam di rentang (lama → baru), nilai dalam jam. Nggak ada rata-rata — garisnya harian. */
+/**
+ * Tidur per malam di rentang (lama → baru), nilai dalam jam. `avg` = rata-rata malam yang ada di d−6…d (malam bolong
+ * nggak diitung), cuma di malam yang jendelanya punya >= 3 malam — aturannya sama kayak rata-rata timbangan.
+ */
 export function sleepSeries(sleeps, range, lastOn) {
   const from = addDays(lastOn, -(range - 1))
-  const daily = sleeps
-    .filter((s) => s.sleptOn >= from && s.sleptOn <= lastOn && isNum(s.totalMin))
+  const nights = sleeps.filter((s) => isNum(s.totalMin))
+  const daily = nights
+    .filter((s) => s.sleptOn >= from && s.sleptOn <= lastOn)
     .sort((a, b) => a.sleptOn.localeCompare(b.sleptOn))
     .map((s) => ({ d: s.sleptOn, v: s.totalMin / 60 }))
-  return { daily, avg: [] }
+  const avg = []
+  for (const { d } of daily) {
+    const start = addDays(d, -6)
+    const week = nights.filter((s) => s.sleptOn >= start && s.sleptOn <= d)
+    if (week.length >= 3) avg.push({ d, v: week.reduce((a, s) => a + s.totalMin, 0) / week.length / 60 })
+  }
+  return { daily, avg }
 }
 
 /** Titik rata-rata → potongan garis; bolong > `maxGap` hari = garis putus (nggak ditarik lurus nyebrangin). */
