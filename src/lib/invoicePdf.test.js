@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PDFDocument from 'pdfkit'
-import { buildInvoicePdf } from './invoicePdf.js'
+import { buildInvoicePdf, SIGN_SPACE } from './invoicePdf.js'
 
 /** Font dibaca langsung dari node_modules (di browser lewat fetch). Uint8Array dibikin di realm test biar dikenali pdfkit. */
 const FONTS = resolve(process.cwd(), 'node_modules/@fontsource/plus-jakarta-sans/files')
@@ -49,11 +49,19 @@ describe('buildInvoicePdf', () => {
     expect(raw).toMatch(/\/MediaBox \[0 0 595\.28 841\.89\]/)
   })
 
-  it('+ diskon + PPN + cap LUNAS + tanda tangan: tetep satu halaman', async () => {
+  it('invoice APS + tanda tangan (ruang materai ±3,2 cm): tetep satu halaman', async () => {
+    const signature = `data:image/png;base64,${readFileSync(resolve(process.cwd(), 'public/icons/favicon-32.png')).toString('base64')}`
+    const raw = await bytes(await buildInvoicePdf(aps({ letterhead: { ...letterhead, signature } }), { loadFont }))
+    expect(SIGN_SPACE).toBeGreaterThanOrEqual(110)
+    expect(pageCount(raw)).toBe(1)
+    expect(raw).toContain('/Subtype /Image')
+  })
+
+  it('+ diskon + PPN + cap LUNAS + tanda tangan: blok ttd boleh pindah utuh ke halaman 2', async () => {
     const signature = `data:image/png;base64,${readFileSync(resolve(process.cwd(), 'public/icons/favicon-32.png')).toString('base64')}`
     const inv = aps({ discount: 1000000, taxOn: true, paidOn: '2026-11-17', letterhead: { ...letterhead, signature } })
     const raw = await bytes(await buildInvoicePdf(inv, { loadFont }))
-    expect(pageCount(raw)).toBe(1)
+    expect(pageCount(raw)).toBeLessThanOrEqual(2)
     expect(raw).toContain('/Subtype /Image')
   })
 

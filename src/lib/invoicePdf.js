@@ -281,12 +281,14 @@ function totals(doc, m, y, h) {
 const KV_W = 428 - 36 - 92
 const KV_VAL = { size: 11.5, w: '700', color: C.ink, tnum: true }
 const SIGN_NAME = { size: 11.5, w: '800', color: C.ink, align: 'center' }
+/** Tinggi ruang tanda tangan (px kertas, ±3,2 cm): muat buat tempel materai + tanda tangan basah. Sama kayak `.s-ttd` di InvoiceSheet. */
+export const SIGN_SPACE = 120
 
 function bottomHeights(doc, m) {
   const vals = [m.lh.bank, m.lh.accountNo, m.lh.accountName]
   const kvH = vals.reduce((sum, v) => sum + Math.max(15, v ? paraHeight(doc, v, KV_W, KV_VAL) : 15), 0) + 10
   const bankH = 16 + 12 + 10 + kvH + 16
-  const signH = 81 + Math.max(15, paraHeight(doc, m.lh.name || ' ', 210, SIGN_NAME))
+  const signH = SIGN_SPACE + 29 + Math.max(15, paraHeight(doc, m.lh.name || ' ', 210, SIGN_NAME))
   return { bankH, signH, h: Math.max(bankH, signH) }
 }
 
@@ -310,13 +312,13 @@ function bottom(doc, m, y, { bankH, signH, h }) {
   line(doc, PAPER.sign, cx, st, { size: 11.5, color: C.text, align: 'center' })
   if (m.lh.signature) {
     try {
-      doc.image(m.lh.signature, 524 * K, (st + 17) * K, { fit: [210 * K, 52 * K], align: 'center', valign: 'center' })
+      doc.image(m.lh.signature, 524 * K, (st + 17 + (SIGN_SPACE - 52) / 2) * K, { fit: [210 * K, 52 * K], align: 'center', valign: 'center' })
     } catch {
       // gambar rusak: kertas tetep jadi, cuma tanpa coretan
     }
   }
-  hline(doc, 524, X1, st + 73.5, 1, C.ink)
-  para(doc, m.lh.name, 524, st + 81, 210, SIGN_NAME)
+  hline(doc, 524, X1, st + SIGN_SPACE + 21.5, 1, C.ink)
+  para(doc, m.lh.name, 524, st + SIGN_SPACE + 29, 210, SIGN_NAME)
 
   if (m.stamp) stamp(doc, m, st)
 }

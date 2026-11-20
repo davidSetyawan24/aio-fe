@@ -153,7 +153,7 @@ const m = computed(() => sheetModel(props.invoice))
 .s-kv { display: grid; grid-template-columns: 92px 1fr; row-gap: 5px; font-size: 11.5px; }
 .s-kv span { color: #8A8A82; font-weight: 500; } .s-kv b { color: #141410; font-weight: 700; }
 .s-sign { position: relative; text-align: center; font-size: 11.5px; }
-.s-ttd { height: 52px; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+.s-ttd { height: 120px; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
 .s-ttd img { max-height: 52px; max-width: 100%; object-fit: contain; }
 .s-line { border-top: 1px solid #141410; margin-top: 4px; padding-top: 7px; font-weight: 800; color: #141410; }
 .s-stamp { position: absolute; right: 150px; top: -14px; transform: rotate(-9deg); border: 3px solid #2BA864; color: #2BA864; border-radius: 14px; padding: 8px 18px 7px; text-align: center; background: rgba(255, 255, 255, .75); z-index: 3; }
