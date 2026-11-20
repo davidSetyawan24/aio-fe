@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="b-label rise" style="--i: 3"><span>Makan per hari</span><button v-if="canActivity" type="button" class="b-lk" data-test="food-activity" @click="$emit('target')">Aktivitas <PhCaretRight :size="14" weight="bold" /></button></div>
+    <div class="b-label rise" style="--i: 3"><span>Makan per hari</span><button v-if="canActivity" type="button" class="b-lk" data-test="food-activity" @click="$emit('target', 'activity')">Aktivitas <PhCaretRight :size="14" weight="bold" /></button></div>
     <div class="shell rise" style="--i: 3">
       <div v-if="empty" class="b-core b-mkempty" data-test="food-empty" :data-state="food.state">
         <span class="em">{{ empty.em }}</span>
         <p class="grow">{{ empty.t }}<small>{{ empty.sub }}</small></p>
-        <button type="button" class="pill small" data-test="food-btn" @click="$emit(empty.act)">{{ empty.btn }}</button>
+        <button type="button" class="pill small" data-test="food-btn" @click="$emit(empty.act, empty.focus)">{{ empty.btn }}</button>
       </div>
       <div v-else class="b-core b-pad" data-test="food">
         <div class="b-eat">
@@ -48,7 +48,7 @@ const EMPTY = {
   needWeighing: { em: '⚖️', t: 'Upload timbangan dulu buat ngitung target makan.', sub: 'Butuh BMR & massa tanpa lemak dari timbangan.', act: 'upload', btn: 'Upload' },
   needTarget: { em: '🎯', t: 'Pasang target dulu (arah + aktivitas)', sub: 'Abis itu kalori & protein per hari langsung keitung.', act: 'target', btn: 'Atur target' },
   needPace: { em: '🎯', t: 'Pilih kecepatan dulu', sub: 'Buka Atur target, pilih Santai/Normal/Agresif.', act: 'target', btn: 'Atur target' },
-  needActivity: { em: '🏃', t: 'Isi aktivitas dulu', sub: 'Kerja harian & gym, diisi sekali di Atur target.', act: 'target', btn: 'Atur target' },
+  needActivity: { em: '🏃', t: 'Isi aktivitas dulu', sub: 'Kerja harian & gym, diisi sekali di Atur target.', act: 'target', btn: 'Atur target', focus: 'activity' },
   needBmr: { em: '⚖️', t: 'BMR belum ada di timbangan 7 hari terakhir', sub: 'Upload timbangan dari Zepp Life biar keitung.', act: 'upload', btn: 'Upload' },
 }
 const empty = computed(() => EMPTY[props.food.state] ?? null)

@@ -56,6 +56,22 @@ afterEach(() => {
 })
 
 describe('BadanTargetSheet', () => {
+  it('focus "activity": tiap dibuka langsung scroll ke bagian Aktivitas; tanpa focus mulai dari atas', async () => {
+    const w = make({ open: false, focus: 'activity' })
+    const sheet = q('[data-test="target-sheet"]')
+    const group = q('[data-test="activity-group"]')
+    sheet.getBoundingClientRect = () => ({ top: 100 })
+    group.getBoundingClientRect = () => ({ top: 900 - sheet.scrollTop })
+    await w.setProps({ open: true })
+    await flushPromises()
+    expect(sheet.scrollTop).toBe(800 - 12)
+    await w.setProps({ open: false })
+    await w.setProps({ focus: '' })
+    await w.setProps({ open: true })
+    await flushPromises()
+    expect(sheet.scrollTop).toBe(0)
+  })
+
   it('shows the existing target, "sekarang" averages and delete link', () => {
     make()
     expect(q('[data-test="t-fat"]').value).toBe('20')

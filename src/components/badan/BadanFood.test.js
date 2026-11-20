@@ -62,12 +62,14 @@ describe('BadanFood', () => {
     expect(t(w, 'food-empty')).toContain(nospace(text))
     await w.get('[data-test="food-btn"]').trigger('click')
     expect(w.emitted(event)).toHaveLength(1)
+    // "Isi aktivitas dulu → Atur target" langsung ke bagian Aktivitas; sisanya dari atas.
+    expect(w.emitted(event)[0][0]).toBe(state === 'needActivity' ? 'activity' : undefined)
     expect(w.find('[data-test="food-activity"]').exists()).toBe(link)
   })
 
-  it('link Aktivitas buka sheet target', async () => {
+  it('link Aktivitas buka sheet target di bagian Aktivitas', async () => {
     const w = make()
     await w.get('[data-test="food-activity"]').trigger('click')
-    expect(w.emitted('target')).toHaveLength(1)
+    expect(w.emitted('target')).toEqual([['activity']])
   })
 })

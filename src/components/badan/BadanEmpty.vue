@@ -17,7 +17,7 @@
     </div>
     <div>
       <template v-if="sleep">
-        <BadanFood v-if="target" :food="food" :target="target" :count="0" @upload="$emit('upload')" @target="$emit('target')" />
+        <BadanFood v-if="target" :food="food" :target="target" :count="0" @upload="$emit('upload')" @target="(f) => $emit('target', f)" />
         <BadanSleepCard :sleep="sleep" :summary="sleepSum" :today="today" :i="1" @open="(id) => $emit('openSleep', id)" />
       </template>
       <div class="b-label rise" style="--i: 1">Cara dapetin gambarnya</div>

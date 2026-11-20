@@ -2,7 +2,7 @@
   <!-- Ke dalem ion-app (bukan body): popup Ionic dipasang di ion-app, kalau di body ketutup scrim. -->
   <Teleport to="ion-app">
     <div class="bt-scrim" :class="{ show: open }" @click="close" />
-    <div class="bt-sheet" :class="{ show: open, dialog: wide }" data-test="target-sheet" role="dialog" aria-modal="true" aria-label="Atur target" :aria-hidden="String(!open)">
+    <div ref="sheetEl" class="bt-sheet" :class="{ show: open, dialog: wide }" data-test="target-sheet" role="dialog" aria-modal="true" aria-label="Atur target" :aria-hidden="String(!open)">
       <div class="bt-handle" />
       <form :class="{ 'bf-shake': shake }" novalidate data-test="target-form" @submit.prevent="save">
         <div class="bt-head">
@@ -73,7 +73,7 @@
         </div>
         <p class="bf-hint">Yang dikosongin nggak muncul di progres. Grafik &amp; warna panah ngikut arah yang lo pilih.</p>
 
-        <div class="bf-group" style="margin-top: 28px"><span>Aktivitas</span><small>diisi sekali</small></div>
+        <div ref="activityEl" class="bf-group" style="margin-top: 28px" data-test="activity-group"><span>Aktivitas</span><small>diisi sekali</small></div>
         <div class="bt-asub">Kerja harian</div>
         <div class="bt-seg wrap3" role="group" aria-label="Kerja harian">
           <button v-for="k in WORK_TYPES" :key="k" type="button" :class="{ on: form.workType === k }" :data-work="k" :aria-pressed="String(form.workType === k)" @click="setWork(k)">{{ WORK_INFO[k] }}</button>
@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { PhCheck, PhWarning, PhX } from '@phosphor-icons/vue'
 import { ARAH, ARAH_INFO, fmt, foodPlan, LEVEL_INFO, LEVELS, PACE_INFO, PACES, WORK_INFO, WORK_TYPES } from '@/lib/badan.js'
 import { fmtU, kgWeek, monthShort } from '@/lib/badanView.js'
@@ -142,6 +142,8 @@ const props = defineProps({
   target: { type: Object, default: null },
   summary: { type: Object, default: null },
   wide: { type: Boolean, default: false },
+  /** 'activity' = pas dibuka langsung scroll ke bagian Aktivitas (dari kartu Makan); kosong = dari atas. */
+  focus: { type: String, default: '' },
 })
 const emit = defineEmits(['close'])
 
@@ -212,6 +214,16 @@ function useSuggestion() {
   clear('level')
 }
 
+const sheetEl = ref(null)
+const activityEl = ref(null)
+/** Posisi scroll awal: bagian Aktivitas (judulnya nempel di atas, sisa 12px) atau paling atas. */
+function scrollStart() {
+  const sheet = sheetEl.value
+  if (!sheet) return
+  const act = props.focus === 'activity' ? activityEl.value : null
+  sheet.scrollTop = act ? Math.max(0, act.getBoundingClientRect().top - sheet.getBoundingClientRect().top + sheet.scrollTop - 12) : 0
+}
+
 // Tiap dibuka, isian mulai lagi dari target yang tersimpen.
 watch(
   () => props.open,
@@ -221,6 +233,7 @@ watch(
     for (const k of Object.keys(errors)) delete errors[k]
     lines.value = []
     busy.value = ''
+    nextTick(scrollStart)
   },
   { immediate: true },
 )

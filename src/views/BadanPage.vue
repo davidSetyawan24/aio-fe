@@ -20,15 +20,15 @@
 
         <BadanEmpty
           v-else-if="isEmpty" :food="store.food" :target="store.target" :sleep="store.lastSleep" :sleep-sum="store.sleepSum" :today="today"
-          @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" @target="openPanel('target')" @open-sleep="(id) => openPanel('sleepDetail', id)"
+          @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" @target="openTarget" @open-sleep="(id) => openPanel('sleepDetail', id)"
         />
 
         <div v-else-if="store.loaded" class="b-bgrid" data-test="main">
           <section class="b-left">
             <div class="b-label rise">Sekarang</div>
             <BadanHero :summary="store.summary" :last="store.last" :today="today" />
-            <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" :pace="store.pace" :pace-eta="store.paceEtaInfo" @edit="openPanel('target')" />
-            <BadanFood :food="store.food" :target="store.target" :count="store.summary.count" @target="openPanel('target')" @upload="openPanel('upload')" />
+            <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" :pace="store.pace" :pace-eta="store.paceEtaInfo" @edit="openTarget()" />
+            <BadanFood :food="store.food" :target="store.target" :count="store.summary.count" @target="openTarget" @upload="openPanel('upload')" />
           </section>
           <section class="b-mid">
             <BadanChart :key="chartKey" :rows="store.sorted" :sleeps="store.sleeps" :target="store.target" :last-on="store.summary.lastOn" />
@@ -43,7 +43,7 @@
 
       <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @sleep-detail="(i) => openPanel('sleepDetail', i)" @sleep-edit="(i) => openPanel('sleepEdit', i)" @sleep-manual="openPanel('sleepManual')" @done="onPanelDone" />
 
-      <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" @close="targetOpen = false" />
+      <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" :focus="targetFocus" @close="targetOpen = false" />
 
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="choose(UPLOAD_CHOICE)">
         Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
@@ -114,11 +114,14 @@ const PATHS = {
   sleepUpload: () => `${BASE}/tidur/upload`,
 }
 const targetOpen = ref(false)
+const targetFocus = ref('')
+/** Sheet Atur target. `focus` 'activity' = langsung ke bagian Aktivitas (dari kartu Makan). */
+function openTarget(focus = '') {
+  targetFocus.value = focus || ''
+  targetOpen.value = true
+}
 function openPanel(view, id = null) {
-  if (view === 'target') {
-    targetOpen.value = true
-    return
-  }
+  if (view === 'target') return openTarget()
   if (!wide.value && PATHS[view]) return ionRouter.push(PATHS[view](id))
   panel.view = view
   panel.id = id
@@ -152,7 +155,7 @@ async function choose({ views, ...texts }) {
     choosing = false
   }
 }
-defineExpose({ openPanel, panel, targetOpen })
+defineExpose({ openPanel, panel, targetOpen, targetFocus })
 
 const LINK_VIEWS = ['detail', 'edit', 'manual', 'upload', 'sleepDetail', 'sleepEdit', 'sleepManual', 'sleepUpload']
 const WEIGHING_ID = new Set(['detail', 'edit'])

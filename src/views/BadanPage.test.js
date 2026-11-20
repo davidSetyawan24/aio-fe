@@ -118,6 +118,20 @@ describe('BadanPage', () => {
     expect(w.find('[data-test="food-empty"]').attributes('data-state')).toBe('needActivity')
   })
 
+  it('Isi aktivitas dulu / Aktivitas › → sheet Atur target di bagian Aktivitas; Atur biasa dari atas', async () => {
+    const w = await mountPage({ data: { weighings: declining, target: target({ pace: 'normal', startedOn: addDays(TODAY, -34) }), activity: null, sleeps: [] } })
+    await w.find('[data-test="food-btn"]').trigger('click')
+    expect(w.vm.targetOpen).toBe(true)
+    expect(w.vm.targetFocus).toBe('activity')
+    w.vm.targetOpen = false
+    await w.find('[data-test="edit-target"]').trigger('click')
+    expect(w.vm.targetOpen).toBe(true)
+    expect(w.vm.targetFocus).toBe('')
+    w.vm.targetOpen = false
+    await w.find('[data-test="food-activity"]').trigger('click')
+    expect(w.vm.targetFocus).toBe('activity')
+  })
+
   it('cutting lama tanpa kecepatan: nggak error, tanpa baris Kecepatan & perkiraan, Makan minta pilih kecepatan', async () => {
     const w = await mountPage({ data: { weighings: declining, target: target({ startedOn: addDays(TODAY, -34) }) } })
     expect(w.find('[data-test="row-speed"]').exists()).toBe(false)
