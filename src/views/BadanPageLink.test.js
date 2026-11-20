@@ -62,4 +62,10 @@ describe('BadanPage ?panel= link', () => {
     expect(d.vm.panel.open).toBe(false)
     d.unmount()
   })
+
+  it('opens the sleep upload panel without an id', async () => {
+    const w = await mountAt({ panel: 'sleepUpload' })
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepUpload', id: null })
+    w.unmount()
+  })
 })

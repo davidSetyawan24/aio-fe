@@ -4,20 +4,21 @@
       <div class="page b-page">
         <div class="b-toprow">
           <button type="button" class="b-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
-          <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="openPanel('manual')"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
+          <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="choose(MANUAL_CHOICE)"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
         </div>
         <span class="eyebrow rise"><span class="dot" />Badan</span>
         <div class="b-headrow">
           <h1 class="h1 rise b-h1" style="--i: 1">Badan.<span class="b-sub" data-test="sub">{{ subText }}</span></h1>
           <div v-if="wide" class="b-hact">
             <button type="button" class="pill ghost" data-test="manual" @click="openPanel('manual')"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
+            <button type="button" class="pill b-alt" data-test="sleep-upload" @click="openPanel('sleepUpload')">Upload tidur <span class="ic"><PhMoon :size="16" weight="bold" /></span></button>
             <button type="button" class="pill" data-test="upload" @click="openPanel('upload')">Upload timbangan <span class="ic"><PhUploadSimple :size="17" weight="bold" /></span></button>
           </div>
         </div>
 
         <p v-if="failed" class="b-fail" data-test="failed">Nggak bisa muat data badan. <button type="button" @click="load">Coba lagi</button></p>
 
-        <BadanEmpty v-else-if="isEmpty" @upload="openPanel('upload')" @manual="openPanel('manual')" />
+        <BadanEmpty v-else-if="isEmpty" @upload="openPanel('upload')" @manual="openPanel('manual')" @sleep="openPanel('sleepUpload')" />
 
         <div v-else-if="store.loaded" class="b-bgrid" data-test="main">
           <section class="b-left">
@@ -36,12 +37,12 @@
         </div>
       </div>
 
-      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @sleep-detail="(i) => openPanel('sleepDetail', i)" @sleep-edit="(i) => openPanel('sleepEdit', i)" @done="onPanelDone" />
+      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @sleep-detail="(i) => openPanel('sleepDetail', i)" @sleep-edit="(i) => openPanel('sleepEdit', i)" @sleep-manual="openPanel('sleepManual')" @done="onPanelDone" />
 
       <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" @close="targetOpen = false" />
 
-      <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="openPanel('upload')">
-        Upload timbangan <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
+      <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="choose(UPLOAD_CHOICE)">
+        Upload <span class="ic"><PhUploadSimple :size="19" weight="bold" /></span>
       </button>
     </ion-content>
   </ion-page>
@@ -49,8 +50,8 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
-import { PhCaretLeft, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
+import { IonContent, IonPage, actionSheetController, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
+import { PhCaretLeft, PhMoon, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
 import BadanChart from '@/components/badan/BadanChart.vue'
 import BadanEmpty from '@/components/badan/BadanEmpty.vue'
@@ -105,6 +106,7 @@ const panel = reactive({ open: false, view: 'detail', id: null, key: 0 })
 const PATHS = {
   upload: () => `${BASE}/upload`, manual: () => `${BASE}/catat`, detail: (id) => `${BASE}/${id}`, edit: (id) => `${BASE}/${id}/ubah`,
   sleepManual: () => `${BASE}/tidur/catat`, sleepDetail: (id) => `${BASE}/tidur/${id}`, sleepEdit: (id) => `${BASE}/tidur/${id}/ubah`,
+  sleepUpload: () => `${BASE}/tidur/upload`,
 }
 const targetOpen = ref(false)
 function openPanel(view, id = null) {
@@ -126,9 +128,28 @@ function onPanelDone(message) {
   else closePanel()
   if (message) showToast(message)
 }
+/** HP: FAB "Upload" & tombol kecil "Isi manual" nanya dulu timbangan atau tidur. */
+const UPLOAD_CHOICE = { header: 'Upload apa?', subHeader: 'Pilih gambar yang mau dibaca.', views: ['upload', 'sleepUpload'] }
+const MANUAL_CHOICE = { header: 'Isi manual apa?', views: ['manual', 'sleepManual'] }
+let choosing = false
+async function choose({ views, ...texts }) {
+  if (choosing) return
+  choosing = true
+  try {
+    const sheet = await actionSheetController.create({
+      ...texts,
+      buttons: [{ text: '⚖️ Timbangan', data: views[0] }, { text: '🌙 Tidur', data: views[1] }, { text: 'Batal', role: 'cancel' }],
+    })
+    await sheet.present()
+    const { data } = await sheet.onDidDismiss()
+    if (views.includes(data)) openPanel(data)
+  } finally {
+    choosing = false
+  }
+}
 defineExpose({ openPanel, panel, targetOpen })
 
-const LINK_VIEWS = ['detail', 'edit', 'manual', 'upload', 'sleepDetail', 'sleepEdit', 'sleepManual']
+const LINK_VIEWS = ['detail', 'edit', 'manual', 'upload', 'sleepDetail', 'sleepEdit', 'sleepManual', 'sleepUpload']
 const WEIGHING_ID = new Set(['detail', 'edit'])
 const SLEEP_ID = new Set(['sleepDetail', 'sleepEdit'])
 /**
@@ -173,8 +194,11 @@ onIonViewWillEnter(() => {
 }
 .b-h1 { margin-bottom: 4px; }
 .b-sub { display: block; font-size: 15px; letter-spacing: -0.01em; margin-top: 8px; line-height: 1.4; }
-.b-hact { display: flex; gap: 8px; flex-shrink: 0; margin-bottom: 6px; }
+.b-hact { display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; margin-bottom: 6px; }
 .b-hact .pill { height: 46px; }
+/* Upload tidur: pill hitam, ikonnya nggak lime biar Upload timbangan tetep yang utama. */
+.b-alt .ic { background: rgba(255, 255, 255, .14); color: var(--on-ink); }
+:root.theme-dark .b-alt .ic { background: rgba(0, 0, 0, .1); }
 .b-fail { margin: 20px 8px; color: var(--muted); font-weight: 600; }
 .b-fail button { border: 0; background: none; font: 700 14px var(--ion-font-family); color: var(--text); text-decoration: underline; cursor: pointer; }
 .b-bgrid { display: grid; grid-template-columns: minmax(0, 1fr); }

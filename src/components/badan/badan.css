@@ -290,6 +290,8 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bu-sk2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bu-sk3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .bu-sk3.lain { grid-template-columns: 1fr 1fr; }
+.bu-sk4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bu-sk2 > .bs-span2 { grid-column: span 2; }
 .bu-sk { border-radius: 18px; background: var(--soft); height: 62px; position: relative; overflow: hidden; }
 .bu-sk.big { height: 70px; }
 .bu-sk::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent); transform: translateX(-100%); animation: bu-shim 1.3s infinite; }
@@ -312,6 +314,10 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
   .bu-imgcol .bu-reread { flex-shrink: 0; }
   .bu-sk3.lain { grid-template-columns: 1fr 1fr 1fr; }
   .bu-grid .bf-grid.lain { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* Upload tidur di panel lebar PC: Lama tidur & Lainnya 4 kolom (di iPad kolom form-nya masih sempit → tetep 2). */
+@media (min-width: 1100px) {
+  .bu-grid .bu-sk4, .bu-grid .bf-grid.bs-dur, .bu-grid .bf-grid.bs-lain { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* Atur target (bt-): sheet HP / dialog PC, di-teleport ke ion-app */

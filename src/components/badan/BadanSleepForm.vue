@@ -51,7 +51,7 @@
     <div class="bs-sum" :class="sum && (sum.ok ? 'ok' : 'off')" data-test="sum-line"><template v-if="sum"><PhCheck v-if="sum.ok" :size="14" weight="bold" /><PhWarning v-else :size="14" weight="bold" />{{ sum.text }}</template></div>
 
     <div class="bf-group"><span>Lainnya</span><small v-if="mode === 'manual'">boleh kosong</small></div>
-    <div class="bf-grid">
+    <div class="bf-grid bs-lain">
       <label v-for="o in OTHERS" :key="o.k" class="bf-nf" :class="{ warn: warn.has(o.k), bad: errors[o.k] }" :data-k="o.k">
         <span class="lb">{{ o.label }}</span>
         <span class="iw">

@@ -49,6 +49,7 @@ export function buildTabRoutes(pages) {
     { path: 'menu/badan/catat', component: BadanSubPage, meta: { view: 'manual' } },
     // Tidur ditulis sebelum :id timbangan biar nggak ketuker.
     { path: 'menu/badan/tidur/catat', component: BadanSubPage, meta: { view: 'sleepManual' } },
+    { path: 'menu/badan/tidur/upload', component: BadanSubPage, meta: { view: 'sleepUpload' } },
     { path: 'menu/badan/tidur/:id', component: BadanSubPage, meta: { view: 'sleepDetail' } },
     { path: 'menu/badan/tidur/:id/ubah', component: BadanSubPage, meta: { view: 'sleepEdit' } },
     { path: 'menu/badan/:id', component: BadanSubPage, meta: { view: 'detail' } },

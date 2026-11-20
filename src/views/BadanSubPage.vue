@@ -17,6 +17,7 @@
           <BadanForm v-else-if="view === 'edit' && weighing" mode="edit" :initial="weighing" @done="onDone" @open="goExisting" />
           <p v-else-if="view === 'edit'" class="bd-gone" data-test="gone">Timbangannya nggak ketemu. Mungkin udah dihapus.</p>
           <BadanUpload v-else-if="view === 'upload'" @stage="onStage" @manual="goManual" @done="onDone" @open="goExisting" />
+          <BadanSleepUpload v-else-if="view === 'sleepUpload'" @stage="onStage" @manual="goSleepManual" @done="onDone" @open="goSleep" />
           <BadanSleepDetail v-else-if="view === 'sleepDetail'" :sleep-id="id" @edit="goSleepEdit" @done="onDone" />
           <BadanSleepForm v-else-if="view === 'sleepManual'" mode="manual" @done="onDone" @open="goSleep" />
           <BadanSleepForm v-else-if="view === 'sleepEdit' && sleep" mode="edit" :initial="sleep" @done="onDone" @open="goSleep" />
@@ -36,6 +37,7 @@ import BadanDetail from '@/components/badan/BadanDetail.vue'
 import BadanForm from '@/components/badan/BadanForm.vue'
 import BadanSleepDetail from '@/components/badan/BadanSleepDetail.vue'
 import BadanSleepForm from '@/components/badan/BadanSleepForm.vue'
+import BadanSleepUpload from '@/components/badan/BadanSleepUpload.vue'
 import BadanUpload from '@/components/badan/BadanUpload.vue'
 import '@/components/badan/badan.css'
 import { dLong, jam } from '@/lib/badanView.js'
@@ -61,7 +63,9 @@ const failed = ref(false)
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(id)) ?? null)
 const sleep = computed(() => store.sleeps.find((s) => s.id === Number(id)) ?? null)
 const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
-const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', sleepManual: 'Isi tidur manual', sleepEdit: 'Ubah tidur' }
+const SL_SUB = { ...UP_SUB, pick: 'Dari gambar Huawei Health.' }
+const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', sleepManual: 'Isi tidur manual', sleepEdit: 'Ubah tidur', sleepUpload: 'Upload tidur' }
+const RESULT_TITLE = { upload: 'Hasil bacaan', sleepUpload: 'Hasil bacaan tidur' }
 const stage = ref('pick')
 const content = ref(null)
 /** Ganti tahap upload → balik ke atas biar status barunya kebaca. */
@@ -69,11 +73,12 @@ function onStage(s) {
   stage.value = s
   content.value?.$el?.scrollToTop?.(0)
 }
-const title = computed(() => (view === 'upload' && stage.value === 'result' ? 'Hasil bacaan' : TITLES[view] ?? ''))
+const title = computed(() => (RESULT_TITLE[view] && stage.value === 'result' ? RESULT_TITLE[view] : TITLES[view] ?? ''))
 const subtitle = computed(() => {
   if (view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'
   if (view === 'edit' && weighing.value) return `${dLong(weighing.value.weighedOn)}, ${jam(weighing.value.weighedAt)}`
   if (view === 'upload') return UP_SUB[stage.value] ?? ''
+  if (view === 'sleepUpload') return SL_SUB[stage.value] ?? ''
   if (view === 'sleepManual') return 'Ketik angka dari Huawei Health.'
   if (view === 'sleepEdit' && sleep.value) return dLong(sleep.value.sleptOn)
   return ''
@@ -98,6 +103,7 @@ const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navig
 const goEdit = () => ionRouter.navigate(`${BASE}/${id}/ubah`, 'forward', 'push')
 const goManual = () => ionRouter.navigate(`${BASE}/catat`, 'forward', 'replace')
 const goExisting = (existingId) => ionRouter.navigate(`${BASE}/${existingId}`, 'forward', 'push')
+const goSleepManual = () => ionRouter.navigate(`${BASE}/tidur/catat`, 'forward', 'replace')
 const goSleepEdit = () => ionRouter.navigate(`${BASE}/tidur/${id}/ubah`, 'forward', 'push')
 const goSleep = (sleepId) => ionRouter.navigate(`${BASE}/tidur/${sleepId}`, 'forward', 'push')
 

@@ -10,6 +10,7 @@
           <div class="acts">
             <button type="button" class="b-bigbtn" data-test="empty-upload" @click="$emit('upload')">Upload timbangan <span class="ic"><PhUploadSimple :size="20" weight="bold" /></span></button>
             <button type="button" class="b-ghostbtn" data-test="empty-manual" @click="$emit('manual')"><PhPencilSimple :size="18" />Isi manual</button>
+            <button type="button" class="b-ghostbtn" data-test="empty-sleep" @click="$emit('sleep')"><PhMoon :size="18" />Upload tidur</button>
           </div>
         </div>
       </div>
@@ -31,10 +32,10 @@
 </template>
 
 <script setup>
-import { PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
+import { PhMoon, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
 import './badan.css'
 
-defineEmits(['upload', 'manual'])
+defineEmits(['upload', 'manual', 'sleep'])
 </script>
 
 <style scoped>

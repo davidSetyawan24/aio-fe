@@ -7,7 +7,13 @@ import { setBadanApi } from '@/stores/badan.js'
 import BadanPage from './BadanPage.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
-vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), useIonRouter: () => ionRouter }))
+/** Action sheet palsu: `sheetPick` = data tombol yang "dipencet" (undefined = Batal). */
+const sheet = vi.hoisted(() => ({ create: vi.fn(), pick: undefined }))
+vi.mock('@ionic/vue', async (importOriginal) => ({
+  ...(await importOriginal()),
+  useIonRouter: () => ionRouter,
+  actionSheetController: { create: sheet.create },
+}))
 
 const TODAY = wibNow().date
 /** 12 timbangan, terbaru dulu: 7 hari terakhir 73,9 kg, sebelumnya 80 kg. */
@@ -41,6 +47,8 @@ async function mountPage({ width = 390, data = { weighings, target: target() } }
 
 beforeEach(() => {
   ionRouter.push.mockReset()
+  sheet.pick = undefined
+  sheet.create.mockReset().mockImplementation(async () => ({ present: vi.fn(), onDidDismiss: async () => ({ data: sheet.pick }) }))
   document.body.appendChild(document.createElement('ion-app'))
 })
 afterEach(() => {
@@ -165,9 +173,13 @@ describe('BadanPage', () => {
 
   it('HP: FAB & baris ke halaman anak; PC: buka panel', async () => {
     const w = await mountPage()
+    sheet.pick = 'upload'
     await w.find('[data-test="fab"]').trigger('click')
+    await flushPromises()
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/upload')
+    sheet.pick = 'manual'
     await w.find('[data-test="manual-small"]').trigger('click')
+    await flushPromises()
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/catat')
     await w.find('[data-test="hrow"]').trigger('click')
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/100')
@@ -280,12 +292,83 @@ describe('BadanPage', () => {
     expect(row).not.toContain('100%')
   })
 
-  it('link "Semua menu" ada juga di PC/iPad; FAB HP "Upload timbangan"', async () => {
+  it('link "Semua menu" ada juga di PC/iPad; FAB HP "Upload"', async () => {
     const pc = await mountPage({ width: 1440 })
     expect(pc.find('[data-test="back"]').text()).toBe('Semua menu')
     const ipad = await mountPage({ width: 820 })
     expect(ipad.find('[data-test="back"]').exists()).toBe(true)
     const hp = await mountPage()
-    expect(hp.find('[data-test="fab"]').text()).toBe('Upload timbangan')
+    expect(hp.find('[data-test="fab"]').text()).toBe('Upload')
+  })
+
+  it('PC/iPad header: Isi manual · Upload tidur · Upload timbangan; Upload tidur buka panel upload tidur', async () => {
+    const w = await mountPage({ width: 1440 })
+    expect(w.find('.b-hact').findAll('button').map((b) => b.text())).toEqual(['Isi manual', 'Upload tidur', 'Upload timbangan'])
+    await w.find('[data-test="sleep-upload"]').trigger('click')
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepUpload' })
+    const panel = document.querySelector('[data-test="panel"]')
+    expect(panel.querySelector('[data-test="panel-title"]').textContent).toBe('Upload tidur')
+    expect(panel.querySelector('[data-test="panel-sub"]').textContent).toBe('Dari gambar Huawei Health.')
+    expect(sheet.create).not.toHaveBeenCalled()
+  })
+
+  it('HP FAB "Upload" → action sheet Upload apa? 2 pilihan; Tidur → halaman upload tidur; Batal → diem', async () => {
+    const w = await mountPage()
+    sheet.pick = 'sleepUpload'
+    await w.find('[data-test="fab"]').trigger('click')
+    await flushPromises()
+    const opts = sheet.create.mock.calls[0][0]
+    expect(opts.header).toBe('Upload apa?')
+    expect(opts.subHeader).toBe('Pilih gambar yang mau dibaca.')
+    expect(opts.buttons.map((b) => b.text)).toEqual(['⚖️ Timbangan', '🌙 Tidur', 'Batal'])
+    expect(opts.buttons[2].role).toBe('cancel')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/upload')
+    ionRouter.push.mockClear()
+    sheet.pick = undefined
+    await w.find('[data-test="fab"]').trigger('click')
+    await flushPromises()
+    expect(ionRouter.push).not.toHaveBeenCalled()
+  })
+
+  it('HP Isi manual kecil → action sheet Isi manual apa?; Tidur → isi tidur manual', async () => {
+    const w = await mountPage()
+    sheet.pick = 'sleepManual'
+    await w.find('[data-test="manual-small"]').trigger('click')
+    await flushPromises()
+    const opts = sheet.create.mock.calls[0][0]
+    expect(opts.header).toBe('Isi manual apa?')
+    expect(opts.buttons.map((b) => b.text)).toEqual(['⚖️ Timbangan', '🌙 Tidur', 'Batal'])
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/catat')
+  })
+
+  it('HP: tap FAB dua kali cepet cuma munculin satu action sheet', async () => {
+    const w = await mountPage()
+    // Sheet pertama masih kebuka (belum ditutup) pas tap kedua.
+    sheet.create.mockImplementation(async () => ({ present: vi.fn(), onDidDismiss: () => new Promise(() => {}) }))
+    await w.find('[data-test="fab"]').trigger('click')
+    await w.find('[data-test="fab"]').trigger('click')
+    await flushPromises()
+    expect(sheet.create).toHaveBeenCalledTimes(1)
+  })
+
+  it('kosong: tombol ketiga Upload tidur (HP → halaman upload tidur, PC → panel)', async () => {
+    const empty = { weighings: [], target: null, activity: null, sleeps: [] }
+    const hp = await mountPage({ data: empty })
+    expect(hp.find('[data-test="empty-sleep"]').text()).toBe('Upload tidur')
+    await hp.find('[data-test="empty-sleep"]').trigger('click')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/upload')
+    const pc = await mountPage({ width: 1440, data: empty })
+    await pc.find('[data-test="empty-sleep"]').trigger('click')
+    expect(pc.vm.panel).toMatchObject({ open: true, view: 'sleepUpload' })
+  })
+
+  it('PC: Isi manual dari layar gagal upload tidur → panel isi tidur manual', async () => {
+    const w = await mountPage({ width: 1440 })
+    w.vm.openPanel('sleepUpload')
+    await flushPromises()
+    w.findComponent({ name: 'BadanPanel' }).vm.$emit('sleepManual')
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepManual' })
   })
 })

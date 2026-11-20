@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { setBadanApi, useBadanStore } from '@/stores/badan.js'
 import BadanPanel from './BadanPanel.vue'
+import BadanSleepUpload from './BadanSleepUpload.vue'
 import BadanUpload from './BadanUpload.vue'
 
 let w
@@ -54,5 +55,33 @@ describe('BadanPanel', () => {
     expect(aside.querySelector('[data-test="panel-sub"]').textContent).toBe('Selasa, 17 November')
     aside.querySelector('[data-test="panel-back"]').click()
     expect(w.emitted('sleepDetail')[0]).toEqual([8])
+  })
+
+  it('sleepUpload view: title/sub follow the stage, panel goes wide after pick, Isi manual asks for sleepManual', async () => {
+    w = mount(BadanPanel, { props: { open: true, view: 'sleepUpload', formKey: 1 }, attachTo: document.body })
+    await flushPromises()
+    const aside = document.querySelector('[data-test="panel"]')
+    expect(aside.querySelector('[data-test="panel-title"]').textContent).toBe('Upload tidur')
+    expect(aside.querySelector('[data-test="panel-sub"]').textContent).toBe('Dari gambar Huawei Health.')
+    expect(aside.classList.contains('wide')).toBe(false)
+    const up = w.findComponent(BadanSleepUpload)
+    up.vm.$emit('stage', 'load')
+    await flushPromises()
+    expect(aside.classList.contains('wide')).toBe(true)
+    expect(aside.querySelector('[data-test="panel-sub"]').textContent).toBe('Bentar ya.')
+    up.vm.$emit('stage', 'fail')
+    await flushPromises()
+    expect(aside.querySelector('[data-test="panel-title"]').textContent).toBe('Upload tidur')
+    expect(aside.querySelector('[data-test="panel-sub"]').textContent).toBe('Gambarnya nggak bisa dibaca.')
+    up.vm.$emit('stage', 'result')
+    await flushPromises()
+    expect(aside.querySelector('[data-test="panel-title"]').textContent).toBe('Hasil bacaan tidur')
+    expect(aside.querySelector('[data-test="panel-sub"]').textContent).toBe('Cek dulu angkanya, terus Simpen.')
+    up.vm.$emit('manual')
+    expect(w.emitted('sleepManual')).toHaveLength(1)
+    up.vm.$emit('open', 4)
+    expect(w.emitted('sleepDetail')[0]).toEqual([4])
+    up.vm.$emit('done', 'Data tidur kesimpen ✓')
+    expect(w.emitted('done')[0]).toEqual(['Data tidur kesimpen ✓'])
   })
 })
