@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { toastController } from '@ionic/vue'
+import { wibNow } from './home.js'
 import { ADDRESS_FIELDS, BIO_FIELDS, DOC_TYPES, GENDERS, validBirthDate } from './personal.js'
 
 /** Isian form Data Pribadi + cek sebelum kirim. Batas & pesannya KEMBAR sama server. */
@@ -74,7 +75,7 @@ export function addressErrors(form) {
 export const blankBio = () => ({ fields: Object.fromEntries(BIO_FIELDS.map(([k]) => [k, ''])), extra: [] })
 
 /** Cek isian Biodata. Kosong selalu boleh; tanggal lahir, jenis kelamin & tinggi dicek kayak server. `today` = 'YYYY-MM-DD' WIB. */
-export function bioErrors(form, today) {
+export function bioErrors(form, today = wibNow().date) {
   const out = []
   const val = (key) => String(form.fields[key] ?? '').trim()
   for (const [key, label] of BIO_FIELDS) {
@@ -83,7 +84,7 @@ export function bioErrors(form, today) {
     else if (!v) continue
     else if (key === 'birthDate' && !validBirthDate(v, today)) out.push('Tanggal lahirnya nggak valid.')
     else if (key === 'gender' && !GENDERS.includes(v)) out.push('Pilih Laki-laki atau Perempuan.')
-    else if (key === 'height' && !(/^\d+$/.test(v) && Number(v) >= 100 && Number(v) <= 250)) out.push('Tinggi harus angka bulat 100–250 cm.')
+    else if (key === 'height' && !(/^\d{3}$/.test(v) && Number(v) >= 100 && Number(v) <= 250)) out.push('Tinggi harus angka bulat 100–250 cm.')
   }
   if (form.extra.length > MAX_EXTRA) out.push(`Maksimal ${MAX_EXTRA} data lain.`)
   for (const x of form.extra) {

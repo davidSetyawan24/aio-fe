@@ -66,6 +66,17 @@ describe('addressErrors', () => {
 })
 
 describe('bioErrors', () => {
+  const withF = (o) => ({ ...blankBio(), fields: { ...blankBio().fields, ...o } })
+  it('tinggi harus 3 digit 100–250 (di-trim)', () => {
+    const msg = ['Tinggi harus angka bulat 100–250 cm.']
+    expect(bioErrors(withF({ height: '0166' }))).toEqual(msg)
+    expect(bioErrors(withF({ height: '0100' }))).toEqual(msg)
+    expect(bioErrors(withF({ height: '166' }))).toEqual([])
+    expect(bioErrors(withF({ height: ' 166 ' }))).toEqual([])
+  })
+  it('tanpa today, tanggal lahir lampau lolos', () => {
+    expect(bioErrors(withF({ birthDate: '1995-06-24' }))).toEqual([])
+  })
   it('allows empty fields but caps lengths and extras', () => {
     expect(bioErrors(blankBio())).toEqual([])
     expect(bioErrors({ ...blankBio(), fields: { ...blankBio().fields, name: 'x'.repeat(101) } })).toEqual(['Nama lengkap maksimal 100 karakter.'])
