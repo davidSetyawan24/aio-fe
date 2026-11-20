@@ -101,11 +101,21 @@ describe('BadanPage', () => {
     expect(w.find('[data-test="row-weight"]').text()).toContain('di luar kisaran')
   })
 
-  it('perkiraan ⏳ buat cutting: "nyampe 69 kg kira-kira ±<bulan tahun>"', async () => {
-    const w = await mountPage({ data: { weighings: declining, target: target({ startedOn: addDays(TODAY, -34) }) } })
-    const t = w.find('[data-test="eta"]').text()
+  it('perkiraan ⏳ buat cutting: 2 baris dari kecepatan, kartu Makan ikut tampil', async () => {
+    const w = await mountPage({ data: { weighings: declining, target: target({ pace: 'normal', startedOn: addDays(TODAY, -34) }) } })
+    const t = w.find('[data-test="eta-pace"]').text()
     expect(t).toContain('⏳')
-    expect(t).toMatch(/nyampe 69 kg kira-kira ±[A-Za-z]+ \d{4}/)
+    expect(t).toMatch(/berat 69 kg kira-kira ±[A-Za-z]+ \d{4}/)
+    expect(w.find('[data-test="speed-chip"]').exists()).toBe(true)
+    expect(w.find('[data-test="food-empty"]').attributes('data-state')).toBe('needActivity')
+  })
+
+  it('cutting lama tanpa kecepatan: nggak error, tanpa baris Kecepatan & perkiraan, Makan minta pilih kecepatan', async () => {
+    const w = await mountPage({ data: { weighings: declining, target: target({ startedOn: addDays(TODAY, -34) }) } })
+    expect(w.find('[data-test="row-speed"]').exists()).toBe(false)
+    expect(w.find('[data-test="eta-pace"]').exists()).toBe(false)
+    expect(w.find('[data-test="eta"]').exists()).toBe(false)
+    expect(w.find('[data-test="food-empty"]').attributes('data-state')).toBe('needPace')
   })
 
   it('target ditulis tanpa nol di belakang koma', async () => {

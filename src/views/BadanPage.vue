@@ -23,7 +23,8 @@
           <section class="b-left">
             <div class="b-label rise">Sekarang</div>
             <BadanHero :summary="store.summary" :last="store.last" :today="today" />
-            <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" @edit="openPanel('target')" />
+            <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" :pace="store.pace" :pace-eta="store.paceEtaInfo" @edit="openPanel('target')" />
+            <BadanFood :food="store.food" :target="store.target" :count="store.summary.count" @target="openPanel('target')" @upload="openPanel('upload')" />
           </section>
           <section class="b-mid">
             <BadanChart :key="chartKey" :rows="store.sorted" :target="store.target" :last-on="store.summary.lastOn" />
@@ -53,6 +54,7 @@ import { PhCaretLeft, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue
 import { useRoute, useRouter } from 'vue-router'
 import BadanChart from '@/components/badan/BadanChart.vue'
 import BadanEmpty from '@/components/badan/BadanEmpty.vue'
+import BadanFood from '@/components/badan/BadanFood.vue'
 import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
 import BadanLast from '@/components/badan/BadanLast.vue'
