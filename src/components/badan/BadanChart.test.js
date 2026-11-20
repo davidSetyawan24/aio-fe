@@ -152,4 +152,31 @@ describe('BadanChart', () => {
       expect(w.text()).toContain('belum ada data tidur')
     })
   })
+
+  it('timbangan terakhir 19/11, tidur 20/11: ujung sumbu 20 Nov, titik tidur 20/11 kegambar, legenda timbangan tetep dari timbangan terakhir', async () => {
+    window.matchMedia = () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} })
+    const W19 = '2026-11-19'
+    const wrows = Array.from({ length: 10 }, (_, i) => ({ id: i, weighedOn: addDays(W19, -i), weighedAt: '06:00', weight: 77, fat: 25, muscle: 52 }))
+    const sleeps = [{ id: 1, sleptOn: '2026-11-20', totalMin: 403 }, { id: 2, sleptOn: W19, totalMin: 380 }]
+    const w = mount(BadanChart, { props: { rows: wrows, target: null, lastOn: W19, sleeps }, attachTo: document.body })
+    const ticks = w.findAll('text.ax').map((t) => t.text())
+    expect(ticks).toContain('20 Nov')
+    expect(ticks).not.toContain('19 Nov')
+    await chip(w, 'sleep').trigger('click')
+    // garis tidur 19 → 20 Nov, titik terakhirnya mepet kanan (W − R)
+    const d = w.find('[data-test="sleep-path"]').attributes('d')
+    expect(d.match(/L/g)).toHaveLength(1)
+    const lastX = Number(/L([\d.]+),/.exec(d)[1])
+    expect(lastX).toBeCloseTo(260 - 10, 0)
+    // berat: titik terakhir 19 Nov, sebelum ujung kanan
+    const weightLast = w.findAll('circle.last')[2]
+    expect(Number(weightLast.attributes('cx'))).toBeLessThan(lastX)
+    expect(w.find('[data-test="lrow-weight"]').text()).toBe('±0,0')
+    w.find('[data-test="hit"]').element.dispatchEvent(new MouseEvent('pointermove', { clientX: 9999, bubbles: true }))
+    await nextTick()
+    const tip = w.find('[data-test="tip"]').text()
+    expect(tip).toContain('Jum, 20 Nov')
+    expect(tip).toContain('6 j 43 m')
+    expect(tip).toContain('Berat–')
+  })
 })

@@ -130,12 +130,17 @@ function toggle(k) {
 }
 
 const WEIGH_KEYS = CHART_ORDER.filter((k) => k !== 'sleep')
-const series = computed(() => ({ ...chartSeries(props.rows, WEIGH_KEYS, range.value, props.lastOn), sleep: sleepSeries(props.sleeps, range.value, props.lastOn) }))
+/**
+ * Ujung kanan sumbu: tanggal paling baru antara timbangan terakhir & tidur terakhir (tidur pagi ini tetep kegambar walau belum nimbang).
+ * Rata-rata & perubahan metrik timbangan tetep patokan `lastOn` (timbangan terakhir).
+ */
+const end = computed(() => props.sleeps.reduce((m, s) => (s.sleptOn > m ? s.sleptOn : m), props.lastOn))
+const series = computed(() => ({ ...chartSeries(props.rows, WEIGH_KEYS, range.value, end.value), sleep: sleepSeries(props.sleeps, range.value, end.value) }))
 /** Garis yang digambar: rata-rata 7 hari; tidur garis harian (jam per malam). */
 const lineOf = (k) => (k === 'sleep' ? series.value.sleep.daily : series.value[k].avg)
 const sleepOn = computed(() => new Map(props.sleeps.map((s) => [s.sleptOn, s])))
-const x0 = computed(() => addDays(props.lastOn, -(range.value - 1)))
-const inRange = computed(() => props.rows.filter((r) => r.weighedOn >= x0.value && r.weighedOn <= props.lastOn))
+const x0 = computed(() => addDays(end.value, -(range.value - 1)))
+const inRange = computed(() => props.rows.filter((r) => r.weighedOn >= x0.value && r.weighedOn <= end.value))
 
 /* ukuran */
 const W = computed(() => Math.max(260, width.value))
@@ -195,9 +200,9 @@ const xTicks = computed(() => {
     out.push({ d, x, label, anchor: x > W.value - 30 ? 'end' : x < L.value + 20 ? 'start' : 'middle' })
   }
   if (range.value === 30) {
-    for (let d = props.lastOn; d >= x0.value; d = addDays(d, -7)) push(d, dShort(d))
+    for (let d = end.value; d >= x0.value; d = addDays(d, -7)) push(d, dShort(d))
   } else {
-    for (let d = x0.value; d <= props.lastOn; d = addDays(d, 1)) {
+    for (let d = x0.value; d <= end.value; d = addDays(d, 1)) {
       const m = Number(d.slice(5, 7)) - 1
       if (d.slice(8) === '01' && (range.value === 90 || m % 2 === 0)) push(d, BLN[m])
     }
@@ -242,7 +247,7 @@ function sleepAvg(date) {
   return week.length ? Math.round(week.reduce((a, s) => a + s.totalMin, 0) / week.length) : null
 }
 function sleepLegend() {
-  const a1 = sleepAvg(props.lastOn)
+  const a1 = sleepAvg(end.value)
   const first = series.value.sleep.daily[0]?.d
   const a0 = first ? sleepAvg(first) : null
   const dv = a1 == null || a0 == null ? null : a1 - a0
