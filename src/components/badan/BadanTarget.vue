@@ -7,7 +7,7 @@
           <span class="em">🎯</span>
           <div>
             <b>Pasang target biar progresnya keliatan</b>
-            <p>Misal lemak 20%, otot 55 kg, berat dijaga 73–76 kg. Semuanya boleh dikosongin.</p>
+            <p>Pilih arah (Cutting, Bulking, …), angka target, sama aktivitas harian. Dari situ target makan ikut keitung.</p>
           </div>
         </div>
         <div style="padding: 0 16px 16px">
@@ -46,7 +46,7 @@
             </div>
           </template>
           <template v-else>
-            <div class="b-ptop"><span class="k">Berat</span><span class="v">{{ fmt(weightNow, 1) }} → <b>{{ fmt(goal.goal, 0) }} kg</b></span></div>
+            <div class="b-ptop"><span class="k">Berat</span><span class="v">{{ fmt(weightNow, 1) }} → <b>{{ fmtGoal(goal.goal, 2) }} kg</b></span></div>
             <div class="b-pbar"><i :style="{ width: `${goal.state === 'in' ? 100 : goal.pct}%` }" /></div>
             <div class="b-psub">
               <span>awal {{ fmt(weightStart, 1) }} kg ({{ dShort(startDate) }})</span>
@@ -75,7 +75,7 @@
 import { computed } from 'vue'
 import { PhCaretRight, PhCheck, PhTarget } from '@phosphor-icons/vue'
 import { ARAH_INFO, PACE_INFO, PACE_STATE, avg7, etaFor, fmt, monthLabel, progress, startValue } from '@/lib/badan.js'
-import { dShort, kgWeek, rangeScale, reachView, startOn } from '@/lib/badanView.js'
+import { dShort, kgWeek, monthShort, rangeScale, reachView, startOn } from '@/lib/badanView.js'
 import './badan.css'
 
 const props = defineProps({
@@ -98,7 +98,7 @@ const goal = computed(() => reachView(props.summary?.weightGoal ?? null, weightN
 /** Tanggal timbangan yang jadi nilai "awal" (bukan tanggal target dipasang). */
 const startDate = computed(() => startOn(props.rows, props.target.startedOn))
 const weightStart = computed(() => startValue(props.rows, 'weight', props.target.startedOn) ?? weightNow.value)
-const range = computed(() => `${fmt(goal.value.min, 0)}–${fmt(goal.value.max, 0)}`)
+const range = computed(() => `${fmtGoal(goal.value.min, 2)}–${fmtGoal(goal.value.max, 2)}`)
 const scale = computed(() => (goal.value && weightNow.value != null ? rangeScale(goal.value.min, goal.value.max, weightNow.value) : null))
 
 /** Lemak & Otot: bar progres kalau targetnya diisi. */
@@ -138,14 +138,14 @@ const paceText = computed(() => {
   const e = props.paceEta
   const p = props.pace
   if (!moving.value || !e || !p || (!e.now && !e.plan)) return null
-  const goal = `${fmt(e.goal, 0)} kg`
+  const goal = `${fmtGoal(e.goal, 2)} kg`
   const note = 'Perkiraan kasar dari rata-rata 7 hari.'
   const planLine = `Kalau pas ${PACE_INFO[props.target.pace]} (${kgWeek(p.lo)}–${kgWeek(p.hi)} kg/minggu)`
   if (e.now) {
-    const main = `Kalau temponya kayak 2 minggu terakhir (${kgWeek(p.actual)} kg/minggu), berat ${goal} kira-kira ±${monthLabel(e.now)}.`
-    return { main, small: e.plan ? `${planLine}: ±${monthLabel(e.plan)}. ${note}` : note }
+    const main = `Kalau temponya kayak 2 minggu terakhir (${kgWeek(p.actual)} kg/minggu), berat ${goal} kira-kira ±${monthShort(e.now)}.`
+    return { main, small: e.plan ? `${planLine}: ±${monthShort(e.plan)}. ${note}` : note }
   }
-  return { main: `${planLine}, berat ${goal} kira-kira ±${monthLabel(e.plan)}.`, small: note }
+  return { main: `${planLine}, berat ${goal} kira-kira ±${monthShort(e.plan)}.`, small: note }
 })
 
 const etaText = computed(() => {
@@ -153,7 +153,7 @@ const etaText = computed(() => {
   const e = etaFor(props.target, props.rows, props.summary.lastOn)
   if (!e) return null
   const month = monthLabel(`${e.month}-01`)
-  if (e.key === 'weight') return { before: `nyampe ${fmt(goal.value.goal, 0)} kg kira-kira`, month }
+  if (e.key === 'weight') return { before: `nyampe ${fmtGoal(goal.value.goal, 2)} kg kira-kira`, month }
   return { before: `lemak ${fmtGoal(props.target.fat, 1)}% kira-kira`, month }
 })
 </script>

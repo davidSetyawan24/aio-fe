@@ -28,7 +28,7 @@
           <div class="bt-spdx" data-test="speed-line">
             <p class="bt-spd-main">
               {{ cut ? 'Turun' : 'Naik' }}
-              <template v-if="speed.lo != null"><b>±{{ kgW(speed.lo) }}–{{ kgW(speed.hi) }} kg/minggu</b> ({{ pctText }} berat)</template>
+              <template v-if="speed.lo != null"><b>±{{ kgWeek(speed.lo) }}–{{ kgWeek(speed.hi) }} kg/minggu</b> ({{ pctText }} berat)</template>
               <b v-else>{{ pctText }} berat/minggu</b>
               · makan <b data-test="speed-food">{{ food.state === 'ok' ? `±${fmt(food.kcal, 0)} kkal` : '–' }}</b>
               · nyampe <span data-test="speed-reach"><template v-if="speed.reach">{{ fmtN(speed.reach.goal) }} kg <b>±{{ monthShort(speed.reach.month) }}</b> (±{{ speed.reach.weeks }} minggu)</template><template v-else>–</template></span>
@@ -130,9 +130,8 @@
 <script setup>
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { PhCheck, PhWarning, PhX } from '@phosphor-icons/vue'
-import { BLN } from '@/lib/agenda.js'
 import { ARAH, ARAH_INFO, fmt, foodPlan, LEVEL_INFO, LEVELS, PACE_INFO, PACES, WORK_INFO, WORK_TYPES } from '@/lib/badan.js'
-import { fmtU } from '@/lib/badanView.js'
+import { fmtU, kgWeek, monthShort } from '@/lib/badanView.js'
 import { errorLines, focusNext, showToast, useShake } from '@/lib/personalForm.js'
 import { activityErrors, activityPayload, levelFor, speedPreview, targetErrors, targetPayload, targetToForm } from '@/lib/badanTarget.js'
 import { useBadanStore } from '@/stores/badan.js'
@@ -172,9 +171,7 @@ const clear = (k) => {
 
 /* Kecepatan & aktivitas: semua angka hidup dihitung dari isian (belum disimpen). */
 const fmtN = (n) => String(n).replace('.', ',')
-const kgW = (v) => fmt(v, 2).replace(/0$/, '')
 const multText = (v) => fmt(v, 3).replace(/0+$/, '')
-const monthShort = (ym) => `${BLN[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`
 const cut = computed(() => form.arah === 'cutting')
 const paceKeys = computed(() => Object.keys(PACES[form.arah] ?? {}))
 const speed = computed(() => speedPreview(form, props.summary?.weight ?? null, props.summary?.lastOn ?? null))

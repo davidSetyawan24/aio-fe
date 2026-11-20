@@ -61,6 +61,19 @@ describe('BadanTarget kecepatan', () => {
     expect(e).toMatch(/Kalau pas Normal \(0,\d+–0,\d+ kg\/minggu\): ±\w+ \d{4}\. Perkiraan kasar dari rata-rata 7 hari\.$/)
   })
 
+  it('perkiraan: bulan singkat & angka target berkoma kayak di sheet', () => {
+    const e = t(make(steady, T({ weightMin: 64.5, weightMax: 68.5 })), 'eta-pace')
+    expect(e).toMatch(/berat 68,5 kg kira-kira ±[A-Z][a-z]{2} \d{4}\./)
+    expect(e).toMatch(/: ±[A-Z][a-z]{2} \d{4}\. Perkiraan kasar/)
+    expect(t(make(steady, T()), 'eta-pace')).toMatch(/berat 69 kg kira-kira ±[A-Z][a-z]{2} \d{4}\./)
+  })
+
+  it('skala kecepatan pakai format mockup (0,5 · 1,0 / 0,3 · 0,6)', () => {
+    const slab = (w) => w.findAll('.b-slab span').map((x) => x.text())
+    expect(slab(make(steady, T()))).toEqual(['0', '0,5', '1,0 kg/minggu'])
+    expect(slab(make(steady, T({ arah: 'bulking', weightMin: 78, weightMax: 80 })))).toEqual(['0', '0,3', '0,6 kg/minggu'])
+  })
+
   it('actual null: cuma baris plan', () => {
     const e = t(make(series(7, () => 74.5), T()), 'eta-pace')
     expect(e).toMatch(/^⏳Kalau pas Normal \(0,\d+–0,\d+ kg\/minggu\), berat 69 kg kira-kira ±\w+ \d{4}\.Perkiraan kasar/)
@@ -76,5 +89,13 @@ describe('BadanTarget kecepatan', () => {
     const w = make(rows, T({ arah: 'recomp', pace: null, fat: 20 }))
     expect(w.find('[data-test="row-speed"]').exists()).toBe(false)
     expect(t(w, 'eta')).toContain('lemak 20% kira-kira')
+  })
+})
+
+describe('BadanTarget kosong', () => {
+  it('teks mockup notarget', () => {
+    const w = mount(BadanTarget, { props: { target: null } })
+    expect(t(w, 'no-target')).toContain('Pasang target biar progresnya keliatan')
+    expect(t(w, 'no-target')).toContain('Pilih arah (Cutting, Bulking, …), angka target, sama aktivitas harian. Dari situ target makan ikut keitung.')
   })
 })

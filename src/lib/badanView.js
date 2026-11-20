@@ -82,5 +82,8 @@ export function reachView(g, now) {
 /** Halaman anak Badan (detail / catat / ubah / upload) — balik dari sini nggak nge-reset grafik. */
 export const isBadanChild = (path) => typeof path === 'string' && path.startsWith('/tabs/menu/badan/')
 
-/** kg per minggu tanpa nol di belakang: 0,4 · 0,55 · 1. */
-export const kgWeek = (v) => fmt(v, 2).replace(/,00$/, '').replace(/0$/, '')
+/** kg per minggu, satu nol di belakang dibuang: 0,4 · 0,55 · 1,0. */
+export const kgWeek = (v) => fmt(v, 2).replace(/0$/, '')
+
+/** '2027-02' → "Feb 2027". */
+export const monthShort = (ym) => `${BLN[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`
