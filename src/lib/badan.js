@@ -214,3 +214,116 @@ export function fmt(v, dec) {
 }
 
 export const monthLabel = (ym) => `${BULAN[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`
+
+/* v2: aktivitas, kecepatan, makan per hari, tidur. KEMBAR backend (body-types + body-math). */
+export const WORK_TYPES = ['sit', 'stand_walk', 'heavy']
+export const LEVELS = { sedentary: 1.2, light: 1.375, active: 1.55, very_active: 1.725 }
+export const PACES = {
+  cutting: { santai: [0.25, 0.5], normal: [0.5, 0.75], agresif: [0.75, 1.0] },
+  bulking: { santai: [0.1, 0.25], normal: [0.25, 0.5] },
+}
+export const PROTEIN_G = { cutting: 2.5, other: 2.2 }
+export const KCAL_PER_KG = 7700
+export const SLEEP_KEYS = ['bedAt', 'wakeAt', 'totalMin', 'deepMin', 'lightMin', 'remMin', 'score', 'awakeCount', 'avgHr', 'avgHrv']
+export const SLEEP_LIMITS = {
+  totalMin: [60, 960], deepMin: [0, 960], lightMin: [0, 960], remMin: [0, 960],
+  score: [0, 100], awakeCount: [0, 30], avgHr: [30, 150], avgHrv: [5, 250],
+}
+
+export const LEVEL_INFO = { sedentary: 'Banyak duduk', light: 'Ringan', active: 'Aktif', very_active: 'Sangat aktif' }
+export const WORK_INFO = { sit: 'Duduk', stand_walk: 'Berdiri & jalan', heavy: 'Fisik berat' }
+export const PACE_INFO = { santai: 'Santai', normal: 'Normal', agresif: 'Agresif' }
+export const PACE_STATE = { slow: 'kepelanan', ok: 'pas', fast: 'kecepetan' }
+
+export function suggestLevel(a) {
+  let score = 0
+  if (a.workType === 'heavy') score += 2
+  else if (a.workType === 'stand_walk' && a.workHours >= 4 && a.workDays >= 4) score += 1
+  const g = a.gymPerWeek
+  score += g >= 6 ? 3 : g >= 4 ? 2 : g >= 1 ? 1 : 0
+  if (score <= 0) return 'sedentary'
+  if (score === 1) return 'light'
+  if (score <= 3) return 'active'
+  return 'very_active'
+}
+
+export function paceRange(arah, pace, weight) {
+  const r = PACES[arah]?.[pace]
+  if (!r) return null
+  const lo = (r[0] * weight) / 100
+  const hi = (r[1] * weight) / 100
+  return { lo, hi, mid: (lo + hi) / 2 }
+}
+
+export function paceStatus(target, rows, date) {
+  if (!target) return null
+  const w = avg7(rows, 'weight', date)
+  if (w == null) return null
+  const range = paceRange(target.arah, target.pace, w)
+  if (!range) return null
+  const prev = avg7(rows, 'weight', addDays(date, -14))
+  if (prev == null) return { ...range, actual: null, state: null }
+  const diff = (w - prev) / 2
+  const actual = target.arah === 'cutting' ? -diff : diff
+  const state = actual < range.lo ? 'slow' : actual > range.hi ? 'fast' : 'ok'
+  return { ...range, actual, state }
+}
+
+export function paceEta(target, rows, date) {
+  const g = weightGoal(target, rows, date)
+  if (!g || g.mode !== 'reach' || g.state !== 'progress') return null
+  const status = paceStatus(target, rows, date)
+  if (!status) return null
+  const w = avg7(rows, 'weight', date)
+  const left = Math.abs(w - g.goal)
+  const month = (days) => (days > 0 && days <= 730 ? addDays(date, Math.round(days)).slice(0, 7) : null)
+  const now = status.actual != null && status.actual > 0 ? month((left / status.actual) * 7) : null
+  const plan = month((left / status.mid) * 7)
+  return { goal: g.goal, now, plan }
+}
+
+export function foodPlan(rows, target, activity) {
+  if (!rows.length) return { state: 'needWeighing' }
+  if (!target) return { state: 'needTarget' }
+  const moving = target.arah === 'cutting' || target.arah === 'bulking'
+  if (moving && !target.pace) return { state: 'needPace' }
+  if (!activity) return { state: 'needActivity' }
+  const D = rows.reduce((m, r) => (r.weighedOn > m ? r.weighedOn : m), rows[0].weighedOn)
+  const bmr = avg7(rows, 'bmr', D)
+  if (bmr == null) return { state: 'needBmr' }
+  const mult = LEVELS[activity.level]
+  const tdee = bmr * mult
+  const w = avg7(rows, 'weight', D)
+  let adjust = 0
+  if (moving) {
+    const { mid } = paceRange(target.arah, target.pace, w)
+    adjust = Math.round((mid * KCAL_PER_KG) / 7) * (target.arah === 'cutting' ? -1 : 1)
+  }
+  const kcal = Math.round((tdee + adjust) / 50) * 50
+  const fat = avg7(rows, 'fat', D)
+  const lean = fat == null ? null : w * (1 - fat / 100)
+  const proteinPerKg = target.arah === 'cutting' ? PROTEIN_G.cutting : PROTEIN_G.other
+  const protein = lean == null ? null : Math.round((proteinPerKg * lean) / 5) * 5
+  return {
+    state: 'ok', bmr, level: activity.level, mult, tdee, adjust, kcal, lean, proteinPerKg, protein,
+    belowBmr: kcal < bmr, aggressive: target.pace === 'agresif',
+  }
+}
+
+const toMin = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+
+export function clockSpan(bed, wake) {
+  return (toMin(wake) - toMin(bed) + 1440) % 1440
+}
+
+export function sleepSummary(sleeps) {
+  if (!sleeps.length) return null
+  const last = sleeps.reduce((m, s) => (s.sleptOn > m.sleptOn ? s : m), sleeps[0])
+  const from = addDays(last.sleptOn, -6)
+  const week = sleeps.filter((s) => s.sleptOn >= from && s.sleptOn <= last.sleptOn)
+  const avg = week.reduce((a, s) => a + s.totalMin, 0) / week.length
+  return {
+    lastOn: last.sleptOn, totalMin: last.totalMin, bedAt: last.bedAt, wakeAt: last.wakeAt, score: last.score,
+    avg7Min: Math.round(avg), nights: week.length,
+  }
+}

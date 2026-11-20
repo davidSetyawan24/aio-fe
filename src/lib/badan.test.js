@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   METRIC_KEYS, METRICS, BODY_TYPES, ARAH, bodyTypeFromZepp,
   avg7, count7, weekDelta, tone, startValue, progress, weightGoal, eta, etaFor,
-  checkFlags, bodySummary, ADEC, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
+  checkFlags, bodySummary,
+  suggestLevel, paceRange, paceStatus, paceEta, foodPlan, clockSpan, sleepSummary,
+  LEVEL_INFO, WORK_INFO, PACE_INFO, PACE_STATE, ADEC, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
 } from './badan.js'
 
 const F = [
@@ -146,5 +148,118 @@ describe('bodySummary', () => {
   it('count = banyaknya timbangan di 7 hari terakhir (1 timbangan → 1)', () => {
     expect(bodySummary([F[0]], null).count).toBe(1)
     expect(bodySummary(F.slice(0, 2), null).count).toBe(2)
+  })
+})
+
+/* v2 */
+const day = (i) => new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10)
+const DAVID = Array.from({ length: 7 }, (_, i) => ({ weighedOn: `2026-11-${14 + i}`, weighedAt: '06:00', weight: 74.9, fat: 25.6, bmr: 1650 }))
+const ACT = { workType: 'stand_walk', workHours: 10, workDays: 7, gymPerWeek: 5, gymMinutes: 75, otherSport: null, notes: null, level: 'active', levelManual: false }
+const DT = { arah: 'cutting', pace: 'normal', fat: 20, muscle: 55, weightMin: 65, weightMax: 69, startedOn: '2026-11-14' }
+const TREN = Array.from({ length: 20 }, (_, i) => ({ weighedOn: day(i), weighedAt: '06:00', weight: 76 - 0.07 * i }))
+const TT = { arah: 'cutting', pace: 'normal', fat: null, muscle: null, weightMin: 65, weightMax: 69, startedOn: '2026-11-01' }
+
+describe('suggestLevel', () => {
+  it.each([
+    [{ workType: 'sit', workHours: 8, workDays: 5, gymPerWeek: 0 }, 'sedentary'],
+    [{ workType: 'sit', workHours: 8, workDays: 5, gymPerWeek: 2 }, 'light'],
+    [{ workType: 'sit', workHours: 8, workDays: 5, gymPerWeek: 5 }, 'active'],
+    [{ workType: 'stand_walk', workHours: 10, workDays: 7, gymPerWeek: 5 }, 'active'],
+    [{ workType: 'stand_walk', workHours: 10, workDays: 7, gymPerWeek: 6 }, 'very_active'],
+    [{ workType: 'heavy', workHours: 8, workDays: 6, gymPerWeek: 4 }, 'very_active'],
+    [{ workType: 'stand_walk', workHours: 3, workDays: 7, gymPerWeek: 0 }, 'sedentary'],
+  ])('%j -> %s', (a, want) => expect(suggestLevel(a)).toBe(want))
+})
+
+describe('label v2', () => {
+  it('teks', () => {
+    expect(LEVEL_INFO.very_active).toBe('Sangat aktif')
+    expect(WORK_INFO.stand_walk).toBe('Berdiri & jalan')
+    expect(PACE_INFO.agresif).toBe('Agresif')
+    expect(PACE_STATE).toEqual({ slow: 'kepelanan', ok: 'pas', fast: 'kecepetan' })
+  })
+})
+
+describe('foodPlan', () => {
+  it('David cutting normal', () => {
+    const p = foodPlan(DAVID, DT, ACT)
+    expect(p).toMatchObject({ state: 'ok', bmr: 1650, mult: 1.55, tdee: 2557.5, adjust: -515, kcal: 2050, protein: 140, proteinPerKg: 2.5, belowBmr: false, aggressive: false })
+    expect(p.lean).toBeCloseTo(55.7256, 3)
+  })
+  it('agresif + sedentary', () => {
+    expect(foodPlan(DAVID, { ...DT, pace: 'agresif' }, { ...ACT, level: 'sedentary' })).toMatchObject({ adjust: -721, kcal: 1250, belowBmr: true, aggressive: true })
+  })
+  it('bulking normal', () => {
+    expect(foodPlan(DAVID, { ...DT, arah: 'bulking' }, ACT)).toMatchObject({ adjust: 309, kcal: 2850, protein: 125, proteinPerKg: 2.2 })
+  })
+  it('recomp', () => {
+    expect(foodPlan(DAVID, { ...DT, arah: 'recomp', pace: null }, ACT)).toMatchObject({ adjust: 0, kcal: 2550, protein: 125 })
+  })
+  it('state butuh data', () => {
+    expect(foodPlan([], DT, ACT).state).toBe('needWeighing')
+    expect(foodPlan(DAVID, null, ACT).state).toBe('needTarget')
+    expect(foodPlan(DAVID, { ...DT, pace: null }, ACT).state).toBe('needPace')
+    expect(foodPlan(DAVID, DT, null).state).toBe('needActivity')
+    expect(foodPlan(DAVID.map((r) => ({ ...r, bmr: null })), DT, ACT).state).toBe('needBmr')
+  })
+})
+
+describe('paceStatus', () => {
+  const at = '2026-11-20'
+  it('cutting normal pas', () => {
+    const s = paceStatus(TT, TREN, at)
+    expect(s.actual).toBeCloseTo(0.4725, 4)
+    expect(s.lo).toBeCloseTo(0.3744, 4)
+    expect(s.hi).toBeCloseTo(0.5616, 4)
+    expect(s.state).toBe('ok')
+  })
+  it('santai fast, agresif slow', () => {
+    expect(paceStatus({ ...TT, pace: 'santai' }, TREN, at).state).toBe('fast')
+    expect(paceStatus({ ...TT, pace: 'agresif' }, TREN, at).state).toBe('slow')
+  })
+  it('bulking normal', () => {
+    const s = paceStatus({ ...TT, arah: 'bulking' }, TREN, at)
+    expect(s.actual).toBeCloseTo(-0.4725, 4)
+    expect(s.state).toBe('slow')
+  })
+  it('data kurang & recomp', () => {
+    const s = paceStatus(TT, TREN.filter((r) => r.weighedOn >= '2026-11-11'), at)
+    expect(s.actual).toBeNull()
+    expect(s.state).toBeNull()
+    expect(paceStatus({ ...TT, arah: 'recomp', pace: null }, TREN, at)).toBeNull()
+  })
+})
+
+describe('paceEta', () => {
+  const at = '2026-11-20'
+  it('cutting normal', () => {
+    expect(paceEta(TT, TREN, at)).toEqual({ goal: 69, now: '2027-02', plan: '2027-02' })
+  })
+  it('actual <= 0 -> now null', () => {
+    expect(paceEta({ ...TT, arah: 'bulking', weightMin: 80, weightMax: 85 }, TREN, at).now).toBeNull()
+  })
+  it('state in / pace null -> null', () => {
+    expect(paceEta({ ...TT, weightMin: 60, weightMax: 80 }, TREN, at)).toBeNull()
+    expect(paceEta({ ...TT, pace: null }, TREN, at)).toBeNull()
+  })
+})
+
+describe('clockSpan & sleepSummary', () => {
+  it('lewat tengah malam', () => {
+    expect(clockSpan('04:54', '11:37')).toBe(403)
+    expect(clockSpan('23:30', '06:10')).toBe(400)
+  })
+  it('ringkasan 7 malam', () => {
+    const s = [['2026-11-20', 403], ['2026-11-19', 380], ['2026-11-17', 360], ['2026-11-12', 300]].map(([sleptOn, totalMin]) => ({ sleptOn, totalMin, bedAt: null, wakeAt: null, score: null }))
+    expect(sleepSummary(s)).toMatchObject({ lastOn: '2026-11-20', totalMin: 403, avg7Min: 381, nights: 3 })
+    expect(sleepSummary([])).toBeNull()
+  })
+})
+
+describe('paceRange', () => {
+  it('null kalau nggak valid', () => {
+    expect(paceRange('recomp', null, 70)).toBeNull()
+    expect(paceRange('bulking', 'agresif', 70)).toBeNull()
+    expect(paceRange('cutting', 'normal', 100)).toEqual({ lo: 0.5, hi: 0.75, mid: 0.625 })
   })
 })
