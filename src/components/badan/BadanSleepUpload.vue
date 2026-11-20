@@ -9,12 +9,14 @@
         <span>Gambar panjang hasil Share dari Huawei Health</span>
       </button>
       <div class="b-label">Caranya</div>
-      <div class="b-core">
-        <ol class="bu-steps">
-          <li><span>Buka <b>Huawei Health</b> → <b>Tidur</b> → tidur semalem.</span></li>
-          <li><span>Tap <b>Share</b> → simpen gambarnya ke <b>Foto</b>.</span></li>
-          <li><span>Balik ke sini, pilih gambarnya. Angkanya dibaca otomatis.</span></li>
-        </ol>
+      <div class="shell" data-test="steps">
+        <div class="b-core">
+          <ol class="bu-steps">
+            <li><span>Buka <b>Huawei Health</b> → <b>Tidur</b> → tidur semalem.</span></li>
+            <li><span>Tap <b>Share</b> → simpen gambarnya ke <b>Foto</b>.</span></li>
+            <li><span>Balik ke sini, pilih gambarnya. Angkanya dibaca otomatis.</span></li>
+          </ol>
+        </div>
       </div>
       <div class="bf-note"><PhEyeSlash :size="15" />Gambarnya nggak disimpen, cuma angkanya.</div>
     </template>

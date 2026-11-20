@@ -47,6 +47,9 @@ describe('BadanSleepUpload', () => {
     expect(w.text()).toContain('Huawei Health')
     expect(w.text()).toContain('Gambarnya nggak disimpen, cuma angkanya.')
     expect(w.emitted('stage')?.at(-1)).toEqual(['pick'])
+    // kartu Caranya dibungkus shell kayak mockup sl-pick
+    expect(w.get('[data-test="steps"]').classes()).toContain('shell')
+    expect(w.get('[data-test="steps"]').find('.b-core .bu-steps').exists()).toBe(true)
   })
 
   it('reads the resized (small) blob via /body/sleeps/scan and shows the result form with yellow fields', async () => {
