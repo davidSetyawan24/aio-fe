@@ -13,8 +13,8 @@
             <div v-for="d in g.days" :key="d.date" class="b-rrow" role="button" tabindex="0" data-test="hrow" @click="openDay(d)" @keydown.enter.self.prevent="openDay(d)">
               <div class="dt">
                 <b>{{ rowTitle(d.date, today) }}</b>
-                <small v-if="d.weighing">{{ d.date >= yesterday ? `${dShort(d.date)} · ` : '' }}{{ jam(d.weighing.weighedAt) }}<span v-if="d.weighing.source === 'manual'" class="b-mtag">manual</span></small>
-                <small v-else>{{ d.date >= yesterday ? `${dShort(d.date)} · ` : '' }}cuma tidur</small>
+                <small v-if="d.weighing"><span v-if="d.date >= yesterday" class="b-rpre">{{ dShort(d.date) }} · </span>{{ jam(d.weighing.weighedAt) }}<span v-if="d.weighing.source === 'manual'" class="b-mtag">manual</span></small>
+                <small v-else><span v-if="d.date >= yesterday" class="b-rpre sl">{{ dShort(d.date) }} · </span>cuma tidur</small>
               </div>
               <template v-if="d.weighing">
                 <span class="c">{{ fmt(d.weighing.weight, 2) }}</span>

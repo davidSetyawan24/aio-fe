@@ -37,6 +37,17 @@ describe('BadanHistory (gabung timbangan + tidur)', () => {
     expect(cells.slice(4)).toEqual(['–', '–', '–', '–', '–'])
   })
 
+  it('tanggal di depan keterangan (hari ini/kemarin) punya span sendiri: "cuma tidur" bisa dibuang di HP, teks lengkap tetep sama', () => {
+    const w = mk({ rows: [wg(1), wg(3)], sleeps: [sl(0, 403)] })
+    const today = hrows(w)[0].find('.dt small')
+    expect(today.text()).toBe('20 Nov · cuma tidur')
+    expect(today.find('.b-rpre.sl').text()).toBe('20 Nov ·')
+    const yest = hrows(w)[1].find('.dt small')
+    expect(yest.text()).toBe('19 Nov · 06.42')
+    expect(yest.find('.b-rpre').classes()).not.toContain('sl')
+    expect(hrows(w)[2].find('.b-rpre').exists()).toBe(false)
+  })
+
   it('tanpa tidur: judul kecil tanpa bagian malam', () => {
     expect(mk({ sleeps: [] }).text()).toContain('3 timbangan')
     expect(mk({ sleeps: [] }).text()).not.toContain('malam tidur')

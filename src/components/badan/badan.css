@@ -81,8 +81,11 @@
 .b-rmonth { padding: 10px 16px 6px; font-size: 12px; font-weight: 800; color: var(--muted); box-shadow: inset 0 1px 0 var(--hair); }
 .b-rrow { min-height: 58px; padding: 8px 10px 8px 14px; cursor: pointer; box-shadow: inset 0 1px 0 var(--hair); width: 100%; border: 0; background: none; color: var(--text); font-family: inherit; text-align: left; }
 .b-rmonth + .b-rrow { box-shadow: none; }
-.b-rrow .dt b { display: block; font-size: 14.5px; font-weight: 700; }
-.b-rrow .dt small { display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; }
+/* Kolom tanggal nggak boleh patah 2 baris (HP sempit): satu baris, kepanjangan → "…". */
+.b-rrow .dt { min-width: 0; }
+.b-rrow .dt b { display: block; font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-rrow .dt small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-rrow .dt small .b-mtag { margin-left: 6px; vertical-align: middle; }
 .b-rrow .c { font-size: 14.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .b-rrow .c small { font-size: 10.5px; font-weight: 700; color: var(--muted); margin-left: 1px; }
 .b-rrow .c.na { color: var(--muted); opacity: .6; font-weight: 700; }
@@ -93,6 +96,14 @@
 .b-mtag { height: 18px; padding: 0 6px; border-radius: 99px; background: var(--soft); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; }
 .b-rmore { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 48px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; box-shadow: inset 0 1px 0 var(--hair); border: 0; background: none; width: 100%; font-family: inherit; }
 @media (hover: hover) { .b-rrow:hover { background: rgba(127, 127, 120, .05); border-radius: 18px; } .b-rsl:hover { text-decoration: underline; text-underline-offset: 3px; } }
+/* HP: kolom angka dirapetin biar tanggal ("Rab, 30 Nov") muat sebaris; tanggal di depan "cuma tidur" (judulnya udah Hari ini/Kemarin) dibuang. */
+@media (max-width: 480px) {
+  .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 43px 44px 43px 36px 10px; gap: 4px; }
+  .b-rrow .c { white-space: nowrap; }
+  .b-rhead { letter-spacing: .06em; }
+  .b-rrow .dt .b-rpre.sl { display: none; }
+}
+@media (max-width: 374px) { .b-rrow .dt .b-rpre { display: none; } }
 
 /* kosong */
 .b-empty { text-align: center; padding: 30px 22px 22px; }
