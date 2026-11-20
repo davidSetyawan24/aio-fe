@@ -146,14 +146,14 @@ const m = computed(() => sheetModel(props.invoice))
 .s-grand { display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; padding-top: 10px; border-top: 1.5px solid #141410; }
 .s-grand span { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #141410; }
 .s-grand b { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; color: #141410; font-variant-numeric: tabular-nums; }
-.s-bottom { display: grid; grid-template-columns: 1fr 210px; gap: 36px; margin-top: 22px; align-items: end; }
-.s-bank { border-radius: 16px; background: #F3F2EE; padding: 16px 18px; position: relative; overflow: hidden; }
+.s-bottom { display: grid; grid-template-columns: 1fr 210px; gap: 36px; margin-top: 22px; align-items: stretch; }
+.s-bank { border-radius: 16px; background: #F3F2EE; padding: 16px 18px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
 .s-bank::before { content: ''; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 0 3px 3px 0; background: #C8F04A; }
 .s-bank .s-lbl { margin-bottom: 10px; }
 .s-kv { display: grid; grid-template-columns: 92px 1fr; row-gap: 5px; font-size: 11.5px; }
 .s-kv span { color: #8A8A82; font-weight: 500; } .s-kv b { color: #141410; font-weight: 700; }
-.s-sign { position: relative; text-align: center; font-size: 11.5px; }
-.s-ttd { height: 120px; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
+.s-sign { position: relative; text-align: center; font-size: 11.5px; display: flex; flex-direction: column; }
+.s-ttd { flex: 1; min-height: 120px; margin-top: 2px; display: flex; align-items: center; justify-content: center; }
 .s-ttd img { max-height: 52px; max-width: 100%; object-fit: contain; }
 .s-line { border-top: 1px solid #141410; margin-top: 4px; padding-top: 7px; font-weight: 800; color: #141410; }
 .s-stamp { position: absolute; right: 150px; top: -14px; transform: rotate(-9deg); border: 3px solid #2BA864; color: #2BA864; border-radius: 14px; padding: 8px 18px 7px; text-align: center; background: rgba(255, 255, 255, .75); z-index: 3; }

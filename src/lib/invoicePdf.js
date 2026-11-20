@@ -293,10 +293,10 @@ function bottomHeights(doc, m) {
 }
 
 function bottom(doc, m, y, { bankH, signH, h }) {
-  // rekening (rata bawah)
-  const bt = y + h - bankH
-  box(doc, X0, bt, 428, bankH, 16, C.bw)
-  limeBar(doc, X0, bt + 16, bankH - 32)
+  // rekening: kotaknya setinggi kolom ttd, isinya di tengah (biar kanan nggak keliatan nggantung)
+  box(doc, X0, y, 428, h, 16, C.bw)
+  limeBar(doc, X0, y + 16, h - 32)
+  const bt = y + (h - bankH) / 2
   line(doc, PAPER.bank, 78, bt + 16, LBL)
   let ky = bt + 16 + 12 + 10
   PAPER.bankRows.forEach((label, i) => {
