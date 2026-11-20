@@ -19,13 +19,14 @@
         <p v-if="failed" class="b-fail" data-test="failed">Nggak bisa muat data badan. <button type="button" @click="load">Coba lagi</button></p>
 
         <BadanEmpty
-          v-else-if="isEmpty" :food="store.food" :target="store.target" :sleep="store.lastSleep" :sleep-sum="store.sleepSum" :today="today"
+          v-else-if="isEmpty" :profile="store.profile" :food="store.food" :target="store.target" :sleep="store.lastSleep" :sleep-sum="store.sleepSum" :today="today"
           @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" @target="openTarget" @open-sleep="(id) => openPanel('sleepDetail', id)"
         />
 
         <div v-else-if="store.loaded" class="b-bgrid" data-test="main">
           <section class="b-left">
             <div class="b-label rise">Sekarang</div>
+            <BadanProfile :profile="store.profile" />
             <BadanHero :summary="store.summary" :last="store.last" :today="today" />
             <BadanTarget :target="store.target" :summary="store.summary" :rows="store.rows" :pace="store.pace" :pace-eta="store.paceEtaInfo" @edit="openTarget()" />
             <BadanFood :food="store.food" :target="store.target" :count="store.summary.count" @target="openTarget" @upload="openPanel('upload')" />
@@ -64,6 +65,7 @@ import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
 import BadanLast from '@/components/badan/BadanLast.vue'
 import BadanPanel from '@/components/badan/BadanPanel.vue'
+import BadanProfile from '@/components/badan/BadanProfile.vue'
 import BadanSleepCard from '@/components/badan/BadanSleepCard.vue'
 import BadanTargetSheet from '@/components/badan/BadanTargetSheet.vue'
 import BadanTarget from '@/components/badan/BadanTarget.vue'

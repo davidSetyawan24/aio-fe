@@ -20,9 +20,12 @@ const written = (res) => ({ weighing: res?.weighing ?? res ?? null, message: res
 /** Sama, buat data tidur → { sleep, message }. */
 const writtenSleep = (res) => ({ sleep: res?.sleep ?? res ?? null, message: res?.message ?? null })
 
-/** Badan: timbangan (terbaru dulu), target, aktivitas, tidur. 409 (udah ada) dilempar apa adanya sebagai ApiError. */
+/** Tinggi, umur & jenis kelamin dari Biodata (server yang ngitung umur); kosong = null. */
+const blankProfile = () => ({ height: null, age: null, gender: null })
+
+/** Badan: timbangan (terbaru dulu), target, aktivitas, tidur, profil. 409 (udah ada) dilempar apa adanya sebagai ApiError. */
 export const useBadanStore = defineStore('badan', {
-  state: () => ({ weighings: [], target: null, activity: null, sleeps: [], loaded: false }),
+  state: () => ({ weighings: [], target: null, activity: null, sleeps: [], profile: blankProfile(), loaded: false }),
 
   getters: {
     rows: (state) => state.weighings,
@@ -54,6 +57,7 @@ export const useBadanStore = defineStore('badan', {
       this.target = data?.target ?? null
       this.activity = data?.activity ?? null
       this.sleeps = data?.sleeps ?? []
+      this.profile = { ...blankProfile(), ...data?.profile }
       this.loaded = true
     },
 

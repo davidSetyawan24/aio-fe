@@ -66,6 +66,21 @@ describe('BadanPage', () => {
     expect(w.find('[data-test="fab"]').exists()).toBe(false)
   })
 
+  it('baris profil di bawah "Sekarang": lengkap tanpa link', async () => {
+    const w = await mountPage({ data: { weighings, target: target(), profile: { height: 166, age: 31, gender: 'male' } } })
+    const left = w.find('.b-left')
+    expect(left.find('[data-test="profile"]').text()).toBe('Tinggi 166 cm · 31 tahun · Laki-laki')
+    expect(left.find('.b-label + [data-test="profile"]').exists()).toBe(true)
+    expect(w.find('[data-test="profile-link"]').exists()).toBe(false)
+  })
+
+  it('baris profil di layar kosong: belum diisi → link ke tab Biodata', async () => {
+    const w = await mountPage({ data: { weighings: [], target: null } })
+    expect(w.find('[data-test="profile"]').text()).toBe('Tinggi, umur & jenis kelamin belum diisi · Lengkapin di Data Pribadi ›')
+    await w.find('[data-test="profile-link"]').trigger('click')
+    expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/data-pribadi?tab=bio')
+  })
+
   it('ada data + target cutting: sub-judul, progres berat, bar kisaran', async () => {
     const w = await mountPage()
     expect(w.find('[data-test="sub"]').text()).toBe('Cutting · timbang terakhir hari ini, 06.42')

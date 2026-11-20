@@ -28,7 +28,7 @@ export const DOC_TYPES = {
 export const DOC_TYPE_ORDER = ['ktp', 'kk', 'npwp', 'bpjsk', 'bpjstk', 'sima', 'simc', 'paspor', 'visa', 'stnk', 'lain']
 
 export const BIO_FIELDS = [
-  ['name', 'Nama lengkap'], ['birthPlace', 'Tempat lahir'], ['birthDate', 'Tanggal lahir'], ['gender', 'Jenis kelamin'],
+  ['name', 'Nama lengkap'], ['birthPlace', 'Tempat lahir'], ['birthDate', 'Tanggal lahir'], ['gender', 'Jenis kelamin'], ['height', 'Tinggi'],
   ['bloodType', 'Golongan darah'], ['religion', 'Agama'], ['maritalStatus', 'Status nikah'], ['occupation', 'Pekerjaan'],
   ['nationality', 'Kewarganegaraan'], ['motherName', 'Nama ibu kandung'], ['phone', 'No. HP'], ['email', 'Email'],
 ]
@@ -50,6 +50,82 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', '
 export function formatDate(on) {
   const [y, m, d] = String(on).split('-').map(Number)
   return `${d} ${MONTHS[m - 1]} ${y}`
+}
+
+const MONTHS_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+/** Nama bulan (huruf kecil) → nomor bulan: nama penuh, singkatan 3 huruf, plus singkatan yang suka dipakai. */
+const MONTH_NO = Object.fromEntries([
+  ...MONTHS_FULL.map((m, i) => [m.toLowerCase(), i + 1]),
+  ...MONTHS.map((m, i) => [m.toLowerCase(), i + 1]),
+  ['agt', 8], ['ags', 8], ['sept', 9],
+])
+export const GENDERS = ['Laki-laki', 'Perempuan']
+
+const pad = (n) => String(n).padStart(2, '0')
+
+/** Tanggal kalender beneran (bukan 31 Feb) → 'YYYY-MM-DD', selainnya null. */
+function isoDate(y, m, d) {
+  if (!(m >= 1 && m <= 12 && d >= 1)) return null
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null
+  return `${y}-${pad(m)}-${pad(d)}`
+}
+
+/** 'YYYY-MM-DD' yang tanggalnya ada & nggak lewat `today`. */
+export function validBirthDate(text, today) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text ?? ''))
+  const iso = m && isoDate(Number(m[1]), Number(m[2]), Number(m[3]))
+  return Boolean(iso) && iso <= today
+}
+
+/**
+ * Tanggal lahir lama (dulu kolomnya teks bebas) → 'YYYY-MM-DD', atau null kalau nggak kebaca / ngaco / di masa depan.
+ * Kebaca: '1995-06-24', '24/06/1995', '24-06-1995', '24 Juni 1995', '24 Jun 1995'. `today` = 'YYYY-MM-DD' hari ini WIB.
+ */
+export function parseOldBirthDate(text, today) {
+  const s = String(text ?? '').trim()
+  let y, mo, d
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s)
+  if (m) [y, mo, d] = [m[1], m[2], m[3]].map(Number)
+  else if ((m = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(s))) [d, mo, y] = [m[1], m[2], m[3]].map(Number)
+  else if ((m = /^(\d{1,2})\s+([a-z]+)\.?\s+(\d{4})$/i.exec(s))) {
+    mo = MONTH_NO[m[2].toLowerCase()]
+    if (!mo) return null
+    ;[d, y] = [Number(m[1]), Number(m[3])]
+  } else return null
+  const iso = isoDate(y, mo, d)
+  return iso && iso <= today ? iso : null
+}
+
+const MALE = new Set(['laki', 'laki-laki', 'laki laki', 'pria', 'l'])
+const FEMALE = new Set(['perempuan', 'wanita', 'p'])
+
+/** Jenis kelamin lama (teks bebas) → 'Laki-laki' | 'Perempuan' | '' (nggak kebaca). */
+export function normGender(text) {
+  const s = String(text ?? '').trim().toLowerCase()
+  if (MALE.has(s)) return 'Laki-laki'
+  if (FEMALE.has(s)) return 'Perempuan'
+  return ''
+}
+
+/** '1995-06-24' → '24 Juni 1995'. Isi lama yang bukan format itu ditampilin apa adanya. */
+export function birthDateLabel(text) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text ?? ''))
+  if (!m || !isoDate(Number(m[1]), Number(m[2]), Number(m[3]))) return String(text ?? '')
+  return `${Number(m[3])} ${MONTHS_FULL[Number(m[2]) - 1]} ${m[1]}`
+}
+
+const GENDER_TEXT = { male: 'Laki-laki', female: 'Perempuan' }
+
+/** Profil badan dari server ({ height, age, gender }) → satu baris pendek + apakah masih ada yang kosong. */
+export function profileLine(profile) {
+  const p = profile ?? {}
+  const parts = []
+  if (p.height != null) parts.push(`Tinggi ${p.height} cm`)
+  if (p.age != null) parts.push(`${p.age} tahun`)
+  if (GENDER_TEXT[p.gender]) parts.push(GENDER_TEXT[p.gender])
+  if (!parts.length) return { text: 'Tinggi, umur & jenis kelamin belum diisi', incomplete: true }
+  return { text: parts.join(' · '), incomplete: parts.length < 3 }
 }
 
 /** Yang disalin: isinya cuma angka + spasi/titik/strip → angka doang. Selainnya apa adanya. */

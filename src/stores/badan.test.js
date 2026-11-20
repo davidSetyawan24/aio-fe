@@ -28,6 +28,16 @@ describe('badan store', () => {
     expect(store.summary.lastOn).toBe('2026-11-19')
   })
 
+  it('profile: default semua null, load baca data.profile', async () => {
+    expect(store.profile).toEqual({ height: null, age: null, gender: null })
+    api.get.mockResolvedValue({ weighings: [], target: null, profile: { height: 166, age: 31, gender: 'male' } })
+    await store.load()
+    expect(store.profile).toEqual({ height: 166, age: 31, gender: 'male' })
+    api.get.mockResolvedValue({ weighings: [], target: null })
+    await store.load()
+    expect(store.profile).toEqual({ height: null, age: null, gender: null })
+  })
+
   it('last kosong = null, summary null', async () => {
     api.get.mockResolvedValue({ weighings: [], target: null })
     await store.load()

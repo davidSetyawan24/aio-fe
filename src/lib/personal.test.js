@@ -1,6 +1,7 @@
 import {
   ADDRESS_FIELDS, BIO_FIELDS, DOC_TYPES, DOC_TYPE_ORDER, REMINDER_HOURS, UNITS,
-  addressLine, copyValue, displayNumber, docSub, docTitle, dueList, farText, reminderError, reminderText, sortDocs, stateText,
+  addressLine, birthDateLabel, copyValue, displayNumber, docSub, docTitle, dueList, farText, normGender, parseOldBirthDate, profileLine, reminderError, reminderText,
+  sortDocs, stateText,
 } from './personal.js'
 
 const date = (over) => ({ key: 'expiry', on: '2027-07-24', reminders: [], state: 'ok', daysLeft: 250, lateDays: 0, ...over })
@@ -39,8 +40,9 @@ describe('document types', () => {
   })
 
   it('lists bio, address fields, hours and units', () => {
-    expect(BIO_FIELDS.map(([k]) => k)).toEqual(['name', 'birthPlace', 'birthDate', 'gender', 'bloodType', 'religion', 'maritalStatus', 'occupation', 'nationality', 'motherName', 'phone', 'email'])
-    expect(BIO_FIELDS[9]).toEqual(['motherName', 'Nama ibu kandung'])
+    expect(BIO_FIELDS.map(([k]) => k)).toEqual(['name', 'birthPlace', 'birthDate', 'gender', 'height', 'bloodType', 'religion', 'maritalStatus', 'occupation', 'nationality', 'motherName', 'phone', 'email'])
+    expect(BIO_FIELDS[10]).toEqual(['motherName', 'Nama ibu kandung'])
+    expect(BIO_FIELDS[4]).toEqual(['height', 'Tinggi'])
     expect(ADDRESS_FIELDS).toEqual([['street', 'Jalan & nomor'], ['rtRw', 'RT / RW'], ['village', 'Kelurahan / Desa'], ['district', 'Kecamatan'], ['city', 'Kota / Kabupaten'], ['province', 'Provinsi'], ['postalCode', 'Kode pos']])
     expect(REMINDER_HOURS).toEqual(['09:00', '12:00', '15:00', '18:00', '21:00'])
     expect(UNITS).toEqual([['day', 'hari'], ['week', 'minggu'], ['month', 'bulan']])
@@ -144,5 +146,59 @@ describe('reminderError', () => {
   it('rejects a fourth', () => {
     const three = [{ n: 1, unit: 'day', time: '09:00' }, { n: 2, unit: 'day', time: '09:00' }, { n: 3, unit: 'day', time: '09:00' }]
     expect(reminderError(three, { n: 4, unit: 'day', time: '09:00' })).toBe('Maksimal 3 pengingat.')
+  })
+})
+
+describe('isi Biodata lama (teks bebas)', () => {
+  const TODAY = '2026-11-20'
+  it('parseOldBirthDate baca format yang umum', () => {
+    expect(parseOldBirthDate('24 Juni 1995', TODAY)).toBe('1995-06-24')
+    expect(parseOldBirthDate('24/06/1995', TODAY)).toBe('1995-06-24')
+    expect(parseOldBirthDate('24-06-1995', TODAY)).toBe('1995-06-24')
+    expect(parseOldBirthDate('1995-06-24', TODAY)).toBe('1995-06-24')
+    expect(parseOldBirthDate(' 24 jun 1995 ', TODAY)).toBe('1995-06-24')
+    expect(parseOldBirthDate('3 AGUSTUS 1990', TODAY)).toBe('1990-08-03')
+    expect(parseOldBirthDate('3 Agu 1990', TODAY)).toBe('1990-08-03')
+    expect(parseOldBirthDate('1 Des 1990', TODAY)).toBe('1990-12-01')
+    expect(parseOldBirthDate('5/1/1990', TODAY)).toBe('1990-01-05')
+  })
+
+  it('parseOldBirthDate: tanggal ngaco / masa depan / bukan tanggal → null', () => {
+    expect(parseOldBirthDate('31/02/1995', TODAY)).toBeNull()
+    expect(parseOldBirthDate('1995-13-01', TODAY)).toBeNull()
+    expect(parseOldBirthDate('kemarin', TODAY)).toBeNull()
+    expect(parseOldBirthDate('24 Jumat 1995', TODAY)).toBeNull()
+    expect(parseOldBirthDate('21/11/2026', TODAY)).toBeNull()
+    expect(parseOldBirthDate('20/11/2026', TODAY)).toBe('2026-11-20')
+    expect(parseOldBirthDate('', TODAY)).toBeNull()
+    expect(parseOldBirthDate(null, TODAY)).toBeNull()
+  })
+
+  it('normGender', () => {
+    for (const x of ['laki', 'Laki-laki', 'laki laki', 'Pria', 'L', ' l ']) expect(normGender(x)).toBe('Laki-laki')
+    for (const x of ['Perempuan', 'wanita', 'P']) expect(normGender(x)).toBe('Perempuan')
+    for (const x of ['x', '', null, 'cowok']) expect(normGender(x)).toBe('')
+  })
+
+  it('birthDateLabel: YYYY-MM-DD → "24 Juni 1995", lainnya apa adanya', () => {
+    expect(birthDateLabel('1995-06-24')).toBe('24 Juni 1995')
+    expect(birthDateLabel('1990-01-05')).toBe('5 Januari 1990')
+    expect(birthDateLabel('24-07-1997')).toBe('24-07-1997')
+  })
+})
+
+describe('profileLine', () => {
+  it('lengkap', () => {
+    expect(profileLine({ height: 166, age: 31, gender: 'male' })).toEqual({ text: 'Tinggi 166 cm · 31 tahun · Laki-laki', incomplete: false })
+    expect(profileLine({ height: 158, age: 0, gender: 'female' })).toEqual({ text: 'Tinggi 158 cm · 0 tahun · Perempuan', incomplete: false })
+  })
+  it('sebagian: yang kosong nggak ditulis', () => {
+    expect(profileLine({ height: null, age: 31, gender: 'male' })).toEqual({ text: '31 tahun · Laki-laki', incomplete: true })
+    expect(profileLine({ height: 166, age: null, gender: null })).toEqual({ text: 'Tinggi 166 cm', incomplete: true })
+  })
+  it('semua kosong', () => {
+    const empty = { text: 'Tinggi, umur & jenis kelamin belum diisi', incomplete: true }
+    expect(profileLine({ height: null, age: null, gender: null })).toEqual(empty)
+    expect(profileLine(null)).toEqual(empty)
   })
 })

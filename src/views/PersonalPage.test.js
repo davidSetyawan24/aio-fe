@@ -36,10 +36,10 @@ function stubMedia(width) {
     return { matches: width >= min, addEventListener: () => {}, removeEventListener: () => {} }
   }
 }
-async function mountPage({ width = 390, unlocked = true, url = '/tabs/menu/data-pribadi' } = {}) {
+async function mountPage({ width = 390, unlocked = true, url = '/tabs/menu/data-pribadi', data = full } = {}) {
   stubMedia(width)
   api = {
-    get: vi.fn(async (url) => (url === '/personal/status' ? { status: { configured: true, hasPin: true, unlocked } } : full)),
+    get: vi.fn(async (url) => (url === '/personal/status' ? { status: { configured: true, hasPin: true, unlocked } } : data)),
     post: vi.fn(async (url) => (url === '/personal/lock' ? { status: { configured: true, hasPin: true, unlocked: false } } : {})),
     put: vi.fn(), del: vi.fn(),
   }
@@ -107,6 +107,22 @@ describe('PersonalPage', () => {
     await birth.trigger('click')
     await flushPromises()
     expect(copyMock).toHaveBeenLastCalledWith('24-07-1997')
+  })
+
+  it('shows the new birth date as "24 Juni 1995" and height with cm, copying what is shown', async () => {
+    const bio = { fields: { birthDate: '1995-06-24', gender: 'Laki-laki', height: '166' }, extra: [] }
+    const w = await mountPage({ data: { ...full, bio } })
+    await w.find('[data-test="tab-bio"]').trigger('click')
+    const rows = w.findAll('[data-test="copy-row"]')
+    expect(rows.map((r) => r.find('.k').text())).toEqual(['Tanggal lahir', 'Jenis kelamin', 'Tinggi'])
+    expect(rows[0].find('.v').text()).toBe('24 Juni 1995')
+    expect(rows[2].find('.v').text()).toBe('166 cm')
+    await rows[0].trigger('click')
+    await flushPromises()
+    expect(copyMock).toHaveBeenLastCalledWith('24 Juni 1995')
+    await rows[2].trigger('click')
+    await flushPromises()
+    expect(copyMock).toHaveBeenLastCalledWith('166 cm')
   })
 
   it('copies a whole address as one line', async () => {
@@ -225,6 +241,37 @@ describe('PersonalPage', () => {
       expect(w.find('[data-test="panel"]').text()).toContain('SIM C')
       expect(ionRouter.push).not.toHaveBeenCalled()
       expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+    })
+
+    it('phone: ?tab=bio opens on Biodata and drops the query', async () => {
+      const w = await mountPage({ url: '/tabs/menu/data-pribadi?tab=bio' })
+      expect(w.find('[data-test="tab-bio"]').classes()).toContain('on')
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+      expect(ionRouter.push).not.toHaveBeenCalled()
+    })
+
+    it('phone: locked with ?tab=bio keeps the query, then after the PIN opens Biodata and drops it', async () => {
+      const w = await mountPage({ url: '/tabs/menu/data-pribadi?tab=bio', unlocked: false })
+      expect(router.replace).not.toHaveBeenCalled()
+      expect(router.currentRoute.value.query.tab).toBe('bio')
+      const open = { configured: true, hasPin: true, unlocked: true }
+      api.post.mockImplementation(async (url) => (url === '/personal/unlock' ? { status: open } : {}))
+      await usePersonalStore().unlock('123456')
+      await flushPromises()
+      expect(w.find('[data-test="tab-bio"]').classes()).toContain('on')
+      expect(router.currentRoute.value.query.tab).toBeUndefined()
+    })
+
+    it('ignores an unknown ?tab= but still drops it', async () => {
+      const w = await mountPage({ url: '/tabs/menu/data-pribadi?tab=ngaco' })
+      expect(w.find('[data-test="tab-dokumen"]').classes()).toContain('on')
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+    })
+
+    it('PC: ?tab=bio just drops the query (everything is shown)', async () => {
+      const w = await mountPage({ width: 1440, url: '/tabs/menu/data-pribadi?tab=bio' })
+      expect(router.replace).toHaveBeenCalledWith({ path: '/tabs/menu/data-pribadi', query: {} })
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
     })
 
     it('PC: ?panel=addr-new from a redirected sub page opens the form panel', async () => {

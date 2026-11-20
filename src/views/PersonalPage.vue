@@ -120,14 +120,17 @@ const editBio = () => open('bio', null, 'biodata/ubah')
 watch(() => store.unlocked, (unlocked) => !unlocked && closePanel())
 
 /**
- * Link dari notif / Beranda (?dokumen=<id>) dan lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>).
+ * Link dari notif / Beranda (?dokumen=<id>), dari halaman Badan (?tab=bio) dan lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>).
  * Baru dijalanin abis kebuka & datanya ke-muat (kekunci → nunggu PIN dulu). Abis dipakai query dibuang.
  */
 function followLink() {
   if (store.today === null || route.path !== PERSONAL_BASE) return
-  const { dokumen, panel: wanted, id, ...rest } = route.query
-  if (dokumen === undefined && wanted === undefined) return
+  const { dokumen, panel: wanted, id, tab: wantedTab, ...rest } = route.query
+  if (dokumen === undefined && wanted === undefined && wantedTab === undefined) return
   router.replace({ path: PERSONAL_BASE, query: rest })
+  // Layar lebar nampilin semua bagian sekaligus, jadi tab cuma kepake di HP.
+  if (TABS.some(([key]) => key === wantedTab)) tab.value = wantedTab
+  if (dokumen === undefined && wanted === undefined) return
   const docId = dokumen !== undefined ? dokumen : id
   const view = dokumen !== undefined ? 'doc' : wanted
   const num = Number(docId)

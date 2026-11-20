@@ -2,6 +2,7 @@
   <div class="b-empty-grid">
     <div>
       <div class="b-label rise">Mulai</div>
+      <BadanProfile :profile="profile" />
       <div class="shell rise">
         <div class="b-core b-empty">
           <div class="em">⚖️</div>
@@ -38,11 +39,14 @@
 <script setup>
 import { PhMoon, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
 import BadanFood from './BadanFood.vue'
+import BadanProfile from './BadanProfile.vue'
 import BadanSleepCard from './BadanSleepCard.vue'
 import './badan.css'
 
 /** Belum ada timbangan. Udah ada tidur → kolom kanan nampilin Makan (nunggu timbangan, kalau target ada) + Tidur terakhir biar tidurnya tetep bisa dibuka. */
 defineProps({
+  /** Tinggi, umur & jenis kelamin (`store.profile`). */
+  profile: { type: Object, default: null },
   food: { type: Object, default: null },
   target: { type: Object, default: null },
   /** Tidur terakhir (`store.lastSleep`) atau null. */

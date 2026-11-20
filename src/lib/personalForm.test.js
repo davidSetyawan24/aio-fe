@@ -73,3 +73,24 @@ describe('bioErrors', () => {
     expect(bioErrors({ ...blankBio(), extra: [{ label: 'x'.repeat(41), value: 'b' }] })).toEqual(['Label data lain maksimal 40 karakter.'])
   })
 })
+
+describe('bioErrors: tanggal lahir, jenis kelamin, tinggi', () => {
+  const TODAY = '2026-11-20'
+  const withFields = (over) => ({ ...blankBio(), fields: { ...blankBio().fields, ...over } })
+  it('kosong selalu boleh, isi yang bener lolos', () => {
+    expect(bioErrors(withFields({}), TODAY)).toEqual([])
+    expect(bioErrors(withFields({ birthDate: '1995-06-24', gender: 'Laki-laki', height: '166' }), TODAY)).toEqual([])
+    expect(bioErrors(withFields({ birthDate: TODAY, gender: 'Perempuan', height: '100' }), TODAY)).toEqual([])
+    expect(bioErrors(withFields({ height: '250' }), TODAY)).toEqual([])
+  })
+  it('nolak yang ngaco, pesannya sama kayak server', () => {
+    expect(bioErrors(withFields({ birthDate: '2026-11-21' }), TODAY)).toEqual(['Tanggal lahirnya nggak valid.'])
+    expect(bioErrors(withFields({ birthDate: '1995-02-30' }), TODAY)).toEqual(['Tanggal lahirnya nggak valid.'])
+    expect(bioErrors(withFields({ birthDate: '24 Juni 1995' }), TODAY)).toEqual(['Tanggal lahirnya nggak valid.'])
+    expect(bioErrors(withFields({ gender: 'Pria' }), TODAY)).toEqual(['Pilih Laki-laki atau Perempuan.'])
+    for (const h of ['99', '251', '166.5', '166 cm', 'abc', '-170']) {
+      expect(bioErrors(withFields({ height: h }), TODAY)).toEqual(['Tinggi harus angka bulat 100–250 cm.'])
+    }
+  })
+})
+
