@@ -10,7 +10,7 @@
         <div class="b-headrow">
           <h1 class="h1 rise b-h1" style="--i: 1">Badan.<span class="b-sub" data-test="sub">{{ subText }}</span></h1>
           <div v-if="wide" class="b-hact">
-            <button type="button" class="pill ghost" data-test="manual" @click="openPanel('manual')"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
+            <button type="button" class="pill ghost" data-test="manual" @click="choose(MANUAL_CHOICE)"><PhPencilSimple :size="17" />&nbsp;Isi manual</button>
             <button type="button" class="pill b-alt" data-test="sleep-upload" @click="openPanel('sleepUpload')">Upload tidur <span class="ic"><PhMoon :size="16" weight="bold" /></span></button>
             <button type="button" class="pill" data-test="upload" @click="openPanel('upload')">Upload timbangan <span class="ic"><PhUploadSimple :size="17" weight="bold" /></span></button>
           </div>
@@ -18,7 +18,7 @@
 
         <p v-if="failed" class="b-fail" data-test="failed">Nggak bisa muat data badan. <button type="button" @click="load">Coba lagi</button></p>
 
-        <BadanEmpty v-else-if="isEmpty" @upload="openPanel('upload')" @manual="openPanel('manual')" @sleep="openPanel('sleepUpload')" />
+        <BadanEmpty v-else-if="isEmpty" @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" />
 
         <div v-else-if="store.loaded" class="b-bgrid" data-test="main">
           <section class="b-left">
@@ -128,7 +128,7 @@ function onPanelDone(message) {
   else closePanel()
   if (message) showToast(message)
 }
-/** HP: FAB "Upload" & tombol kecil "Isi manual" nanya dulu timbangan atau tidur. */
+/** FAB "Upload" (HP) & semua tombol "Isi manual" (header HP/PC, layar kosong) nanya dulu timbangan atau tidur. */
 const UPLOAD_CHOICE = { header: 'Upload apa?', subHeader: 'Pilih gambar yang mau dibaca.', views: ['upload', 'sleepUpload'] }
 const MANUAL_CHOICE = { header: 'Isi manual apa?', views: ['manual', 'sleepManual'] }
 let choosing = false

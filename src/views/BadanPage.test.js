@@ -194,6 +194,7 @@ describe('BadanPage', () => {
 
   it('PC: panel nampilin form isi manual; abis simpan panel nutup', async () => {
     const w = await mountPage({ width: 1440 })
+    sheet.pick = 'manual'
     await w.find('[data-test="manual"]').trigger('click')
     await flushPromises()
     const panel = document.querySelector('[data-test="panel"]')
@@ -339,6 +340,41 @@ describe('BadanPage', () => {
     const opts = sheet.create.mock.calls[0][0]
     expect(opts.header).toBe('Isi manual apa?')
     expect(opts.buttons.map((b) => b.text)).toEqual(['⚖️ Timbangan', '🌙 Tidur', 'Batal'])
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/catat')
+  })
+
+  it('PC header Isi manual → action sheet Isi manual apa?; Tidur → panel isi tidur manual; tap dobel = 1 sheet', async () => {
+    const w = await mountPage({ width: 1440 })
+    sheet.pick = 'sleepManual'
+    await w.find('[data-test="manual"]').trigger('click')
+    await flushPromises()
+    const opts = sheet.create.mock.calls[0][0]
+    expect(opts.header).toBe('Isi manual apa?')
+    expect(opts.buttons.map((b) => b.text)).toEqual(['⚖️ Timbangan', '🌙 Tidur', 'Batal'])
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepManual' })
+    expect(document.querySelector('[data-test="panel-title"]').textContent).toBe('Isi tidur manual')
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    sheet.create.mockClear()
+    sheet.create.mockImplementation(async () => ({ present: vi.fn(), onDidDismiss: () => new Promise(() => {}) }))
+    await w.find('[data-test="manual"]').trigger('click')
+    await w.find('[data-test="manual"]').trigger('click')
+    await flushPromises()
+    expect(sheet.create).toHaveBeenCalledTimes(1)
+  })
+
+  it('kosong: Isi manual → action sheet; PC Timbangan → panel manual, HP Tidur → halaman isi tidur manual', async () => {
+    const empty = { weighings: [], target: null, activity: null, sleeps: [] }
+    const pc = await mountPage({ width: 1440, data: empty })
+    sheet.pick = 'manual'
+    await pc.find('[data-test="empty-manual"]').trigger('click')
+    await flushPromises()
+    expect(sheet.create.mock.calls[0][0].header).toBe('Isi manual apa?')
+    expect(pc.vm.panel).toMatchObject({ open: true, view: 'manual' })
+    const hp = await mountPage({ data: empty })
+    sheet.pick = 'sleepManual'
+    await hp.find('[data-test="empty-manual"]').trigger('click')
+    await flushPromises()
+    expect(sheet.create).toHaveBeenCalledTimes(2)
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/catat')
   })
 

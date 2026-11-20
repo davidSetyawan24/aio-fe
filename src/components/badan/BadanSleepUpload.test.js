@@ -53,7 +53,7 @@ describe('BadanSleepUpload', () => {
     const w = make(async () => read)
     await pick(w)
     expect(resize).toHaveBeenCalledTimes(1)
-    expect(resize.mock.calls[0][1] ?? 1080).toBe(1080)
+    expect(resize.mock.calls[0][1]).toBe(1080)
     expect(api.post.mock.calls[0][0]).toBe('/body/sleeps/scan')
     const sent = api.post.mock.calls[0][1].get('photo')
     expect(sent.size).toBe(blob.size)
