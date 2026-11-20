@@ -13,6 +13,18 @@ describe('badanView', () => {
     expect(headerSub(null, '2026-11-18', '06:42', '2026-11-19')).toBe('timbang terakhir kemarin, 06.42')
     expect(jam('06:42')).toBe('06.42')
   })
+  it('sub header + tidur: cuma kalau tidurnya tanggal hari ini', () => {
+    const slp = { sleptOn: '2026-11-19', totalMin: 403 }
+    expect(headerSub('Cutting', '2026-11-19', '06:42', '2026-11-19', slp)).toBe('Cutting · timbang terakhir hari ini, 06.42 · tidur semalem 6 j 43 m')
+    expect(headerSub(null, '2026-11-19', '06:42', '2026-11-19', slp)).toBe('timbang terakhir hari ini, 06.42 · tidur semalem 6 j 43 m')
+    expect(headerSub('Cutting', '2026-11-19', '06:42', '2026-11-20', slp)).toBe('Cutting · timbang terakhir kemarin, 06.42')
+    expect(headerSub('Cutting', '2026-11-19', '06:42', '2026-11-19', null)).toBe('Cutting · timbang terakhir hari ini, 06.42')
+  })
+  it('sub header belum ada timbangan', () => {
+    expect(headerSub(null, null, null, '2026-11-19', { sleptOn: '2026-11-19', totalMin: 403 })).toBe('Belum ada timbangan yang masuk · tidur semalem 6 j 43 m')
+    expect(headerSub(null, null, null, '2026-11-19', { sleptOn: '2026-11-18', totalMin: 403 })).toBe('Belum ada timbangan yang masuk.')
+    expect(headerSub(null, null, null, '2026-11-19')).toBe('Belum ada timbangan yang masuk.')
+  })
   it('delta & skala', () => {
     expect(deltaView(null, 1)).toBeNull()
     expect(deltaView(-0.44, 1)).toEqual({ dir: 'down', text: '0,4' })

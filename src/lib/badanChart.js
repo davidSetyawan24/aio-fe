@@ -3,7 +3,7 @@ import { addDays, daysBetween } from './agenda.js'
 import { avg7, count7 } from './badan.js'
 
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v)
-const MIN_SPAN = { visceral: 2, bmr: 6, score: 6 }
+const MIN_SPAN = { visceral: 2, bmr: 6, score: 6, sleep: 1.5 }
 
 /** Per metrik: `daily` (angka asli, lama → baru) dan `avg` (rata-rata 7 hari, cuma yang punya >= 3 timbangan). */
 export function chartSeries(rows, keys, range, lastOn) {
@@ -22,6 +22,16 @@ export function chartSeries(rows, keys, range, lastOn) {
     out[key] = { daily, avg }
   }
   return out
+}
+
+/** Tidur per malam di rentang (lama → baru), nilai dalam jam. Nggak ada rata-rata — garisnya harian. */
+export function sleepSeries(sleeps, range, lastOn) {
+  const from = addDays(lastOn, -(range - 1))
+  const daily = sleeps
+    .filter((s) => s.sleptOn >= from && s.sleptOn <= lastOn && isNum(s.totalMin))
+    .sort((a, b) => a.sleptOn.localeCompare(b.sleptOn))
+    .map((s) => ({ d: s.sleptOn, v: s.totalMin / 60 }))
+  return { daily, avg: [] }
 }
 
 /** Titik rata-rata → potongan garis; bolong > `maxGap` hari = garis putus (nggak ditarik lurus nyebrangin). */

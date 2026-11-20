@@ -18,7 +18,7 @@
           <div v-for="r in legend" :key="r.key" class="b-lrow" data-test="lrow">
             <span class="b-ldot" :style="{ background: `var(--b-c-${r.key})` }" />
             <span class="b-ln">{{ METRIC_LABEL[r.key][0] }}<small v-if="r.tgt">{{ r.tgt }}</small></span>
-            <span class="b-lv">{{ r.value }}<small v-if="r.unit">{{ r.unit }}</small></span>
+            <span class="b-lv" :class="{ none: r.none }">{{ r.value }}<small v-if="r.unit">{{ r.unit }}</small></span>
             <span class="b-ld" :class="r.tone" :data-test="`lrow-${r.key}`">{{ r.delta }}</span>
           </div>
         </div>
@@ -41,7 +41,7 @@
             </template>
             <line class="grid" :x1="L" :x2="W - R" :y1="H - B" :y2="H - B" />
             <text v-for="t in xTicks" :key="t.d" class="ax" :x="t.x" :y="H - 6" :text-anchor="t.anchor">{{ t.label }}</text>
-            <text v-if="noData" class="nodata" :x="noData.x" :y="(Tp + H - B) / 2" text-anchor="middle">belum ada data</text>
+            <text v-if="noData" class="nodata" :x="noData.x" :y="(Tp + H - B) / 2" text-anchor="middle">{{ noData.text }}</text>
             <template v-if="range === 30">
               <template v-for="k in onKeys" :key="`d${k}`">
                 <circle v-for="p in series[k].daily" :key="p.d" class="dot" :cx="X(p.d)" :cy="Y[k](p.v)" r="2.4" :style="{ fill: `var(--b-c-${k})` }" />
@@ -49,10 +49,10 @@
             </template>
             <path v-if="single && areaPath" class="area" :d="areaPath" :style="{ fill: `var(--b-c-${single})` }" />
             <template v-for="k in [...onKeys].reverse()" :key="`a${k}`">
-              <path v-if="series[k].avg.length > 1" class="avg" :d="pathOf(series[k].avg, k)" :style="{ stroke: `var(--b-c-${k})` }" data-test="avg-path" />
+              <path v-if="lineOf(k).length > 1" class="avg" :d="pathOf(lineOf(k), k)" :style="{ stroke: `var(--b-c-${k})` }" :data-test="k === 'sleep' ? 'sleep-path' : 'avg-path'" />
             </template>
             <template v-for="k in onKeys" :key="`l${k}`">
-              <circle v-if="series[k].avg.length" class="last" :cx="X(series[k].avg.at(-1).d)" :cy="Y[k](series[k].avg.at(-1).v)" r="4.5" :style="{ fill: `var(--b-c-${k})` }" />
+              <circle v-if="lineOf(k).length" class="last" :cx="X(lineOf(k).at(-1).d)" :cy="Y[k](lineOf(k).at(-1).v)" r="4.5" :style="{ fill: `var(--b-c-${k})` }" />
             </template>
             <template v-if="cursor">
               <line class="cur" :x1="X(cursor.d)" :x2="X(cursor.d)" :y1="Tp" :y2="H - B" />
@@ -63,11 +63,11 @@
             <rect :x="L" y="0" :width="Math.max(0, W - L - R)" :height="H" fill="transparent" data-test="hit" @pointermove="show" @pointerdown="show" @pointerleave="cursor = null" />
           </svg>
           <div v-if="cursor" ref="tipEl" class="b-tip" data-test="tip" :style="{ left: `${tipLeft}px` }">
-            <b>{{ dDay(cursor.row.weighedOn) }}<template v-if="cursor.row.weighedAt"> · {{ jam(cursor.row.weighedAt) }}</template></b>
+            <b>{{ dDay(cursor.d) }}<template v-if="cursor.row?.weighedAt"> · {{ jam(cursor.row.weighedAt) }}</template></b>
             <div v-for="k in onKeys" :key="k" class="tr">
-              <i :style="{ background: `var(--b-c-${k})` }" /><span>{{ METRIC_LABEL[k][1] }}</span><em>{{ fmtU(cursor.row[k], METRICS[k].dec, unitOf(k)) }}</em>
+              <i :style="{ background: `var(--b-c-${k})` }" /><span>{{ METRIC_LABEL[k][1] }}</span><em>{{ tipValue(k) }}</em>
             </div>
-            <small>angka timbangan hari itu</small>
+            <small>{{ isOn('sleep') ? 'angka hari itu' : 'angka timbangan hari itu' }}</small>
           </div>
         </div>
         <div class="b-legend">
@@ -75,6 +75,7 @@
           <span v-if="range === 30"><i class="l2" />harian</span>
           <span v-if="onKeys.length > 1">tiap garis pakai skala sendiri</span>
           <span v-if="bandLines"><i class="l3" />kisaran berat</span>
+          <span v-if="isOn('sleep')">tidur = total jam per malam</span>
         </div>
       </div>
     </div>
@@ -85,7 +86,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { BLN, addDays, daysBetween } from '@/lib/agenda.js'
 import { ADEC, CHART_ORDER, DEFAULT_ON, METRICS, METRIC_LABEL, UNIT, avg7, count7, fmt, tone } from '@/lib/badan.js'
-import { chartSeries, gapSegments, niceStep, scaleFor } from '@/lib/badanChart.js'
+import { chartSeries, gapSegments, niceStep, scaleFor, sleepSeries } from '@/lib/badanChart.js'
+import { durL } from '@/lib/badanSleep.js'
 import { avgLabel, dDay, dShort, fmtU, jam } from '@/lib/badanView.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
@@ -95,6 +97,8 @@ const props = defineProps({
   rows: { type: Array, required: true },
   target: { type: Object, default: null },
   lastOn: { type: String, required: true },
+  /** Data tidur (chip Tidur). */
+  sleeps: { type: Array, default: () => [] },
 })
 
 const RANGES = [[30, '30 hari'], [90, '90 hari'], [365, '1 tahun']]
@@ -125,14 +129,18 @@ function toggle(k) {
   } else on.value = [...on.value, k]
 }
 
-const series = computed(() => chartSeries(props.rows, CHART_ORDER, range.value, props.lastOn))
+const WEIGH_KEYS = CHART_ORDER.filter((k) => k !== 'sleep')
+const series = computed(() => ({ ...chartSeries(props.rows, WEIGH_KEYS, range.value, props.lastOn), sleep: sleepSeries(props.sleeps, range.value, props.lastOn) }))
+/** Garis yang digambar: rata-rata 7 hari; tidur garis harian (jam per malam). */
+const lineOf = (k) => (k === 'sleep' ? series.value.sleep.daily : series.value[k].avg)
+const sleepOn = computed(() => new Map(props.sleeps.map((s) => [s.sleptOn, s])))
 const x0 = computed(() => addDays(props.lastOn, -(range.value - 1)))
 const inRange = computed(() => props.rows.filter((r) => r.weighedOn >= x0.value && r.weighedOn <= props.lastOn))
 
 /* ukuran */
 const W = computed(() => Math.max(260, width.value))
 const H = computed(() => (pc.value ? (xl.value ? 330 : 290) : 230))
-const L = computed(() => (single.value ? 40 : L0))
+const L = computed(() => (single.value === 'sleep' ? 34 : single.value ? 40 : L0))
 const span = computed(() => Math.max(1, range.value - 1))
 const X = (d) => L.value + (daysBetween(x0.value, d) / span.value) * (W.value - L.value - R)
 
@@ -162,9 +170,10 @@ const yTicks = computed(() => {
   const s = k && scales.value[k]
   if (!s) return []
   const step = niceStep((s.hi - s.lo) / 4)
-  const dec = step < 0.1 ? 2 : step < 1 ? 1 : 0
+  const dec = k === 'sleep' ? (step < 1 ? 1 : 0) : step < 0.1 ? 2 : step < 1 ? 1 : 0
+  const unit = k === 'sleep' ? 'j' : ''
   const out = []
-  for (let v = Math.ceil(s.lo / step) * step, n = 0; v <= s.hi && n < 20; v += step, n++) out.push({ v, y: Y.value[k](v), label: fmt(v, dec) })
+  for (let v = Math.ceil(s.lo / step) * step, n = 0; v <= s.hi && n < 20; v += step, n++) out.push({ v, y: Y.value[k](v), label: `${fmt(v, dec)}${unit}` })
   return out
 })
 const bandLines = computed(() => {
@@ -196,8 +205,17 @@ const xTicks = computed(() => {
   return out
 })
 
-const firstOn = computed(() => (props.rows.length ? props.rows.reduce((m, r) => (r.weighedOn < m ? r.weighedOn : m), props.rows[0].weighedOn) : null))
-const noData = computed(() => (firstOn.value && daysBetween(x0.value, firstOn.value) > 3 ? { x: (L.value + X(firstOn.value)) / 2 } : null))
+/** Tanggal data paling lama dari garis yang nyala (timbangan dan/atau tidur). */
+const firstOn = computed(() => {
+  const dates = []
+  if (onKeys.value.some((k) => k !== 'sleep')) dates.push(...props.rows.map((r) => r.weighedOn))
+  if (isOn('sleep')) dates.push(...props.sleeps.map((s) => s.sleptOn))
+  return dates.length ? dates.reduce((m, d) => (d < m ? d : m)) : null
+})
+const noData = computed(() => {
+  if (single.value === 'sleep' && !series.value.sleep.daily.length) return { x: (L.value + W.value - R) / 2, text: 'belum ada data tidur' }
+  return firstOn.value && daysBetween(x0.value, firstOn.value) > 3 ? { x: (L.value + X(firstOn.value)) / 2, text: 'belum ada data' } : null
+})
 
 /** Garis rata-rata; bolong > 7 hari = garisnya putus (titik sendirian nggak kegambar garis, cuma titik terakhir yang dibuletin). */
 const segPath = (seg, k) => seg.map((p, i) => `${i ? 'L' : 'M'}${X(p.d).toFixed(1)},${Y.value[k](p.v).toFixed(1)}`).join('')
@@ -205,7 +223,7 @@ const pathOf = (pts, k) => gapSegments(pts).filter((seg) => seg.length > 1).map(
 const areaPath = computed(() => {
   const k = single.value
   if (!k) return ''
-  return gapSegments(series.value[k].avg)
+  return gapSegments(lineOf(k))
     .filter((seg) => seg.length > 1)
     .map((seg) => `${segPath(seg, k)}L${X(seg.at(-1).d)},${H.value - B}L${X(seg[0].d)},${H.value - B}Z`)
     .join('')
@@ -214,11 +232,33 @@ const areaPath = computed(() => {
 /* legenda */
 const since = computed(() => {
   if (range.value === 30) return '30 hari'
-  const first = series.value[onKeys.value[0]]?.avg[0]?.d
+  const first = lineOf(onKeys.value[0])[0]?.d
   return first ? `sejak ${dShort(first)}` : 'sejak awal'
 })
+/** Rata-rata tidur (menit) malam yang ada datanya di `date`−6…`date`; nggak ada → null. */
+function sleepAvg(date) {
+  const from = addDays(date, -6)
+  const week = props.sleeps.filter((s) => s.sleptOn >= from && s.sleptOn <= date)
+  return week.length ? Math.round(week.reduce((a, s) => a + s.totalMin, 0) / week.length) : null
+}
+function sleepLegend() {
+  const a1 = sleepAvg(props.lastOn)
+  const first = series.value.sleep.daily[0]?.d
+  const a0 = first ? sleepAvg(first) : null
+  const dv = a1 == null || a0 == null ? null : a1 - a0
+  return {
+    key: 'sleep',
+    tgt: '',
+    value: a1 == null ? 'belum ada data' : durL(a1),
+    none: a1 == null,
+    unit: '',
+    delta: a1 == null ? '' : dv == null ? '–' : `${dv < 0 ? '↓' : dv > 0 ? '↑' : '±'}${Math.abs(dv)} m`,
+    tone: 'neutral',
+  }
+}
 const legend = computed(() =>
   onKeys.value.map((key) => {
+    if (key === 'sleep') return sleepLegend()
     const dec = ADEC[key]
     const a1 = avg7(props.rows, key, props.lastOn)
     const a0 = series.value[key].avg[0]?.v
@@ -242,22 +282,33 @@ const legend = computed(() =>
 )
 
 /* crosshair + tooltip */
+/** Angka asli hari itu di tooltip; tidur = durasi ("6 j 43 m"). */
+function tipValue(k) {
+  if (k === 'sleep') {
+    const s = sleepOn.value.get(cursor.value.d)
+    return s ? durL(s.totalMin) : '–'
+  }
+  return fmtU(cursor.value.row?.[k], METRICS[k].dec, unitOf(k))
+}
 function show(ev) {
-  const list = [...inRange.value].sort((a, b) => a.weighedOn.localeCompare(b.weighedOn))
+  const dates = new Set()
+  if (onKeys.value.some((k) => k !== 'sleep')) inRange.value.forEach((r) => dates.add(r.weighedOn))
+  if (isOn('sleep')) series.value.sleep.daily.forEach((p) => dates.add(p.d))
+  const list = [...dates].sort()
   if (!list.length) return
   const rc = wrap.value.getBoundingClientRect()
   const px = ev.clientX - rc.left
   let best = list[0]
-  for (const r of list) if (Math.abs(X(r.weighedOn) - px) < Math.abs(X(best.weighedOn) - px)) best = r
+  for (const d of list) if (Math.abs(X(d) - px) < Math.abs(X(best) - px)) best = d
   const hl = []
   for (const k of onKeys.value) {
-    const p = series.value[k].avg.find((a) => a.d === best.weighedOn)
+    const p = lineOf(k).find((a) => a.d === best)
     if (p) hl.push({ k, y: Y.value[k](p.v) })
   }
-  cursor.value = { d: best.weighedOn, row: best, hl }
+  cursor.value = { d: best, row: inRange.value.find((r) => r.weighedOn === best) ?? null, hl }
   nextTick(() => {
     const tw = tipEl.value?.offsetWidth ?? 0
-    tipLeft.value = Math.min(W.value - tw, Math.max(0, X(best.weighedOn) - tw / 2))
+    tipLeft.value = Math.min(W.value - tw, Math.max(0, X(best) - tw / 2))
   })
 }
 
@@ -279,11 +330,11 @@ watch(range, () => (cursor.value = null))
 <style scoped>
 .b-chart {
   --b-c-fat: #141410; --b-c-muscle: #2BA864; --b-c-weight: #4C8DF6; --b-c-water: #1FA9B8; --b-c-visceral: #F5A524;
-  --b-c-bone: #9277D9; --b-c-protein: #E2669F; --b-c-bmr: #F0533D; --b-c-bmi: #A08A52; --b-c-score: #7FA51E;
+  --b-c-bone: #9277D9; --b-c-protein: #E2669F; --b-c-bmr: #F0533D; --b-c-bmi: #A08A52; --b-c-score: #7FA51E; --b-c-sleep: #6C63D9;
 }
 :root.theme-dark .b-chart {
   --b-c-fat: #F2F2EE; --b-c-muscle: #C8F04A; --b-c-weight: #6FA6FF; --b-c-water: #3CC6D3; --b-c-visceral: #F5B544;
-  --b-c-bone: #AE97F0; --b-c-protein: #F08ABA; --b-c-bmr: #FF7A66; --b-c-bmi: #C9AE6E; --b-c-score: #9CCB3A;
+  --b-c-bone: #AE97F0; --b-c-protein: #F08ABA; --b-c-bmr: #FF7A66; --b-c-bmi: #C9AE6E; --b-c-score: #9CCB3A; --b-c-sleep: #9A92FF;
 }
 .b-mchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; scroll-padding: 16px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 28px), transparent); }
@@ -306,6 +357,7 @@ watch(range, () => (cursor.value = null))
 .b-ln small { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-left: 6px; }
 .b-lv { font-size: 14.5px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .b-lv small { font-size: 11px; font-weight: 700; color: var(--muted); margin-left: 1px; }
+.b-lv.none { font-size: 12.5px; font-weight: 700; color: var(--muted); }
 .b-ld { font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
 .b-ld.good { color: var(--green); }
 .b-ld.bad { color: var(--red); }

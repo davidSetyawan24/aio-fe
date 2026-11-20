@@ -75,21 +75,24 @@
 .b-kv .v em { display: block; font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 1px; }
 
 /* riwayat */
-.b-rhead, .b-rrow { display: grid; grid-template-columns: minmax(0, 1fr) 64px 56px 64px 18px; align-items: center; gap: 6px; }
-.b-rhead { padding: 12px 12px 8px 16px; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.b-rhead, .b-rrow { display: grid; grid-template-columns: minmax(0, 1fr) 54px 48px 54px 44px 14px; align-items: center; gap: 5px; }
+.b-rhead { padding: 12px 10px 8px 14px; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
 .b-rhead span:not(:first-child), .b-rrow .c { text-align: right; }
 .b-rmonth { padding: 10px 16px 6px; font-size: 12px; font-weight: 800; color: var(--muted); box-shadow: inset 0 1px 0 var(--hair); }
-.b-rrow { min-height: 58px; padding: 8px 12px 8px 16px; cursor: pointer; box-shadow: inset 0 1px 0 var(--hair); width: 100%; border: 0; background: none; color: var(--text); font-family: inherit; text-align: left; }
+.b-rrow { min-height: 58px; padding: 8px 10px 8px 14px; cursor: pointer; box-shadow: inset 0 1px 0 var(--hair); width: 100%; border: 0; background: none; color: var(--text); font-family: inherit; text-align: left; }
 .b-rmonth + .b-rrow { box-shadow: none; }
 .b-rrow .dt b { display: block; font-size: 14.5px; font-weight: 700; }
 .b-rrow .dt small { display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 1px; font-variant-numeric: tabular-nums; }
 .b-rrow .c { font-size: 14.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .b-rrow .c small { font-size: 10.5px; font-weight: 700; color: var(--muted); margin-left: 1px; }
+.b-rrow .c.na { color: var(--muted); opacity: .6; font-weight: 700; }
+/* sel Tidur: tombol sendiri ke detail tidur */
+.b-rsl { align-self: stretch; padding: 0; border: 0; background: none; color: var(--text); font-family: inherit; cursor: pointer; }
 .b-rrow .go { color: var(--muted); justify-self: end; display: grid; }
 .b-rrow .x, .b-rhead .x { display: none; }
 .b-mtag { height: 18px; padding: 0 6px; border-radius: 99px; background: var(--soft); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; }
 .b-rmore { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 48px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; box-shadow: inset 0 1px 0 var(--hair); border: 0; background: none; width: 100%; font-family: inherit; }
-@media (hover: hover) { .b-rrow:hover { background: rgba(127, 127, 120, .05); border-radius: 18px; } }
+@media (hover: hover) { .b-rrow:hover { background: rgba(127, 127, 120, .05); border-radius: 18px; } .b-rsl:hover { text-decoration: underline; text-underline-offset: 3px; } }
 
 /* kosong */
 .b-empty { text-align: center; padding: 30px 22px 22px; }
@@ -112,19 +115,20 @@
   .b-kv > div:nth-child(-n+4) { box-shadow: inset 1px 0 0 var(--hair); }
   .b-kv > div:first-child { box-shadow: none; }
   .b-hv { font-size: 46px; }
-  .b-rhead, .b-rrow { grid-template-columns: minmax(150px, 1.4fr) repeat(8, minmax(0, 1fr)) 18px; }
+  .b-rhead, .b-rrow { grid-template-columns: minmax(150px, 1.4fr) repeat(9, minmax(0, 1fr)) 18px; gap: 6px; }
+  .b-rrow { padding: 8px 12px 8px 16px; } .b-rhead { padding: 12px 12px 8px 16px; }
   .b-rrow .x, .b-rhead .x { display: block; }
   .b-rrow .x.w2, .b-rhead .x.w2 { display: block; }
 }
 @media (min-width: 1600px) {
   .b-hv { font-size: 50px; }
-  .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 70px 60px 70px 18px; }
+  .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 62px 54px 62px 50px 16px; }
   .b-rrow .x, .b-rhead .x { display: none; }
   .b-rrow .x.w2, .b-rhead .x.w2 { display: none; }
 }
 @media (min-width: 2200px) {
   .b-hv { font-size: 54px; }
-  .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 74px 62px 74px 62px 62px 18px; }
+  .b-rhead, .b-rrow { grid-template-columns: minmax(0, 1fr) 70px 58px 70px 56px 58px 50px 18px; }
   .b-rrow .x.w2, .b-rhead .x.w2 { display: block; }
 }
 
@@ -248,6 +252,12 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bs-s3 .v small { font-size: 12px; font-weight: 700; color: var(--muted); margin-left: 2px; }
 .bs-avg { margin: 14px -16px -16px; padding: 11px 16px 13px; font-size: 12.5px; font-weight: 600; color: var(--muted); box-shadow: inset 0 1px 0 var(--hair); font-variant-numeric: tabular-nums; }
 .bs-avg b { color: var(--text); font-weight: 800; }
+.bs-when { font-size: 12.5px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* kartu Tidur terakhir di halaman Badan */
+.bs-tap { cursor: pointer; transition: transform .2s var(--spring); -webkit-tap-highlight-color: transparent; }
+.bs-tap:active { transform: scale(.99); }
+.bs-tap:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.bs-empty { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 76px; padding: 18px 16px; font-size: 13.5px; font-weight: 600; color: var(--muted); opacity: .75; }
 
 /* Input tanggal/jam bawaan (transparan) nutup SELURUH kotak kolom (posisinya ikut .bf-nf), jadi tap di mana aja buka picker. */
 .bf-pick { position: static; }

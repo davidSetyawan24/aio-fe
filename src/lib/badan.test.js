@@ -21,7 +21,7 @@ describe('konstanta', () => {
     expect(METRICS.bmr).toEqual({ dec: 0, min: 500, max: 5000 })
     expect(BODY_TYPES).toHaveLength(9)
     expect(ARAH).toEqual(['recomp', 'jaga', 'cutting', 'bulking'])
-    expect(CHART_ORDER).toHaveLength(10)
+    expect(CHART_ORDER).toEqual(['fat', 'muscle', 'weight', 'sleep', 'water', 'visceral', 'bone', 'protein', 'bmr', 'bmi', 'score'])
     expect(DEFAULT_ON).toEqual(['fat', 'muscle', 'weight'])
     expect(METRIC_LABEL.fat).toEqual(['Lemak tubuh', 'Lemak'])
     expect(UNIT.bmr).toBe('kkal')

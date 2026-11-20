@@ -103,4 +103,53 @@ describe('BadanChart', () => {
     expect(tip).not.toContain('–%')
     expect(tip).toContain('–')
   })
+
+  describe('chip Tidur', () => {
+    const sleeps = Array.from({ length: 10 }, (_, i) => ({ id: 300 + i, sleptOn: addDays(LAST, -i), totalMin: i === 0 ? 403 : 380 + i }))
+    function mkS(extra = {}) {
+      window.matchMedia = () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} })
+      return mount(BadanChart, { props: { rows, target: tgt, lastOn: LAST, sleeps, ...extra }, attachTo: document.body })
+    }
+    it('urutan chip: Lemak, Otot, Berat, Tidur, Air…; bawaan mati', () => {
+      const w = mkS()
+      const keys = w.findAll('.b-mc').map((c) => c.attributes('data-test').slice(5))
+      expect(keys.slice(0, 5)).toEqual(['fat', 'muscle', 'weight', 'sleep', 'water'])
+      expect(chip(w, 'sleep').text()).toBe('Tidur')
+      expect(on(w)).toEqual(['fat', 'muscle', 'weight'])
+      expect(w.find('[data-test="sleep-path"]').exists()).toBe(false)
+    })
+    it('nyalain Tidur → garis harian + legenda jam + catatan', async () => {
+      const w = mkS()
+      await chip(w, 'sleep').trigger('click')
+      expect(on(w)).toEqual(['fat', 'muscle', 'weight', 'sleep'])
+      const d = w.find('[data-test="sleep-path"]').attributes('d')
+      expect(d.match(/L/g)).toHaveLength(9)
+      expect(w.find('[data-test="lrow-sleep"]').exists()).toBe(true)
+      expect(w.text()).toContain('tidur = total jam per malam')
+    })
+    it('Tidur doang: sumbu dalam jam', async () => {
+      const w = mkS()
+      await chip(w, 'sleep').trigger('click')
+      for (const k of ['fat', 'muscle', 'weight']) await chip(w, k).trigger('click')
+      expect(on(w)).toEqual(['sleep'])
+      const ticks = w.findAll('text.ax').map((t) => t.text()).filter((t) => t.endsWith('j'))
+      expect(ticks.length).toBeGreaterThan(1)
+    })
+    it('crosshair nampilin durasi "6 j 43 m"', async () => {
+      const w = mkS()
+      await chip(w, 'sleep').trigger('click')
+      w.find('[data-test="hit"]').element.dispatchEvent(new MouseEvent('pointermove', { clientX: 9999, bubbles: true }))
+      await nextTick()
+      const tip = w.find('[data-test="tip"]').text()
+      expect(tip).toContain('Tidur')
+      expect(tip).toContain('6 j 43 m')
+      expect(tip).toContain('angka hari itu')
+    })
+    it('Tidur doang tanpa data tidur di rentang: "belum ada data tidur"', async () => {
+      const w = mkS({ sleeps: [] })
+      await chip(w, 'sleep').trigger('click')
+      for (const k of ['fat', 'muscle', 'weight']) await chip(w, k).trigger('click')
+      expect(w.text()).toContain('belum ada data tidur')
+    })
+  })
 })

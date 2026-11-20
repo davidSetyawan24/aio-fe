@@ -16,6 +16,10 @@
       </div>
     </div>
     <div>
+      <template v-if="sleep">
+        <BadanFood v-if="target" :food="food" :target="target" :count="0" @upload="$emit('upload')" @target="$emit('target')" />
+        <BadanSleepCard :sleep="sleep" :summary="sleepSum" :today="today" :i="1" @open="(id) => $emit('openSleep', id)" />
+      </template>
       <div class="b-label rise" style="--i: 1">Cara dapetin gambarnya</div>
       <div class="shell rise" style="--i: 1">
         <div class="b-core">
@@ -33,9 +37,20 @@
 
 <script setup>
 import { PhMoon, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
+import BadanFood from './BadanFood.vue'
+import BadanSleepCard from './BadanSleepCard.vue'
 import './badan.css'
 
-defineEmits(['upload', 'manual', 'sleep'])
+/** Belum ada timbangan. Udah ada tidur → kolom kanan nampilin Makan (nunggu timbangan, kalau target ada) + Tidur terakhir biar tidurnya tetep bisa dibuka. */
+defineProps({
+  food: { type: Object, default: null },
+  target: { type: Object, default: null },
+  /** Tidur terakhir (`store.lastSleep`) atau null. */
+  sleep: { type: Object, default: null },
+  sleepSum: { type: Object, default: null },
+  today: { type: String, required: true },
+})
+defineEmits(['upload', 'manual', 'sleep', 'target', 'openSleep'])
 </script>
 
 <style scoped>

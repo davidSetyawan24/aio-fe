@@ -191,6 +191,8 @@ export const METRIC_LABEL = {
   bmr: ['BMR', 'BMR'],
   bmi: ['BMI', 'BMI'],
   score: ['Skor badan', 'Skor badan'],
+  /** Bukan angka timbangan — cuma dipakai chip & legenda grafik. */
+  sleep: ['Tidur', 'Tidur'],
 }
 
 /** Desimal angka rata-rata (hero, legenda, detail): tulang 2, BMR & skor 0, sisanya 1. */
@@ -205,7 +207,8 @@ export const ARAH_INFO = {
   bulking: { n: 'Bulking', em: '💪', t: 'Fokus nambah otot, berat ikut naik.', s: 'Hijau kalau otot ↑ dan berat ↑. Lemak dijaga jangan naik banyak.' },
 }
 
-export const CHART_ORDER = ['fat', 'muscle', 'weight', 'water', 'visceral', 'bone', 'protein', 'bmr', 'bmi', 'score']
+/** Chip grafik; `sleep` = total tidur per malam (data tidur, bukan timbangan). */
+export const CHART_ORDER = ['fat', 'muscle', 'weight', 'sleep', 'water', 'visceral', 'bone', 'protein', 'bmr', 'bmi', 'score']
 export const DEFAULT_ON = ['fat', 'muscle', 'weight']
 
 export function fmt(v, dec) {

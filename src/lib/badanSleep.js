@@ -11,6 +11,9 @@ export function durL(min) {
   return h === 0 ? `${m} m` : `${h} j ${m} m`
 }
 
+/** Kolom Tidur di riwayat: 403 → "6j43", 365 → "6j05". */
+export const durS = (min) => `${Math.floor(min / 60)}j${String(min % 60).padStart(2, '0')}`
+
 /** 403 → { h: '6', m: '43' }. */
 export const durParts = (min) => ({ h: String(Math.floor(min / 60)), m: String(min % 60) })
 

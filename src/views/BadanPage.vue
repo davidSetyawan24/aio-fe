@@ -18,7 +18,10 @@
 
         <p v-if="failed" class="b-fail" data-test="failed">Nggak bisa muat data badan. <button type="button" @click="load">Coba lagi</button></p>
 
-        <BadanEmpty v-else-if="isEmpty" @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" />
+        <BadanEmpty
+          v-else-if="isEmpty" :food="store.food" :target="store.target" :sleep="store.lastSleep" :sleep-sum="store.sleepSum" :today="today"
+          @upload="openPanel('upload')" @manual="choose(MANUAL_CHOICE)" @sleep="openPanel('sleepUpload')" @target="openPanel('target')" @open-sleep="(id) => openPanel('sleepDetail', id)"
+        />
 
         <div v-else-if="store.loaded" class="b-bgrid" data-test="main">
           <section class="b-left">
@@ -28,11 +31,12 @@
             <BadanFood :food="store.food" :target="store.target" :count="store.summary.count" @target="openPanel('target')" @upload="openPanel('upload')" />
           </section>
           <section class="b-mid">
-            <BadanChart :key="chartKey" :rows="store.sorted" :target="store.target" :last-on="store.summary.lastOn" />
+            <BadanChart :key="chartKey" :rows="store.sorted" :sleeps="store.sleeps" :target="store.target" :last-on="store.summary.lastOn" />
             <BadanLast :last="store.last" :today="today" @open="(id) => openPanel('detail', id)" />
+            <BadanSleepCard :sleep="store.lastSleep" :summary="store.sleepSum" :today="today" @open="(id) => openPanel('sleepDetail', id)" />
           </section>
           <section class="b-rw">
-            <BadanHistory :rows="store.sorted" :today="today" :all="pc" @open="(id) => openPanel('detail', id)" />
+            <BadanHistory :rows="store.sorted" :sleeps="store.sleeps" :today="today" :all="pc" @open="(id) => openPanel('detail', id)" @open-sleep="(id) => openPanel('sleepDetail', id)" />
           </section>
         </div>
       </div>
@@ -60,6 +64,7 @@ import BadanHero from '@/components/badan/BadanHero.vue'
 import BadanHistory from '@/components/badan/BadanHistory.vue'
 import BadanLast from '@/components/badan/BadanLast.vue'
 import BadanPanel from '@/components/badan/BadanPanel.vue'
+import BadanSleepCard from '@/components/badan/BadanSleepCard.vue'
 import BadanTargetSheet from '@/components/badan/BadanTargetSheet.vue'
 import BadanTarget from '@/components/badan/BadanTarget.vue'
 import '@/components/badan/badan.css'
@@ -86,10 +91,10 @@ let toChild = false
 
 const isEmpty = computed(() => store.loaded && store.weighings.length === 0)
 const subText = computed(() => {
-  if (isEmpty.value) return 'Belum ada timbangan yang masuk.'
+  if (isEmpty.value) return headerSub(null, null, null, today.value, store.lastSleep)
   const s = store.summary
   if (!s) return ''
-  return headerSub(s.arah ? ARAH_INFO[s.arah].n : null, s.lastOn, s.lastAt, today.value)
+  return headerSub(s.arah ? ARAH_INFO[s.arah].n : null, s.lastOn, s.lastAt, today.value, store.lastSleep)
 })
 
 async function load() {

@@ -1,6 +1,7 @@
 /** Teks tampilan halaman Badan (murni, gampang dites). Hitungan angka ada di badan.js. */
 import { BLN, BULAN, HARI, HR, addDays, weekdayOf } from './agenda.js'
 import { fmt } from './badan.js'
+import { durL } from './badanSleep.js'
 
 /** "17 Nov" */
 export const dShort = (date) => `${Number(date.slice(8))} ${BLN[Number(date.slice(5, 7)) - 1]}`
@@ -21,9 +22,14 @@ export function dayWord(date, today) {
   return dDay(date)
 }
 
-/** Sub-judul header: "Cutting · timbang terakhir hari ini, 06.42" (tanpa target: tanpa arah). */
-export function headerSub(arahName, lastOn, lastAt, today) {
-  const t = `timbang terakhir ${dayWord(lastOn, today)}${lastAt ? `, ${jam(lastAt)}` : ''}`
+/**
+ * Sub-judul header: "Cutting · timbang terakhir hari ini, 06.42 · tidur semalem 6 j 43 m" (tanpa target: tanpa arah).
+ * Bagian tidur cuma kalau `sleep` (tidur terakhir) tanggalnya hari ini. Belum ada timbangan (`lastOn` kosong) → "Belum ada timbangan yang masuk…".
+ */
+export function headerSub(arahName, lastOn, lastAt, today, sleep = null) {
+  const slp = sleep?.sleptOn === today ? ` · tidur semalem ${durL(sleep.totalMin)}` : ''
+  if (!lastOn) return `Belum ada timbangan yang masuk${slp || '.'}`
+  const t = `timbang terakhir ${dayWord(lastOn, today)}${lastAt ? `, ${jam(lastAt)}` : ''}${slp}`
   return arahName ? `${arahName} · ${t}` : t
 }
 

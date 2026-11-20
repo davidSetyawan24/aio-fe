@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { durL, durParts, durMin, blankSleep, fromSleep, fromSleepRead, sleepErrors, sleepPayload, sleepHistory } from './badanSleep.js'
+import { durL, durS, durParts, durMin, blankSleep, fromSleep, fromSleepRead, sleepErrors, sleepPayload, sleepHistory } from './badanSleep.js'
 
 const NOW = { date: '2026-11-20', minutes: 600 }
 
@@ -7,6 +7,11 @@ describe('durasi', () => {
   it('durL', () => {
     expect(durL(403)).toBe('6 j 43 m')
     expect(durL(55)).toBe('55 m')
+  })
+  it('durS (kolom Tidur di riwayat)', () => {
+    expect(durS(403)).toBe('6j43')
+    expect(durS(365)).toBe('6j05')
+    expect(durS(55)).toBe('0j55')
   })
   it('durParts', () => expect(durParts(403)).toEqual({ h: '6', m: '43' }))
   it('durMin', () => {

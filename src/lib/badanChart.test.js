@@ -1,5 +1,5 @@
 import { addDays } from './agenda.js'
-import { chartSeries, gapSegments, niceStep, scaleFor } from './badanChart.js'
+import { chartSeries, gapSegments, niceStep, scaleFor, sleepSeries } from './badanChart.js'
 
 const LAST = '2026-11-30'
 /** 30 hari, satu timbangan per hari, berat 80 → 77 (terbaru paling ringan). */
@@ -63,4 +63,21 @@ describe('gapSegments (garis rata-rata putus di bolong panjang)', () => {
     ])
   })
   it('kosong → []', () => expect(gapSegments([])).toEqual([]))
+})
+
+describe('sleepSeries', () => {
+  const sl = (d, totalMin) => ({ id: d, sleptOn: d, totalMin })
+  it('jam per malam (lama → baru), cuma di rentang, avg kosong', () => {
+    const sleeps = [sl(LAST, 403), sl(addDays(LAST, -1), 360), sl(addDays(LAST, -40), 420), sl(addDays(LAST, 1), 500)]
+    const s = sleepSeries(sleeps, 30, LAST)
+    expect(s.daily).toEqual([{ d: addDays(LAST, -1), v: 6 }, { d: LAST, v: 403 / 60 }])
+    expect(s.avg).toEqual([])
+    expect(sleepSeries(sleeps, 90, LAST).daily).toHaveLength(3)
+    expect(sleepSeries([], 30, LAST)).toEqual({ daily: [], avg: [] })
+  })
+  it('bolong > 7 hari → garisnya putus', () => {
+    const sleeps = [sl(LAST, 400), sl(addDays(LAST, -2), 400), sl(addDays(LAST, -12), 400), sl(addDays(LAST, -13), 400)]
+    const segs = gapSegments(sleepSeries(sleeps, 30, LAST).daily)
+    expect(segs.map((g) => g.length)).toEqual([2, 2])
+  })
 })

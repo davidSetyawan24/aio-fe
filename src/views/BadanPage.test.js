@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { addDays } from '@/lib/agenda.js'
-import { dShort } from '@/lib/badanView.js'
+import { dDay, dShort } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { setBadanApi } from '@/stores/badan.js'
 import BadanPage from './BadanPage.vue'
@@ -157,10 +157,10 @@ describe('BadanPage', () => {
     expect(t).toContain('Thick-set di Zepp')
   })
 
-  it('HP: riwayat 8 baris + "Liat semua 12 timbangan", tap buka semua', async () => {
+  it('HP: riwayat 8 baris + "Liat semua 12 hari", tap buka semua', async () => {
     const w = await mountPage()
     expect(w.findAll('[data-test="hrow"]')).toHaveLength(8)
-    expect(w.find('[data-test="more"]').text()).toBe('Liat semua 12 timbangan')
+    expect(w.find('[data-test="more"]').text()).toBe('Liat semua 12 hari')
     await w.find('[data-test="more"]').trigger('click')
     expect(w.findAll('[data-test="hrow"]')).toHaveLength(12)
   })
@@ -406,5 +406,58 @@ describe('BadanPage', () => {
     w.findComponent({ name: 'BadanPanel' }).vm.$emit('sleepManual')
     await flushPromises()
     expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepManual' })
+  })
+
+  describe('tidur di halaman', () => {
+    const nap = (i, over) => ({ id: 50 - i, sleptOn: addDays(TODAY, -i), bedAt: '23:10', wakeAt: '05:53', totalMin: 403, deepMin: 75, lightMin: 228, remMin: 100, score: 79, awakeCount: 1, avgHr: 58, avgHrv: 41, source: 'scan', ...over })
+
+    it('ada timbangan + tidur semalem: sub-judul, kartu Tidur terakhir, kolom Tidur di riwayat', async () => {
+      const w = await mountPage({ data: { weighings, target: target(), activity: null, sleeps: [nap(0), nap(2, { totalMin: 365 })] } })
+      expect(w.find('[data-test="sub"]').text()).toBe('Cutting · timbang terakhir hari ini, 06.42 · tidur semalem 6 j 43 m')
+      expect(w.find('[data-test="sleep-card-when"]').text()).toBe('semalem')
+      await w.find('[data-test="sleep-card"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/50')
+      expect(w.find('[data-test="history"]').text()).toContain('6j05')
+      await w.findAll('[data-test="hsleep"]')[1].trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/48')
+      expect(w.find('[data-test="chip-sleep"]').exists()).toBe(true)
+    })
+
+    it('tanpa tidur: kartu "Belum ada data tidur", sub-judul tanpa tidur', async () => {
+      const w = await mountPage({ data: { weighings, target: target(), activity: null, sleeps: [] } })
+      expect(w.find('[data-test="sub"]').text()).toBe('Cutting · timbang terakhir hari ini, 06.42')
+      expect(w.find('[data-test="sleep-card-empty"]').text()).toBe('Belum ada data tidur')
+    })
+
+    it('tidur ada tapi timbangan belum: layar kosong + kartu tidur bisa dibuka, makan nunggu timbangan', async () => {
+      const data = { weighings: [], target: target(), activity: null, sleeps: [nap(0)] }
+      const hp = await mountPage({ data })
+      expect(hp.text()).toContain('Belum ada timbangan')
+      expect(hp.find('[data-test="sub"]').text()).toBe('Belum ada timbangan yang masuk · tidur semalem 6 j 43 m')
+      expect(hp.find('[data-test="main"]').exists()).toBe(false)
+      expect(hp.find('[data-test="food-empty"]').attributes('data-state')).toBe('needWeighing')
+      await hp.find('[data-test="food-btn"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/upload')
+      await hp.find('[data-test="sleep-card"]').trigger('click')
+      expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/50')
+
+      const pc = await mountPage({ width: 1440, data })
+      await pc.find('[data-test="sleep-card"]').trigger('click')
+      expect(pc.vm.panel).toMatchObject({ open: true, view: 'sleepDetail', id: 50 })
+    })
+
+    it('tidur ada, timbangan & target belum: kartu tidur tanpa kartu makan; tidur kemarin nggak masuk sub-judul', async () => {
+      const w = await mountPage({ data: { weighings: [], target: null, activity: null, sleeps: [nap(1)] } })
+      expect(w.find('[data-test="sub"]').text()).toBe('Belum ada timbangan yang masuk.')
+      expect(w.find('[data-test="sleep-card-when"]').text()).toBe(dDay(addDays(TODAY, -1)))
+      expect(w.find('[data-test="food-empty"]').exists()).toBe(false)
+    })
+
+    it('kosong total: nggak ada kartu tidur / makan', async () => {
+      const w = await mountPage({ data: { weighings: [], target: target(), activity: null, sleeps: [] } })
+      expect(w.find('[data-test="sleep-card"]').exists()).toBe(false)
+      expect(w.find('[data-test="sleep-card-empty"]').exists()).toBe(false)
+      expect(w.find('[data-test="food-empty"]').exists()).toBe(false)
+    })
   })
 })
