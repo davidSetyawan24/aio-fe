@@ -23,16 +23,22 @@
             <button v-for="k in paceKeys" :key="k" type="button" :class="{ on: form.pace === k }" :data-pace="k" :aria-pressed="String(form.pace === k)" @click="setPace(k)">{{ PACE_INFO[k] }}</button>
           </div>
           <p v-if="errors.pace" class="bt-ferr" data-test="err-pace">{{ errors.pace }}</p>
+          <!-- Tinggi kotak ini cuma boleh berubah karena tap (arah / kecepatan), bukan ketikan: bagian yang ikut isian selalu
+               ke-render (pengganti "–") & punya tempat tetap — kalau tinggi berubah di atas kolom yang lagi diketik, iOS ngelempar form. -->
           <div class="bt-spdx" data-test="speed-line">
-            {{ cut ? 'Turun' : 'Naik' }}
-            <template v-if="speed.lo != null"><b>±{{ kgW(speed.lo) }}–{{ kgW(speed.hi) }} kg/minggu</b> ({{ pctText }} berat)</template>
-            <b v-else>{{ pctText }} berat/minggu</b>
-            <template v-if="food.state === 'ok'"> · makan <b>±{{ fmt(food.kcal, 0) }} kkal</b></template>
-            <template v-if="speed.reach"> · nyampe {{ fmtN(speed.reach.goal) }} kg <b>±{{ monthShort(speed.reach.month) }}</b> (±{{ speed.reach.weeks }} minggu)</template>
+            <p class="bt-spd-main">
+              {{ cut ? 'Turun' : 'Naik' }}
+              <template v-if="speed.lo != null"><b>±{{ kgW(speed.lo) }}–{{ kgW(speed.hi) }} kg/minggu</b> ({{ pctText }} berat)</template>
+              <b v-else>{{ pctText }} berat/minggu</b>
+              · makan <b data-test="speed-food">{{ food.state === 'ok' ? `±${fmt(food.kcal, 0)} kkal` : '–' }}</b>
+              · nyampe <span data-test="speed-reach"><template v-if="speed.reach">{{ fmtN(speed.reach.goal) }} kg <b>±{{ monthShort(speed.reach.month) }}</b> (±{{ speed.reach.weeks }} minggu)</template><template v-else>–</template></span>
+            </p>
             <small>{{ cut ? 'Patokan riset: turun 0,5–1% berat/minggu masih jaga otot.' : 'Patokan riset: naik 0,25–0,5% berat/minggu biar lemaknya nggak ikut banyak.' }}</small>
             <small v-if="form.pace === 'agresif'" data-test="pace-agresif">Defisit &gt;500 kkal/hari, risiko otot lebih gede.</small>
+            <div class="bt-spd-warn" :class="{ on: belowBmr }" data-test="pace-warn" :aria-hidden="String(!belowBmr)">
+              <PhWarning :size="16" weight="bold" /><span>Target makan di bawah BMR — otot bisa ikut kebakar. Coba kecepatan Normal.</span>
+            </div>
           </div>
-          <div v-if="food.state === 'ok' && food.belowBmr" class="bf-warnsum" data-test="pace-warn"><PhWarning :size="18" weight="bold" /><span>Target makan di bawah BMR — otot bisa ikut kebakar. Coba kecepatan Normal.</span></div>
         </template>
 
         <div class="bf-group"><span>Angka target</span><small>semua boleh kosong</small></div>
@@ -180,6 +186,8 @@ const food = computed(() => {
   const pace = PACES[form.arah] && !PACES[form.arah][form.pace] ? 'normal' : form.pace
   return foodPlan(store.weighings, { arah: form.arah, pace }, used ? { level: used } : null)
 })
+
+const belowBmr = computed(() => food.value.state === 'ok' && food.value.belowBmr)
 
 // Bulking nggak punya Agresif → balik ke Normal biar kecepatannya selalu valid buat arahnya.
 watch(

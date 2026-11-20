@@ -153,14 +153,35 @@ describe('BadanTargetSheet', () => {
       david()
       expect(text('[data-test="speed-line"]')).toContain('Turun ±0,37–0,56 kg/minggu (0,5–0,75% berat) · makan ±2.050 kkal · nyampe 69 kg ±Feb 2027 (±13 minggu)')
       expect(text('[data-test="speed-line"]')).toContain('Patokan riset: turun 0,5–1% berat/minggu masih jaga otot.')
-      expect(q('[data-test="pace-warn"]')).toBeNull()
+      expect(q('[data-test="pace-warn"]').classList.contains('on')).toBe(false)
+      expect(q('[data-test="pace-warn"]').getAttribute('aria-hidden')).toBe('true')
       expect(q('[data-test="pace-agresif"]')).toBeNull()
     })
 
-    it('tanpa aktivitas → bagian makan nggak tampil', () => {
+    it('tanpa aktivitas → makan diganti "–"', () => {
       make({ target: DAVID_TARGET, summary: bodySummary(DAVID_ROWS, DAVID_TARGET) }, { rows: DAVID_ROWS })
-      expect(text('[data-test="speed-line"]')).not.toContain('makan')
-      expect(text('[data-test="speed-line"]')).toContain('nyampe 69 kg')
+      expect(text('[data-test="speed-food"]')).toBe('–')
+      expect(text('[data-test="speed-line"]')).toContain('· makan – · nyampe 69 kg')
+    })
+
+    it('ketikan nggak pernah nyopot / nambah bagian kotak kecepatan (tinggi tetep buat keyboard iOS)', async () => {
+      david()
+      await tap('[data-pace="agresif"]')
+      const nodes = () => ['speed-food', 'speed-reach', 'pace-warn'].map((t) => q(`[data-test="${t}"]`))
+      const before = nodes()
+      expect(before.every(Boolean)).toBe(true)
+      // gym 0 → saran Ringan → makan di bawah BMR: peringatan cuma ganti keliatan, elemennya udah ada dari awal
+      await type('[data-test="a-gym"]', '0')
+      expect(q('[data-test="pace-warn"]').classList.contains('on')).toBe(true)
+      await type('[data-test="a-gym"]', '5')
+      expect(q('[data-test="pace-warn"]').classList.contains('on')).toBe(false)
+      // isian aktivitas nggak lengkap → makan "–"; kisaran kosong → nyampe "–"
+      await type('[data-test="a-hours"]', '')
+      expect(text('[data-test="speed-food"]')).toBe('–')
+      await type('[data-test="t-max"]', '')
+      expect(text('[data-test="speed-reach"]')).toBe('–')
+      expect(nodes()).toEqual(before)
+      expect(q('[data-test="pace-warn"]').classList.contains('on')).toBe(false)
     })
 
     it('Agresif + Banyak duduk → catatan agresif + peringatan di bawah BMR', async () => {
@@ -169,6 +190,7 @@ describe('BadanTargetSheet', () => {
       await tap('[data-level="sedentary"]')
       expect(text('[data-test="pace-agresif"]')).toBe('Defisit >500 kkal/hari, risiko otot lebih gede.')
       expect(text('[data-test="pace-warn"]')).toBe('Target makan di bawah BMR — otot bisa ikut kebakar. Coba kecepatan Normal.')
+      expect(q('[data-test="pace-warn"]').classList.contains('on')).toBe(true)
       expect(text('[data-test="speed-line"]')).toContain('makan ±1.250 kkal')
     })
 
