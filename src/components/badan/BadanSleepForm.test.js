@@ -76,6 +76,31 @@ describe('BadanSleepForm manual', () => {
     expect(api.post.mock.calls[0][1]).toMatchObject({ bedAt: '23:30', wakeAt: '06:10', totalMin: 400 })
   })
 
+  it('total from the clocks out of range → error on Total, nothing sent', async () => {
+    const w = make()
+    await w.find('[data-test="bedAt"]').setValue('23:30')
+    await w.find('[data-test="wakeAt"]').setValue('23:10')
+    await submit(w)
+    expect(w.find('[data-test="err-total"]').text()).toBe('Lama tidurnya di luar rentang wajar (1–16 jam).')
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('"wajib diisi" on Total goes away once both clocks are filled, or once the total is typed', async () => {
+    const w = make()
+    await submit(w)
+    expect(w.find('[data-test="err-total"]').text()).toBe('Lama tidurnya wajib diisi.')
+    await w.find('[data-test="bedAt"]').setValue('23:30')
+    expect(w.find('[data-test="err-total"]').exists()).toBe(true)
+    await w.find('[data-test="wakeAt"]').setValue('06:10')
+    expect(w.find('[data-test="err-total"]').exists()).toBe(false)
+
+    const w2 = make()
+    await submit(w2)
+    expect(w2.find('[data-test="err-total"]').exists()).toBe(true)
+    await w2.find('[data-test="f-total-h"]').setValue('6')
+    expect(w2.find('[data-test="err-total"]').exists()).toBe(false)
+  })
+
   it('a clock can be cleared with its own button', async () => {
     const w = make()
     await w.find('[data-test="bedAt"]').setValue('23:30')
@@ -157,6 +182,29 @@ describe('BadanSleepForm manual', () => {
     expect(w.emitted('open')[0]).toEqual([3])
     await w.find('[data-test="date"]').setValue(addDays(TODAY, -2))
     expect(w.find('[data-test="block"]').exists()).toBe(false)
+  })
+
+  it('409 exact: submitting again (Enter in a field) while blocked sends nothing', async () => {
+    const w = make()
+    api.post.mockRejectedValueOnce(conflict('exact'))
+    await setDur(w, 'total', '5', '10')
+    await submit(w)
+    expect(w.find('[data-test="block"]').exists()).toBe(true)
+    await submit(w)
+    expect(api.post).toHaveBeenCalledTimes(1)
+    expect(w.find('[data-test="block"]').exists()).toBe(true)
+  })
+
+  it('409 sameDay: the replace sheet failing to open → message in the form, nothing more sent', async () => {
+    sheetCreate.mockRejectedValueOnce(new Error('overlay gagal'))
+    const w = make()
+    api.post.mockRejectedValueOnce(conflict('sameDay'))
+    await setDur(w, 'total', '6', '43')
+    await submit(w)
+    expect(api.post).toHaveBeenCalledTimes(1)
+    expect(w.find('[data-test="error"]').text()).toBe('Pilihan gantinya gagal kebuka. Coba Simpen lagi ya.')
+    expect(w.emitted('done')).toBeUndefined()
+    expect(w.find('[data-test="save"]').attributes('disabled')).toBeUndefined()
   })
 })
 

@@ -79,6 +79,11 @@ export function sleepErrors(form, today) {
   }
   if (total === null) {
     if (!bedWake) out.total = 'Lama tidurnya wajib diisi.'
+    else {
+      const [lo, hi] = SLEEP_LIMITS.totalMin
+      const span = clockSpan(form.bedAt, form.wakeAt)
+      if (span < lo || span > hi) out.total = `Lama tidurnya di luar rentang wajar (${lo / 60}–${hi / 60} jam).`
+    }
   } else check('total', 'totalMin')
   for (const k of ['deepMin', 'lightMin', 'remMin']) check(k, k)
   for (const k of ['score', 'awakeCount', 'avgHr', 'avgHrv']) check(k, k)

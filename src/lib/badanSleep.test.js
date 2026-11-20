@@ -51,6 +51,15 @@ describe('sleepErrors', () => {
     expect(sleepErrors({ ...blankSleep(NOW), bedAt: '23:30' }, NOW.date).total).toBe('Lama tidurnya wajib diisi.')
     expect(sleepErrors({ ...blankSleep(NOW), bedAt: '23:30', wakeAt: '06:10' }, NOW.date)).toEqual({})
   })
+  it('total dari jam tidur–bangun di luar rentang → error di kolom Total', () => {
+    const at = (bedAt, wakeAt) => sleepErrors({ ...blankSleep(NOW), bedAt, wakeAt }, NOW.date).total
+    expect(at('23:30', '23:10')).toBe('Lama tidurnya di luar rentang wajar (1–16 jam).')
+    expect(at('23:30', '23:30')).toBe('Lama tidurnya di luar rentang wajar (1–16 jam).')
+    expect(at('23:30', '00:10')).toBe('Lama tidurnya di luar rentang wajar (1–16 jam).')
+    expect(at('23:30', '00:30')).toBeUndefined()
+    expect(at('06:00', '22:00')).toBeUndefined()
+    expect(at('06:00', '22:01')).toBe('Lama tidurnya di luar rentang wajar (1–16 jam).')
+  })
   it('angka ngaco & di luar rentang', () => {
     expect(sleepErrors({ ...ok, total: { h: '6', m: '75' } }, NOW.date).total).toBe('Isi angka aja ya.')
     expect(sleepErrors({ ...ok, score: 'abc' }, NOW.date).score).toBe('Isi angka aja ya.')

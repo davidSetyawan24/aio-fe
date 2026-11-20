@@ -147,11 +147,12 @@ function onNum(key, field) {
   warn.delete(key)
   delete errors[field]
 }
-/** Ganti tanggal / jam → data "udah ada" yang tadi ngeblok bisa dicoba lagi. */
+/** Ganti tanggal / jam → data "udah ada" yang tadi ngeblok bisa dicoba lagi. Jam lengkap → "wajib diisi" di Total ilang. */
 function onWhen(k, e) {
   form[k] = e.target.value
   warn.delete(k)
   delete errors[k]
+  if (k !== 'date' && bothClocks.value) delete errors.total
   blocked.value = null
 }
 function clearClock(k) {
@@ -175,7 +176,7 @@ async function confirmReplace(existingRow, payload) {
 }
 
 async function submit() {
-  if (busy.value) return
+  if (busy.value || blocked.value) return
   lines.value = []
   for (const k of Object.keys(errors)) delete errors[k]
   const found = sleepErrors(form, today)
@@ -207,7 +208,15 @@ async function send(payload, replaceWith) {
         return
       }
       if (err.fields.reason === 'sameDay') {
-        if (await confirmReplace(existingRow, payload)) await send(payload, existingRow)
+        let replace
+        try {
+          replace = await confirmReplace(existingRow, payload)
+        } catch {
+          lines.value = ['Pilihan gantinya gagal kebuka. Coba Simpen lagi ya.']
+          doShake()
+          return
+        }
+        if (replace) await send(payload, existingRow)
         return
       }
     }
