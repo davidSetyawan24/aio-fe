@@ -36,7 +36,7 @@ import { actionSheetController } from '@ionic/vue'
 import { PhPencilSimple, PhTrash } from '@phosphor-icons/vue'
 import { sleepSummary } from '@/lib/badan.js'
 import { durL } from '@/lib/badanSleep.js'
-import { dLong, jam } from '@/lib/badanView.js'
+import { dLong, dShort, jam } from '@/lib/badanView.js'
 import { errorLines, showToast } from '@/lib/personalForm.js'
 import { useBadanStore } from '@/stores/badan.js'
 
@@ -74,7 +74,7 @@ async function confirmDelete() {
   const r = row.value
   try {
     const sheet = await actionSheetController.create({
-      header: 'Hapus data tidur ini?',
+      header: `Hapus data tidur ${dShort(r.sleptOn)}?`,
       subHeader: 'Angkanya ilang dari riwayat, grafik, dan rata-rata 7 hari.',
       buttons: [{ text: 'Hapus', role: 'destructive', data: 'delete' }, { text: 'Batal', role: 'cancel' }],
     })

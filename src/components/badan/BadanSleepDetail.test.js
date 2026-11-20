@@ -88,7 +88,7 @@ describe('BadanSleepDetail', () => {
     }
     await w.find('[data-test="delete"]').trigger('click')
     await flushPromises()
-    expect(sheetCreate.mock.calls[0][0].header).toBe('Hapus data tidur ini?')
+    expect(sheetCreate.mock.calls[0][0].header).toBe(`Hapus data tidur ${Number(TODAY.slice(8))} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][Number(TODAY.slice(5, 7)) - 1]}?`)
     expect(delCallsAtDone).toBe(0)
     expect(w.emitted('done')).toHaveLength(1)
     expect(api.del).toHaveBeenCalledWith('/body/sleeps/8')
