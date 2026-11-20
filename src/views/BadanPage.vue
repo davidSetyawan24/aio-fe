@@ -36,7 +36,7 @@
         </div>
       </div>
 
-      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @done="onPanelDone" />
+      <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @sleep-detail="(i) => openPanel('sleepDetail', i)" @sleep-edit="(i) => openPanel('sleepEdit', i)" @done="onPanelDone" />
 
       <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" @close="targetOpen = false" />
 
@@ -102,7 +102,10 @@ async function load() {
 
 /** HP (<768px) = halaman anak, ≥768px = panel geser. */
 const panel = reactive({ open: false, view: 'detail', id: null, key: 0 })
-const PATHS = { upload: () => `${BASE}/upload`, manual: () => `${BASE}/catat`, detail: (id) => `${BASE}/${id}`, edit: (id) => `${BASE}/${id}/ubah` }
+const PATHS = {
+  upload: () => `${BASE}/upload`, manual: () => `${BASE}/catat`, detail: (id) => `${BASE}/${id}`, edit: (id) => `${BASE}/${id}/ubah`,
+  sleepManual: () => `${BASE}/tidur/catat`, sleepDetail: (id) => `${BASE}/tidur/${id}`, sleepEdit: (id) => `${BASE}/tidur/${id}/ubah`,
+}
 const targetOpen = ref(false)
 function openPanel(view, id = null) {
   if (view === 'target') {
@@ -119,11 +122,15 @@ const closePanel = () => (panel.open = false)
 /** Abis simpan / hapus: ubah → balik ke detailnya, sisanya nutup panel. Toast tetep nongol. */
 function onPanelDone(message) {
   if (panel.view === 'edit') openPanel('detail', panel.id)
+  else if (panel.view === 'sleepEdit') openPanel('sleepDetail', panel.id)
   else closePanel()
   if (message) showToast(message)
 }
 defineExpose({ openPanel, panel, targetOpen })
 
+const LINK_VIEWS = ['detail', 'edit', 'manual', 'upload', 'sleepDetail', 'sleepEdit', 'sleepManual']
+const WEIGHING_ID = new Set(['detail', 'edit'])
+const SLEEP_ID = new Set(['sleepDetail', 'sleepEdit'])
 /**
  * Lemparan dari halaman anak di layar lebar (?panel=<view>&id=<id>). Baru dijalanin abis datanya ke-muat; abis dipakai query dibuang.
  */
@@ -133,9 +140,10 @@ function followLink() {
   if (wanted === undefined) return
   router?.replace({ path: BASE, query: rest })
   const num = Number(id)
-  if (!['detail', 'edit', 'manual', 'upload'].includes(wanted) || !wide.value) return
-  if ((wanted === 'detail' || wanted === 'edit') && (!Number.isInteger(num) || !store.weighings.some((w) => w.id === num))) return
-  openPanel(wanted, wanted === 'detail' || wanted === 'edit' ? num : null)
+  if (!LINK_VIEWS.includes(wanted) || !wide.value) return
+  const rows = WEIGHING_ID.has(wanted) ? store.weighings : SLEEP_ID.has(wanted) ? store.sleeps : null
+  if (rows && (!Number.isInteger(num) || !rows.some((r) => r.id === num))) return
+  openPanel(wanted, rows ? num : null)
 }
 watch([() => store.loaded, () => route?.query, () => route?.path], followLink, { immediate: true })
 

@@ -3,9 +3,9 @@
     <ion-content ref="content" :fullscreen="true">
       <div class="page b-page b-sub">
         <div class="b-toprow">
-          <button type="button" class="bs-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />{{ view === 'edit' ? 'Detail' : 'Badan' }}</button>
+          <button type="button" class="bs-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />{{ view === 'edit' || view === 'sleepEdit' ? 'Detail' : 'Badan' }}</button>
         </div>
-        <template v-if="view !== 'detail'">
+        <template v-if="view !== 'detail' && view !== 'sleepDetail'">
           <span class="eyebrow rise"><span class="dot" />Badan</span>
           <h1 class="h1 rise" style="--i: 1">{{ title }}.<span class="b-sub-s" data-test="sub">{{ subtitle }}</span></h1>
         </template>
@@ -17,6 +17,10 @@
           <BadanForm v-else-if="view === 'edit' && weighing" mode="edit" :initial="weighing" @done="onDone" @open="goExisting" />
           <p v-else-if="view === 'edit'" class="bd-gone" data-test="gone">Timbangannya nggak ketemu. Mungkin udah dihapus.</p>
           <BadanUpload v-else-if="view === 'upload'" @stage="onStage" @manual="goManual" @done="onDone" @open="goExisting" />
+          <BadanSleepDetail v-else-if="view === 'sleepDetail'" :sleep-id="id" @edit="goSleepEdit" @done="onDone" />
+          <BadanSleepForm v-else-if="view === 'sleepManual'" mode="manual" @done="onDone" @open="goSleep" />
+          <BadanSleepForm v-else-if="view === 'sleepEdit' && sleep" mode="edit" :initial="sleep" @done="onDone" @open="goSleep" />
+          <p v-else-if="view === 'sleepEdit'" class="bd-gone" data-test="gone">Data tidurnya nggak ketemu. Mungkin udah dihapus.</p>
         </template>
       </div>
     </ion-content>
@@ -30,6 +34,8 @@ import { PhCaretLeft } from '@phosphor-icons/vue'
 import { useRoute } from 'vue-router'
 import BadanDetail from '@/components/badan/BadanDetail.vue'
 import BadanForm from '@/components/badan/BadanForm.vue'
+import BadanSleepDetail from '@/components/badan/BadanSleepDetail.vue'
+import BadanSleepForm from '@/components/badan/BadanSleepForm.vue'
 import BadanUpload from '@/components/badan/BadanUpload.vue'
 import '@/components/badan/badan.css'
 import { dLong, jam } from '@/lib/badanView.js'
@@ -38,7 +44,7 @@ import { showToast } from '@/lib/personalForm.js'
 import { useBadanStore } from '@/stores/badan.js'
 
 /**
- * Satu halaman pembungkus buat rute anak Badan di HP (<768px): upload, isi manual, detail, ubah — `route.meta.view` yang nentuin.
+ * Satu halaman pembungkus buat rute anak Badan di HP (<768px): upload, isi manual, detail, ubah (timbangan & tidur) — `route.meta.view` yang nentuin.
  * Di layar ≥768 semuanya panel di halaman utama, jadi halaman ini cuma ngelempar ke sana.
  */
 const BASE = '/tabs/menu/badan'
@@ -53,8 +59,9 @@ const id = route.params.id ?? null
 const failed = ref(false)
 
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(id)) ?? null)
+const sleep = computed(() => store.sleeps.find((s) => s.id === Number(id)) ?? null)
 const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
-const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan' }
+const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', sleepManual: 'Isi tidur manual', sleepEdit: 'Ubah tidur' }
 const stage = ref('pick')
 const content = ref(null)
 /** Ganti tahap upload → balik ke atas biar status barunya kebaca. */
@@ -67,6 +74,8 @@ const subtitle = computed(() => {
   if (view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'
   if (view === 'edit' && weighing.value) return `${dLong(weighing.value.weighedOn)}, ${jam(weighing.value.weighedAt)}`
   if (view === 'upload') return UP_SUB[stage.value] ?? ''
+  if (view === 'sleepManual') return 'Ketik angka dari Huawei Health.'
+  if (view === 'sleepEdit' && sleep.value) return dLong(sleep.value.sleptOn)
   return ''
 })
 
@@ -89,6 +98,8 @@ const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navig
 const goEdit = () => ionRouter.navigate(`${BASE}/${id}/ubah`, 'forward', 'push')
 const goManual = () => ionRouter.navigate(`${BASE}/catat`, 'forward', 'replace')
 const goExisting = (existingId) => ionRouter.navigate(`${BASE}/${existingId}`, 'forward', 'push')
+const goSleepEdit = () => ionRouter.navigate(`${BASE}/tidur/${id}/ubah`, 'forward', 'push')
+const goSleep = (sleepId) => ionRouter.navigate(`${BASE}/tidur/${sleepId}`, 'forward', 'push')
 
 async function onDone(message) {
   goBack()

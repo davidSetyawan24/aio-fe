@@ -9,12 +9,13 @@ const router = vi.hoisted(() => ({ replace: vi.fn() }))
 vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), useIonRouter: () => ionRouter }))
 vi.mock('vue-router', async (importOriginal) => ({ ...(await importOriginal()), useRoute: () => route, useRouter: () => router }))
 
+const sleep = { id: 8, sleptOn: '2026-11-17', bedAt: null, wakeAt: null, totalMin: 400, deepMin: null, lightMin: null, remMin: null, score: null, awakeCount: null, avgHr: null, avgHrv: null, source: 'manual' }
 const row = { id: 4, weighedOn: '2026-11-17', weighedAt: '06:12', weight: 75, fat: 28, muscle: 52, water: 50, visceral: 9, bone: 2.9, protein: 17, bmr: 1600, bmi: 24.6, score: 80, bodyType: null, source: 'scan' }
 
 async function mountAt(query, width = 1440) {
   route.query = query
   window.matchMedia = (q) => ({ matches: width >= Number(/min-width:\s*(\d+)px/.exec(q)?.[1] ?? 0), addEventListener: () => {}, removeEventListener: () => {} })
-  setBadanApi({ get: vi.fn(async () => ({ weighings: [row], target: null })), post: vi.fn(), patch: vi.fn(), put: vi.fn(), del: vi.fn() })
+  setBadanApi({ get: vi.fn(async () => ({ weighings: [row], target: null, activity: null, sleeps: [sleep] })), post: vi.fn(), patch: vi.fn(), put: vi.fn(), del: vi.fn() })
   setActivePinia(createPinia())
   const w = mount(BadanPage, { global: { plugins: [createPinia()] }, attachTo: document.body })
   await flushPromises()
@@ -45,5 +46,20 @@ describe('BadanPage ?panel= link', () => {
     const c = await mountAt({ panel: 'ngaco' })
     expect(c.vm.panel.open).toBe(false)
     c.unmount()
+  })
+
+  it('opens the sleep panels: detail/edit only for a known sleep id (not a weighing id), manual without id', async () => {
+    const a = await mountAt({ panel: 'sleepDetail', id: '8' })
+    expect(a.vm.panel).toMatchObject({ open: true, view: 'sleepDetail', id: 8 })
+    a.unmount()
+    const b = await mountAt({ panel: 'sleepEdit', id: '4' })
+    expect(b.vm.panel.open).toBe(false)
+    b.unmount()
+    const c = await mountAt({ panel: 'sleepManual' })
+    expect(c.vm.panel).toMatchObject({ open: true, view: 'sleepManual', id: null })
+    c.unmount()
+    const d = await mountAt({ panel: 'detail', id: '8' })
+    expect(d.vm.panel.open).toBe(false)
+    d.unmount()
   })
 })

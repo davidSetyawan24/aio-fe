@@ -211,6 +211,44 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bp-wait { padding: 30px 4px; color: var(--muted); font-size: 13.5px; font-weight: 600; }
 .bs-back { display: flex; align-items: center; gap: 2px; width: fit-content; height: 44px; margin: 0 0 0 -6px; padding: 0 8px 0 6px; border: 0; background: none; color: var(--muted); font: 700 14.5px var(--ion-font-family); cursor: pointer; }
 
+/* tidur (bs-): form + isi kartu tidur — global & berawalan karena dipakai juga di panel (ion-app) */
+:root { --b-st-deep: #141410; --b-st-light: rgba(20, 20, 15, .28); --b-st-rem: #C8F04A; }
+:root.theme-dark { --b-st-deep: #F2F2EE; --b-st-light: rgba(242, 242, 238, .32); --b-st-rem: #C8F04A; }
+.bf-nf.bs-span2 { grid-column: span 2; }
+.bf-val.bs-none { color: var(--muted); opacity: .6; }
+.bs-clear { position: absolute; z-index: 1; top: 8px; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 99px; background: var(--card); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.bf-in.bs-dh, .bf-in.bs-dm { flex: none; }
+.bs-dur .bf-nf .iw em + .bf-in { margin-left: 6px; }
+.bs-sum { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; margin: 8px 8px 0; line-height: 1.4; }
+.bs-sum:empty { display: none; }
+.bs-sum.ok { color: var(--green); }
+.bs-sum.off { color: var(--b-amber-t); }
+.bs-shell { margin-top: 14px; }
+.core.bs-card { padding: 16px; }
+.bs-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.bs-tot { font-size: 34px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.1; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bs-tot small { font-size: 15px; font-weight: 700; color: var(--muted); letter-spacing: -0.01em; margin: 0 6px 0 2px; }
+.bs-tot small:last-child { margin-right: 0; }
+.bs-score { width: 60px; height: 60px; border-radius: 20px; background: var(--soft); display: grid; place-content: center; text-align: center; flex-shrink: 0; }
+.bs-score b { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.bs-score small { font-size: 10.5px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.bs-stack { display: flex; gap: 3px; height: 12px; margin-top: 14px; }
+.bs-stack i { display: block; height: 100%; border-radius: 99px; }
+.bs-deep { background: var(--b-st-deep); } .bs-light { background: var(--b-st-light); } .bs-rem { background: var(--b-st-rem); }
+.bs-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.bs-legend > div { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.bs-legend > div i { display: inline-block; width: 8px; height: 8px; border-radius: 99px; margin-right: 6px; vertical-align: 0; }
+.bs-legend > div b { display: block; color: var(--text); font-size: 14.5px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bs-legend > div b small { font-size: 11px; font-weight: 700; color: var(--muted); margin-left: 4px; }
+.bs-s3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 14px -16px 0; box-shadow: inset 0 1px 0 var(--hair); }
+.bs-s3 > div { padding: 12px 16px 0; }
+.bs-s3 > div + div { box-shadow: inset 1px 0 0 var(--hair); }
+.bs-s3 .k { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.bs-s3 .v { font-size: 16px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bs-s3 .v small { font-size: 12px; font-weight: 700; color: var(--muted); margin-left: 2px; }
+.bs-avg { margin: 14px -16px -16px; padding: 11px 16px 13px; font-size: 12.5px; font-weight: 600; color: var(--muted); box-shadow: inset 0 1px 0 var(--hair); font-variant-numeric: tabular-nums; }
+.bs-avg b { color: var(--text); font-weight: 800; }
+
 /* Input tanggal/jam bawaan (transparan) nutup SELURUH kotak kolom (posisinya ikut .bf-nf), jadi tap di mana aja buka picker. */
 .bf-pick { position: static; }
 .bf-val { display: block; flex: 1; min-width: 0; font: 800 17px var(--ion-font-family); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

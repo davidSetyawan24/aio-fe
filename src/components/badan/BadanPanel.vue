@@ -4,7 +4,7 @@
     <div class="bp-scrim" :class="{ show: open }" @click="requestClose" />
     <aside ref="panelEl" class="bp-panel" :class="{ show: open, wide: view === 'upload' && stage !== 'pick' }" data-test="panel" role="dialog" aria-modal="true" :aria-hidden="String(!open)">
       <div class="bp-head">
-        <button v-if="view === 'edit'" type="button" class="bp-x" aria-label="Balik" data-test="panel-back" @click="$emit('detail', id)"><PhCaretLeft :size="18" weight="bold" /></button>
+        <button v-if="view === 'edit' || view === 'sleepEdit'" type="button" class="bp-x" aria-label="Balik" data-test="panel-back" @click="back"><PhCaretLeft :size="18" weight="bold" /></button>
         <h2 data-test="panel-title">{{ title }}</h2>
         <button type="button" class="bp-x" aria-label="Tutup" data-test="panel-close" @click="requestClose"><PhX :size="18" weight="bold" /></button>
       </div>
@@ -14,6 +14,10 @@
         <BadanForm v-else-if="view === 'manual'" ref="child" :key="`${formKey}m`" mode="manual" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
         <BadanForm v-else-if="view === 'edit' && weighing" ref="child" :key="`${formKey}e${id}`" mode="edit" :initial="weighing" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
         <BadanUpload v-else-if="view === 'upload'" ref="child" :key="`${formKey}u`" @stage="onStage" @manual="$emit('manual')" @done="(m) => $emit('done', m)" @open="(i) => $emit('detail', i)" />
+        <BadanSleepDetail v-else-if="view === 'sleepDetail'" ref="child" :key="`${formKey}sd${id}`" :sleep-id="id" @edit="$emit('sleepEdit', id)" @done="(m) => $emit('done', m)" />
+        <BadanSleepForm v-else-if="view === 'sleepManual'" ref="child" :key="`${formKey}sm`" mode="manual" @done="(m) => $emit('done', m)" @open="(i) => $emit('sleepDetail', i)" />
+        <BadanSleepForm v-else-if="view === 'sleepEdit' && sleep" ref="child" :key="`${formKey}se${id}`" mode="edit" :initial="sleep" @done="(m) => $emit('done', m)" @open="(i) => $emit('sleepDetail', i)" />
+        <p v-else-if="view === 'sleepEdit'" class="bd-gone" data-test="gone">Data tidurnya nggak ketemu. Mungkin udah dihapus.</p>
       </div>
     </aside>
   </Teleport>
@@ -24,11 +28,13 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { PhCaretLeft, PhX } from '@phosphor-icons/vue'
 import BadanDetail from '@/components/badan/BadanDetail.vue'
 import BadanForm from '@/components/badan/BadanForm.vue'
+import BadanSleepDetail from '@/components/badan/BadanSleepDetail.vue'
+import BadanSleepForm from '@/components/badan/BadanSleepForm.vue'
 import BadanUpload from '@/components/badan/BadanUpload.vue'
 import { dLong, jam } from '@/lib/badanView.js'
 import { useBadanStore } from '@/stores/badan.js'
 
-/** Panel geser dari kanan (≥768px) buat detail / isi manual / ubah timbangan. view: detail | manual | edit | upload. */
+/** Panel geser dari kanan (≥768px) buat detail / isi manual / ubah timbangan & tidur. view: detail | manual | edit | upload | sleepDetail | sleepManual | sleepEdit. */
 const props = defineProps({
   open: { type: Boolean, default: false },
   view: { type: String, default: 'detail' },
@@ -36,7 +42,7 @@ const props = defineProps({
   /** Naikin tiap buka biar isinya mulai dari awal. */
   formKey: { type: Number, default: 0 },
 })
-const emit = defineEmits(['close', 'edit', 'done', 'detail', 'manual'])
+const emit = defineEmits(['close', 'edit', 'done', 'detail', 'manual', 'sleepDetail', 'sleepEdit'])
 
 const store = useBadanStore()
 const child = ref(null)
@@ -50,15 +56,23 @@ function onStage(s) {
 // Panel baru dibuka / isinya mulai dari awal → balik sempit.
 watch(() => [props.open, props.formKey, props.view], () => (stage.value = 'pick'))
 const weighing = computed(() => store.weighings.find((w) => w.id === Number(props.id)) ?? null)
+const sleep = computed(() => store.sleeps.find((s) => s.id === Number(props.id)) ?? null)
+/** Tombol balik di form ubah → detail yang sama (timbangan / tidur). */
+const back = () => emit(props.view === 'sleepEdit' ? 'sleepDetail' : 'detail', props.id)
 
 const UP_SUB = { pick: 'Dari gambar Zepp Life.', load: 'Bentar ya.', fail: 'Gambarnya nggak bisa dibaca.', result: 'Cek dulu angkanya, terus Simpen.' }
-const TITLES = { upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', detail: 'Detail timbangan' }
+const TITLES = {
+  upload: 'Upload timbangan', manual: 'Isi manual', edit: 'Ubah timbangan', detail: 'Detail timbangan',
+  sleepManual: 'Isi tidur manual', sleepEdit: 'Ubah tidur', sleepDetail: 'Detail tidur',
+}
 const UP_TITLE = { result: 'Hasil bacaan' }
 const title = computed(() => (props.view === 'upload' ? UP_TITLE[stage.value] ?? TITLES.upload : TITLES[props.view] ?? ''))
 const subtitle = computed(() => {
   if (props.view === 'upload') return UP_SUB[stage.value] ?? ''
   if (props.view === 'manual') return 'Ketik angka dari timbangan / Zepp Life.'
   if (props.view === 'edit' && weighing.value) return `${dLong(weighing.value.weighedOn)}, ${jam(weighing.value.weighedAt)}`
+  if (props.view === 'sleepManual') return 'Ketik angka dari Huawei Health.'
+  if (props.view === 'sleepEdit' && sleep.value) return dLong(sleep.value.sleptOn)
   return ''
 })
 

@@ -47,6 +47,10 @@ export function buildTabRoutes(pages) {
     // Rute anak Badan (HP): satu halaman pembungkus, `meta.view` yang nentuin isinya.
     { path: 'menu/badan/upload', component: BadanSubPage, meta: { view: 'upload' } },
     { path: 'menu/badan/catat', component: BadanSubPage, meta: { view: 'manual' } },
+    // Tidur ditulis sebelum :id timbangan biar nggak ketuker.
+    { path: 'menu/badan/tidur/catat', component: BadanSubPage, meta: { view: 'sleepManual' } },
+    { path: 'menu/badan/tidur/:id', component: BadanSubPage, meta: { view: 'sleepDetail' } },
+    { path: 'menu/badan/tidur/:id/ubah', component: BadanSubPage, meta: { view: 'sleepEdit' } },
     { path: 'menu/badan/:id', component: BadanSubPage, meta: { view: 'detail' } },
     { path: 'menu/badan/:id/ubah', component: BadanSubPage, meta: { view: 'edit' } },
     { path: 'agenda/baru', component: AgendaFormPage },

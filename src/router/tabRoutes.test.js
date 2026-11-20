@@ -127,6 +127,22 @@ describe('buildTabRoutes', () => {
     }
   })
 
+  it('opens the Badan sleep pages in the same wrapper, never caught by the weighing :id routes', () => {
+    const expected = { 'menu/badan/tidur/catat': 'sleepManual', 'menu/badan/tidur/:id': 'sleepDetail', 'menu/badan/tidur/:id/ubah': 'sleepEdit' }
+    for (const [path, view] of Object.entries(expected)) {
+      expect(find(path).component).toBe(badanSubStub)
+      expect(find(path).meta).toEqual({ view })
+    }
+    const paths = routes.map((r) => r.path)
+    expect(paths.indexOf('menu/badan/tidur/:id')).toBeLessThan(paths.indexOf('menu/badan/:id'))
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/', children: routes, component: stub }] })
+    expect(router.resolve('/tabs/menu/badan/tidur/catat').meta.view).toBe('sleepManual')
+    expect(router.resolve('/tabs/menu/badan/tidur/5').meta.view).toBe('sleepDetail')
+    expect(router.resolve('/tabs/menu/badan/tidur/5').params.id).toBe('5')
+    expect(router.resolve('/tabs/menu/badan/tidur/5/ubah').meta.view).toBe('sleepEdit')
+    expect(router.resolve('/tabs/menu/badan/5').meta.view).toBe('detail')
+  })
+
   it('opens Kategori and its form under Semua menu', () => {
     expect(find('menu/kategori').component).toBe(categoryStub)
     expect(find('menu/kategori/tambah').component).toBe(categoryFormStub)

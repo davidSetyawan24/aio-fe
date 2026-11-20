@@ -205,6 +205,42 @@ describe('BadanPage', () => {
     expect(w.vm.panel).toMatchObject({ open: true, view: 'detail', id: 100 })
   })
 
+  it('tidur: HP ke halaman anak tidur; PC panel detail tidur → Ubah → abis simpan balik ke detail tidur', async () => {
+    const sleep = { id: 8, sleptOn: TODAY, bedAt: '23:30', wakeAt: '06:10', totalMin: 400, deepMin: null, lightMin: null, remMin: null, score: 80, awakeCount: null, avgHr: null, avgHrv: null, source: 'manual' }
+    const data = { weighings, target: target(), activity: null, sleeps: [sleep] }
+    const hp = await mountPage({ data })
+    hp.vm.openPanel('sleepDetail', 8)
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/8')
+    hp.vm.openPanel('sleepEdit', 8)
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/8/ubah')
+    hp.vm.openPanel('sleepManual')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tidur/catat')
+
+    const w = await mountPage({ width: 1440, data })
+    w.vm.openPanel('sleepDetail', 8)
+    await flushPromises()
+    const panel = document.querySelector('[data-test="panel"]')
+    expect(panel.querySelector('[data-test="panel-title"]').textContent).toBe('Detail tidur')
+    panel.querySelector('[data-test="edit"]').click()
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepEdit', id: 8 })
+    expect(panel.querySelector('[data-test="panel-title"]').textContent).toBe('Ubah tidur')
+    panel.querySelector('[data-test="panel-back"]').click()
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepDetail', id: 8 })
+    w.vm.openPanel('sleepEdit', 8)
+    w.findComponent({ name: 'BadanPanel' }).vm.$emit('done', 'Perubahan kesimpen ✓')
+    await flushPromises()
+    expect(w.vm.panel).toMatchObject({ open: true, view: 'sleepDetail', id: 8 })
+    w.vm.openPanel('sleepManual')
+    await flushPromises()
+    expect(panel.querySelector('[data-test="panel-title"]').textContent).toBe('Isi tidur manual')
+    expect(panel.querySelector('[data-test="panel-sub"]').textContent).toBe('Ketik angka dari Huawei Health.')
+    w.findComponent({ name: 'BadanPanel' }).vm.$emit('done', 'Data tidur kesimpen ✓')
+    await flushPromises()
+    expect(w.vm.panel.open).toBe(false)
+  })
+
   it('hero: 7 hari penuh → "Rata-rata 7 hari" + "vs minggu lalu"', async () => {
     const w = await mountPage()
     expect(w.find('[data-test="hero-label"]').text()).toBe('Rata-rata 7 hari')
