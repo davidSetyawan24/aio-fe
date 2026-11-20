@@ -112,12 +112,14 @@ onBeforeUnmount(() => {
 @media (min-width: 1100px) {
   .h-page { max-width: none; margin: 0; padding: 64px 48px 48px; }
   .h-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-areas: 'attn side' 'today side'; gap: 0 24px; align-items: start; }
+  /* Kolom kanan (Duit + Badan) bisa lebih tinggi dari Perlu diurus: sisa tingginya diserap baris Hari ini (1fr), bukan bikin celah di bawah Perlu diurus. */
+  .h-grid { grid-template-rows: auto 1fr; }
   .h-attn { grid-area: attn; }
   .h-today { grid-area: today; }
   .h-side { grid-area: side; }
 }
 @media (min-width: 1600px) {
-  .h-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 420px; grid-template-areas: 'attn today side'; }
+  .h-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 420px; grid-template-areas: 'attn today side'; grid-template-rows: auto; }
   .h-side { position: sticky; top: 24px; }
 }
 @media (min-width: 2200px) {
