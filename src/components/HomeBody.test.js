@@ -69,4 +69,30 @@ describe('HomeBody', () => {
     await mountIt().find('[data-test="home-body-card"]').trigger('click')
     expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/badan')
   })
+  describe('tidur & makan', () => {
+    const sleep = (o = {}) => ({ lastOn: '2026-11-19', totalMin: 403, bedAt: '23:30', wakeAt: '06:10', score: 80, avg7Min: 380, nights: 5, ...o })
+    const food = (o = {}) => ({ kcal: 2050, protein: 140, belowBmr: false, ...o })
+    it('dua baris: tidur semalem + rata-rata, makan + protein', () => {
+      const w = mountIt({ body: body({ sleep: sleep(), food: food() }) })
+      expect(w.find('[data-test="hb-sleep"]').text()).toBe('Tidur semalem 6 j 43 m · rata-rata 6 j 20 m')
+      expect(w.find('[data-test="hb-food"]').text()).toBe('Makan ±2.050 kkal · protein ±140 g')
+      expect(w.find('[data-test="hb-food-kcal"]').classes()).not.toContain('warn')
+    })
+    it('null: barisnya nggak ada', () => {
+      const w = mountIt({ body: body({ sleep: null, food: null }) })
+      expect(w.find('[data-test="hb-sleep"]').exists()).toBe(false)
+      expect(w.find('[data-test="hb-food"]').exists()).toBe(false)
+      expect(mountIt().find('[data-test="hb-sleep"]').exists()).toBe(false)
+    })
+    it('nights 1: tanpa rata-rata; tidur bukan hari ini: kemarin / tanggal', () => {
+      expect(mountIt({ body: body({ sleep: sleep({ nights: 1 }) }) }).find('[data-test="hb-sleep"]').text()).toBe('Tidur semalem 6 j 43 m')
+      expect(mountIt({ body: body({ sleep: sleep({ lastOn: '2026-11-18', nights: 1 }) }) }).find('[data-test="hb-sleep"]').text()).toBe('Tidur kemarin 6 j 43 m')
+      expect(mountIt({ body: body({ sleep: sleep({ lastOn: '2026-11-17', nights: 1 }) }) }).find('[data-test="hb-sleep"]').text()).toMatch(/^Tidur \S+, 17 Nov 6 j 43 m$/)
+    })
+    it('protein null ilang; belowBmr: kalori warn', () => {
+      const w = mountIt({ body: body({ food: food({ protein: null, belowBmr: true }) }) })
+      expect(w.find('[data-test="hb-food"]').text()).toBe('Makan ±2.050 kkal')
+      expect(w.find('[data-test="hb-food-kcal"]').classes()).toContain('warn')
+    })
+  })
 })

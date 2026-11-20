@@ -28,6 +28,8 @@
           <svg class="hb-spark" viewBox="0 0 300 36" preserveAspectRatio="none" data-test="hb-spark"><path :d="path" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" /></svg>
           <div class="hb-cap">lemak · rata-rata 7 hari · 30 hari terakhir</div>
         </template>
+        <div v-if="sleepText" class="hb-line" data-test="hb-sleep">{{ sleepText }}</div>
+        <div v-if="body.food" class="hb-line" data-test="hb-food">Makan <span data-test="hb-food-kcal" :class="{ warn: body.food.belowBmr }">±{{ fmt(body.food.kcal, 0) }} kkal</span><template v-if="body.food.protein != null"> · protein ±{{ fmt(body.food.protein, 0) }} g</template></div>
       </div>
     </div>
   </div>
@@ -38,7 +40,8 @@ import { computed } from 'vue'
 import { useIonRouter } from '@ionic/vue'
 import { PhCaretRight } from '@phosphor-icons/vue'
 import { fmt } from '@/lib/badan.js'
-import { avgLabel, deltaView, headerSub, reachView } from '@/lib/badanView.js'
+import { avgLabel, dayWord, deltaView, headerSub, reachView } from '@/lib/badanView.js'
+import { durL } from '@/lib/badanSleep.js'
 
 const props = defineProps({
   body: { type: Object, default: null },
@@ -66,6 +69,13 @@ const note = computed(() => {
   if (g.state === 'below') return { tone: 'warn', text: `di bawah kisaran ${range}` }
   if (g.state === 'above') return { tone: 'warn', text: `di atas kisaran ${range}` }
   return { tone: 'neutral', text: `kurang ${fmt(g.left, 1)} kg ke ${fmt(g.goal, 0)}` }
+})
+
+const sleepText = computed(() => {
+  const s = props.body?.sleep
+  if (!s) return ''
+  const when = s.lastOn === props.today ? 'semalem' : dayWord(s.lastOn, props.today)
+  return `Tidur ${when} ${durL(s.totalMin)}${s.nights >= 2 ? ` · rata-rata ${durL(s.avg7Min)}` : ''}`
 })
 
 const path = computed(() => {
@@ -100,5 +110,8 @@ const path = computed(() => {
 :root.theme-dark .hb-d.warn { color: var(--amber); }
 .hb-spark { display: block; width: 100%; height: 36px; margin-top: 10px; color: var(--muted); }
 .hb-cap { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.hb-line { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.hb-line .warn { color: #C27C00; font-weight: 800; }
+:root.theme-dark .hb-line .warn { color: var(--amber); }
 @media (hover: hover) { .hb-card:hover { background: rgba(127, 127, 120, .05); } }
 </style>
