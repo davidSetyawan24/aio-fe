@@ -1,6 +1,6 @@
 <template>
   <ion-app>
-    <AppSplash v-if="showSplash" />
+    <AppSplash v-if="showSplash" :gym-program="gymDraft?.program ?? null" />
     <ion-split-pane v-else content-id="main" when="md" :disabled="isLogin">
       <!-- Sidebar cuma buat iPad/Mac (split-pane ≥768px). Gesture geser dimatiin: di iPhone itu kebiasaan "back". -->
       <ion-menu content-id="main" type="overlay" :disabled="isLogin" :swipe-gesture="false">
@@ -25,8 +25,8 @@
 </template>
 
 <script setup>
-import { computed, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, watch, watchEffect } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { IonApp, IonMenu, IonRouterOutlet, IonSplitPane } from '@ionic/vue'
 import AioLogo from '@/components/AioLogo.vue'
 import AppSplash from '@/components/AppSplash.vue'
@@ -36,13 +36,20 @@ import { PhCaretRight } from '@phosphor-icons/vue'
 import { tabItems } from '@/modules/registry.js'
 import { setStatusBarColor, statusBarColor } from '@/lib/theme.js'
 import { showToast } from '@/lib/personalForm.js'
+import { retryConnection } from '@/lib/retryConnection.js'
+import { GYM_LIVE_PATH } from '@/router/guard.js'
 import { useAuthStore } from '@/stores/auth.js'
-import { useGymStore } from '@/stores/gym.js'
+import { peekLiveDraft, useGymStore } from '@/stores/gym.js'
 import { useThemeStore } from '@/stores/theme.js'
 
 const auth = useAuthStore()
 const route = useRoute()
-const showSplash = computed(() => auth.status === 'unknown' || auth.status === 'offline')
+const router = useRouter()
+const gym = useGymStore()
+// Server nggak kejangkau tapi ada sesi Gym jalan di HP ini → halaman sesi live tetep jalan dari draf (set nggak boleh ilang gara-gara sinyal).
+const gymDraft = computed(() => (auth.status === 'offline' ? (gym.live ?? peekLiveDraft()) : null))
+const offlineGym = computed(() => !!gymDraft.value && route.path === GYM_LIVE_PATH)
+const showSplash = computed(() => auth.status === 'unknown' || (auth.status === 'offline' && !offlineGym.value))
 const isLogin = computed(() => route.path === '/login')
 // Sidebar iPad/Mac: sama kayak tab bar, tapi Profil jadi kartu akun di bawah.
 const sideItems = tabItems().filter((t) => t.path !== '/tabs/profil')
@@ -52,8 +59,28 @@ const isActive = (path) => route.path === path || route.path.startsWith(`${path}
 const theme = useThemeStore()
 watchEffect(() => setStatusBarColor(document, statusBarColor(theme.resolved, isLogin.value || showSplash.value)))
 
+// Lagi offline (mis. sesi Gym dari draf) lalu sinyal balik / app balik keliatan → cek login lagi (401 → login, draf tetep di HP).
+let rechecking = false
+async function recheck() {
+  if (auth.status !== 'offline' || rechecking) return
+  rechecking = true
+  try {
+    await retryConnection(auth, router)
+  } finally {
+    rechecking = false
+  }
+}
+const onVisible = () => document.visibilityState === 'visible' && recheck()
+onMounted(() => {
+  window.addEventListener('online', recheck)
+  document.addEventListener('visibilitychange', onVisible)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('online', recheck)
+  document.removeEventListener('visibilitychange', onVisible)
+})
+
 // Kabar dari store Gym (mis. "Disambung ke sesi Push yang udah jalan") bisa muncul dari halaman mana aja → toast di sini, sekali per kabar.
-const gym = useGymStore()
 watch(
   () => gym.notice?.id,
   () => gym.notice && showToast(gym.notice.text),

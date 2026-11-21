@@ -5,6 +5,7 @@ import AgendaPage from '@/views/AgendaPage.vue'
 import BayarRutinFormPage from '@/views/BayarRutinFormPage.vue'
 import BayarRutinPage from '@/views/BayarRutinPage.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { peekLiveDraft } from '@/stores/gym.js'
 import BudgetPage from '@/views/BudgetPage.vue'
 import CategoryFormPage from '@/views/CategoryFormPage.vue'
 import CctvPage from '@/views/CctvPage.vue'
@@ -61,8 +62,9 @@ const routes = [
 
 export const router = createRouter({ history: createWebHistory(), routes })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   const auth = useAuthStore()
   if (auth.status === 'unknown') await auth.check()
-  return decideNavigation(to, auth.status)
+  const offline = auth.status === 'offline'
+  return decideNavigation(to, auth.status, { gymDraft: offline && !!peekLiveDraft(), first: !from.matched.length })
 })

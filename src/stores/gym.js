@@ -56,6 +56,11 @@ export function setGymUid(fn) {
   uid = fn
 }
 
+/** Draf sesi live di HP ini (tanpa jaringan, tanpa ngubah store) — buat App/router pas server nggak kejangkau. */
+export function peekLiveDraft() {
+  return loadDraft(storage)
+}
+
 // Hal-hal per store yang bukan state (kunci antrian, timer, hantu sesi yang dibuang offline).
 const RUNTIME = new WeakMap()
 function rt(store) {

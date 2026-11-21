@@ -1,4 +1,4 @@
-import { decideNavigation } from './guard.js'
+import { GYM_LIVE_PATH, decideNavigation } from './guard.js'
 
 const to = (fullPath, meta = {}) => {
   const [path, qs] = fullPath.split('?')
@@ -25,5 +25,23 @@ describe('decideNavigation', () => {
   it('does not redirect while offline or unknown (the splash handles it)', () => {
     expect(decideNavigation(to('/tabs/duit'), 'offline')).toBe(true)
     expect(decideNavigation(to('/tabs/duit'), 'unknown')).toBe(true)
+  })
+
+  describe('offline + ada draf sesi Gym di HP', () => {
+    it('buka app (navigasi pertama) → langsung ke sesi live', () => {
+      expect(GYM_LIVE_PATH).toBe('/tabs/menu/gym/sesi')
+      expect(decideNavigation(to('/tabs/home'), 'offline', { gymDraft: true, first: true })).toEqual({ path: GYM_LIVE_PATH })
+    })
+    it('udah di sesi live → lanjut', () => {
+      expect(decideNavigation(to(GYM_LIVE_PATH), 'offline', { gymDraft: true, first: true })).toBe(true)
+    })
+    it('pindah halaman di tengah jalan → nggak dipaksa balik (App nampilin layar offline + tombol lanjut sesi)', () => {
+      expect(decideNavigation(to('/tabs/menu/gym'), 'offline', { gymDraft: true, first: false })).toBe(true)
+    })
+    it('tanpa draf / udah login / belum login → aturan biasa', () => {
+      expect(decideNavigation(to('/tabs/home'), 'offline', { gymDraft: false, first: true })).toBe(true)
+      expect(decideNavigation(to('/tabs/home'), 'authed', { gymDraft: true, first: true })).toBe(true)
+      expect(decideNavigation(to('/tabs/home'), 'guest', { gymDraft: true, first: true })).toEqual({ path: '/login', query: { redirect: '/tabs/home' } })
+    })
   })
 })
