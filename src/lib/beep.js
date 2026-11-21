@@ -7,7 +7,7 @@ export function unlockAudio() {
     const AC = window.AudioContext || window.webkitAudioContext
     if (!AC) return
     ctx = ctx || new AC()
-    if (ctx.state !== 'running') ctx.resume()
+    if (ctx.state !== 'running') ctx.resume()?.catch?.(() => {})
   } catch {
     // tanpa suara: timer tetep jalan
   }
@@ -16,7 +16,7 @@ export function unlockAudio() {
 export function beep() {
   try {
     if (ctx) {
-      if (ctx.state !== 'running') ctx.resume()
+      if (ctx.state !== 'running') ctx.resume()?.catch?.(() => {})
       ;[0, 0.22, 0.44].forEach((t, i) => {
         const at = ctx.currentTime + t
         const o = ctx.createOscillator()
