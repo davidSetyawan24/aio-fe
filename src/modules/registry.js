@@ -30,6 +30,8 @@ export const modules = [
   // 14/11 malem: kalender pribadi, detailnya dibahas nanti.
   // 19/11: timbangan Zepp (upload gambar / isi manual), rata-rata 7 hari, target, grafik.
   { key: 'badan', label: 'Badan', emoji: '⚖️', tint: '#E4F7C4', category: 'kesehatan', status: 'ready' },
+  // 21/11: catat latihan (PPLUL), timer istirahat, ringkasan, riwayat, grafik per gerakan.
+  { key: 'gym', label: 'Gym', emoji: '🏋️', tint: '#FFE9D6', category: 'kesehatan', status: 'ready' },
   // 18/11: dokumen (KTP, SIM, paspor, STNK…), biodata & alamat — dikunci PIN, isinya dienkripsi di server.
   { key: 'data-pribadi', label: 'Data Pribadi', emoji: '🪪', tint: '#DCEBFF', category: 'pribadi', status: 'ready' },
   // 18/11: liat 2 kamera rumah live — cuma dari Chrome di Mac, lewat app mini "AIO CCTV" di Mac itu (server AIO nggak ikut).

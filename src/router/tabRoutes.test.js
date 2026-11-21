@@ -30,13 +30,14 @@ const personalStub = { render: () => null }
 const personalSubStub = { render: () => null }
 const cctvStub = { render: () => null }
 const badanSubStub = { render: () => null }
+const gymStubs = Object.fromEntries(['GymPage', 'GymLivePage', 'GymSummaryPage', 'GymHistoryPage', 'GymSessionPage', 'GymChartPage', 'GymProgramPage'].map((k) => [k, { render: () => null }]))
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
   CategoryPage: categoryStub, CategoryFormPage: categoryFormStub, DuitPage: duitStub, ExpenseFormPage: expenseFormStub,
   BudgetPage: budgetStub, SplitBillPage: splitStub, SplitBillDetailPage: splitDetailStub, SplitBillFormPage: splitFormStub, AgendaPage: agendaStub, AgendaFormPage: agendaFormStub,
   BayarRutinPage: billsStub, BayarRutinFormPage: billFormStub, UangPage: uangStub,
-  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub, CctvPage: cctvStub, BadanSubPage: badanSubStub,
+  InvoicePage: invoiceStub, InvoiceDetailPage: invoiceDetailStub, InvoiceSettingsPage: invoiceSettingsStub, InvoiceFormPage: invoiceFormStub, HomePage: homeStub, PersonalPage: personalStub, PersonalSubPage: personalSubStub, CctvPage: cctvStub, BadanSubPage: badanSubStub, ...gymStubs,
 })
 const find = (path) => routes.find((r) => r.path === path)
 
@@ -196,5 +197,22 @@ describe('buildTabRoutes', () => {
 
   it('redirects the empty tab path to Beranda', () => {
     expect(find('').redirect).toBe('/tabs/home')
+  })
+
+  it('Gym: halaman sendiri + rute anak, tab bar disembunyiin cuma di layar sesi', () => {
+    expect(find('menu/gym').component).toBe(gymStubs.GymPage)
+    const expected = {
+      'menu/gym/sesi': gymStubs.GymLivePage,
+      'menu/gym/selesai/:id': gymStubs.GymSummaryPage,
+      'menu/gym/riwayat': gymStubs.GymHistoryPage,
+      'menu/gym/riwayat/:id': gymStubs.GymSessionPage,
+      'menu/gym/riwayat/:id/ubah': gymStubs.GymSessionPage,
+      'menu/gym/grafik': gymStubs.GymChartPage,
+      'menu/gym/program': gymStubs.GymProgramPage,
+    }
+    for (const [path, comp] of Object.entries(expected)) expect(find(path).component, path).toBe(comp)
+    expect(find('menu/gym/sesi').meta.hideTabs).toBe(true)
+    for (const path of Object.keys(expected).filter((p) => p !== 'menu/gym/sesi')) expect(find(path).meta?.hideTabs, path).toBeFalsy()
+    expect(find('menu/gym').meta?.hideTabs).toBeFalsy()
   })
 })

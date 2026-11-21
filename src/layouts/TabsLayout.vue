@@ -2,7 +2,7 @@
   <ion-page>
     <ion-tabs>
       <ion-router-outlet />
-      <ion-tab-bar slot="bottom">
+      <ion-tab-bar v-show="!route.meta.hideTabs" slot="bottom">
         <ion-tab-button v-for="item in tabs" :key="item.path" :tab="item.path" :href="item.path">
           <span class="tb"><component :is="item.icon" :size="22" :weight="isActive(item.path) ? 'fill' : 'light'" /></span>
           {{ item.label }}

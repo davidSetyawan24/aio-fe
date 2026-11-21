@@ -11,6 +11,13 @@ import CctvPage from '@/views/CctvPage.vue'
 import HomePage from '@/views/HomePage.vue'
 import BadanPage from '@/views/BadanPage.vue'
 import BadanSubPage from '@/views/BadanSubPage.vue'
+import GymPage from '@/views/GymPage.vue'
+import GymLivePage from '@/views/GymLivePage.vue'
+import GymSummaryPage from '@/views/GymSummaryPage.vue'
+import GymHistoryPage from '@/views/GymHistoryPage.vue'
+import GymSessionPage from '@/views/GymSessionPage.vue'
+import GymChartPage from '@/views/GymChartPage.vue'
+import GymProgramPage from '@/views/GymProgramPage.vue'
 import PersonalPage from '@/views/PersonalPage.vue'
 import PersonalSubPage from '@/views/PersonalSubPage.vue'
 import InvoicePage from '@/views/InvoicePage.vue'
@@ -46,6 +53,7 @@ const routes = [
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
       CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage, BadanSubPage,
+      GymPage, GymLivePage, GymSummaryPage, GymHistoryPage, GymSessionPage, GymChartPage, GymProgramPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },
