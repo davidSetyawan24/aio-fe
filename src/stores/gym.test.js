@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
 import { GHOST_KEY, LIVE_KEY, OFFLINE_TEXT, OfflineError, load as loadDraft, loadGhosts } from '@/lib/gymLive.js'
-import { FLUSH_EVERY_MS, setGymApi, setGymStorage, setGymUid, useGymStore } from './gym.js'
+import { EXERCISES_KEY, FLUSH_EVERY_MS, setGymApi, setGymStorage, setGymUid, useGymStore } from './gym.js'
 
 const ex = (id, name, last = null) => ({ id, name, restSec: 120, step: 2.5, dumbbell: false, last, record: null })
 const EXERCISES = [
@@ -316,6 +316,26 @@ describe('gym store: load + draf HP', () => {
     storage.setItem(LIVE_KEY, JSON.stringify({ clientId: 'z', serverId: 5, items: [], queue: [{ op: 'del', key: 'a', serverId: 1 }] }))
     expect(store.restore()).toMatchObject({ clientId: 'z' })
     expect(store.pending).toBe(1)
+  })
+})
+
+describe('gym store: daftar gerakan kesimpen di HP (nama & rekor pas offline)', () => {
+  it('load → daftar gerakan disimpen; app dibuka lagi tanpa sinyal → masih kebaca', async () => {
+    expect(store.exercises).toEqual([])
+    await store.load()
+    expect(store.exercises).toEqual(EXERCISES)
+    setActivePinia(createPinia())
+    store = useGymStore()
+    api.get.mockRejectedValue(net())
+    store.restore()
+    expect(store.exercises).toEqual(EXERCISES)
+    await expect(store.load()).rejects.toThrow()
+    expect(store.exercises).toEqual(EXERCISES)
+  })
+  it('isi simpenan rusak → kosong, nggak error', () => {
+    storage.setItem(EXERCISES_KEY, '{rusak')
+    store.restore()
+    expect(store.exercises).toEqual([])
   })
 })
 

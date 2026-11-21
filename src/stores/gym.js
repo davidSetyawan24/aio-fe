@@ -22,6 +22,9 @@ import {
 
 export { OFFLINE_TEXT, OfflineError } from '@/lib/gymLive.js'
 
+/** Daftar gerakan terakhir dari server (nama, langkah, rekor) — biar sesi live tetep kebaca pas app dibuka tanpa sinyal. */
+export const EXERCISES_KEY = 'aio-gym-exercises'
+
 /** Antrian yang belum kekirim dicoba lagi tiap 15 detik. */
 export const FLUSH_EVERY_MS = 15000
 
@@ -83,6 +86,22 @@ const busy = (store) => !!store.live?.queue.length || ghostsOf(store).length > 0
 function persist(store) {
   saveDraft(storage, store.live)
   store.pending = store.live ? store.live.queue.filter((o) => o.op !== 'start').length : 0
+}
+
+function readExercises() {
+  try {
+    const list = JSON.parse(storage.getItem(EXERCISES_KEY) ?? 'null')
+    return Array.isArray(list) ? list : null
+  } catch {
+    return null
+  }
+}
+function saveExercises(list) {
+  try {
+    storage.setItem(EXERCISES_KEY, JSON.stringify(list ?? []))
+  } catch {
+    // penyimpenan penuh / dimatiin: cuma cadangan
+  }
 }
 
 function notify(store, text) {
@@ -169,11 +188,18 @@ function reconcile(store, data) {
 /** Gym: data `GET /gym`, sesi yang lagi jalan di HP ini (`live`), jumlah set yang belum kekirim, kabar buat toast. */
 export const useGymStore = defineStore('gym', {
   // `finishing`: lagi Selesai / Buang sesi → ✓ & ubah set ditolak (UI matiin tombolnya).
-  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false }),
+  // `exCache`: daftar gerakan simpenan HP, dipake kalau `data` belum ada (offline).
+  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false, exCache: null }),
+
+  getters: {
+    /** Daftar gerakan: dari server kalau udah dimuat, selain itu simpenan HP. */
+    exercises: (s) => s.data?.exercises ?? s.exCache ?? [],
+  },
 
   actions: {
     /** Buka draf sesi dari HP (tanpa jaringan) kalau di memori belum ada. */
     restore() {
+      if (!this.data && !this.exCache) this.exCache = readExercises()
       if (!this.live) {
         const draft = loadDraft(storage)
         if (draft) {
@@ -193,6 +219,7 @@ export const useGymStore = defineStore('gym', {
           const data = await gymApi.get('/gym')
           this.data = data
           this.loaded = true
+          saveExercises(data?.exercises)
           reconcile(this, data)
         })
       } finally {

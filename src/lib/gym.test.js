@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  agoText, bestSet, cmpSet, durText, e1rm, flatCount, forgotSuggest, kgText, livePr, prOf,
-  recordOf, restText, setText, volText, volume, weekStart, wibDate,
+  agoText, bestSet, clockText, cmpSet, durText, e1rm, flatCount, forgotSuggest, kgText, livePr, parseReps, parseWeight, prOf,
+  recordOf, restText, setText, stepValue, volText, volume, weekStart, wibDate, wibTime,
 } from './gym'
 
 const set = (id, w, r) => ({ id, exerciseId: 1, weight: w, reps: r, doneAt: '2026-11-02T11:00:00Z' })
@@ -68,6 +68,68 @@ describe('livePr', () => {
     expect(livePr([25, 9], rec, [25, 8]).kind).toBe('beban')
     expect(livePr([22.5, 9], rec, null)).toBeNull()
   })
+  it('ngalahin rekor tapi lebih jelek dari set terbaik sesi ini → null (toast cuma sekali)', () => {
+    expect(livePr([25, 6], rec, [25, 8])).toBeNull()
+    expect(livePr([22.5, 11], rec, [25, 5])).toBeNull()
+  })
+  it('cabang reps: beban yang pernah dipake + reps lebih banyak', () => {
+    expect(livePr([22.5, 11], rec, null)).toEqual({ kind: 'reps', set: [22.5, 11], prev: 10 })
+    expect(livePr([22.5, 11], rec, [22.5, 9])).toEqual({ kind: 'reps', set: [22.5, 11], prev: 10 })
+    expect(livePr([21, 15], rec, null)).toBeNull()
+  })
+})
+
+describe('prOf ngecek semua set (kayak BE)', () => {
+  const rec = { maxWeight: 25, repsAt: { 25: 6, 20: 10, 22.5: 8 } }
+  it('beban menang', () => {
+    expect(prOf([27.5, 5], rec, [[27.5, 5], [20, 12]])).toEqual({ kind: 'beban', set: [27.5, 5], prev: 25 })
+  })
+  it('reps dari set yang bukan terberat', () => {
+    expect(prOf([25, 5], rec, [[25, 5], [20, 12]])).toEqual({ kind: 'reps', set: [20, 12], prev: 10 })
+  })
+  it('beberapa set reps PR → ambil yang paling bagus', () => {
+    expect(prOf([25, 5], rec, [[25, 5], [20, 12], [22.5, 9]])).toEqual({ kind: 'reps', set: [22.5, 9], prev: 8 })
+  })
+  it('kunci desimal "22.5" cocok', () => {
+    expect(prOf([22.5, 9], { maxWeight: 22.5, repsAt: { '22.5': 8 } })).toEqual({ kind: 'reps', set: [22.5, 9], prev: 8 })
+  })
+  it('bawaan sets = [best]', () => {
+    expect(prOf([20, 12], rec)).toEqual({ kind: 'reps', set: [20, 12], prev: 10 })
+    expect(prOf([20, 12], null, [[20, 12]])).toBeNull()
+  })
+})
+
+describe('editor set', () => {
+  it('stepValue: ikut langkah, 2 desimal, min 0', () => {
+    expect(stepValue(22.5, 1, 2.5)).toBe(25)
+    expect(stepValue(22.5, -1, 2.5)).toBe(20)
+    expect(stepValue(0.1, -1, 2.5)).toBe(0)
+    expect(stepValue(2.2, 1, 0.1)).toBe(2.3)
+    expect(stepValue(null, 1, 2.5)).toBe(2.5)
+    expect(stepValue(8, -1, 1)).toBe(7)
+    expect(stepValue(0, -1, 1)).toBe(0)
+  })
+  it('parseWeight: koma / titik, kosong & ngaco → null', () => {
+    expect(parseWeight('102,5')).toBe(102.5)
+    expect(parseWeight('22,5')).toBe(22.5)
+    expect(parseWeight('22.5')).toBe(22.5)
+    expect(parseWeight(' 25 ')).toBe(25)
+    expect(parseWeight('2,')).toBe(2)
+    expect(parseWeight(',5')).toBe(0.5)
+    expect(parseWeight('')).toBeNull()
+    expect(parseWeight(',')).toBeNull()
+    expect(parseWeight('abc')).toBeNull()
+    expect(parseWeight('1,2,3')).toBeNull()
+    expect(parseWeight('-5')).toBeNull()
+    expect(parseWeight(null)).toBeNull()
+  })
+  it('parseReps: angka bulat aja', () => {
+    expect(parseReps('8')).toBe(8)
+    expect(parseReps(' 12 ')).toBe(12)
+    expect(parseReps('')).toBeNull()
+    expect(parseReps('8,5')).toBeNull()
+    expect(parseReps('x')).toBeNull()
+  })
 })
 
 describe('format', () => {
@@ -89,6 +151,13 @@ describe('format', () => {
   it('volText', () => {
     expect(volText(5642)).toBe('5.642')
     expect(volText(575.4)).toBe('575')
+  })
+  it('wibTime & clockText', () => {
+    expect(wibTime('2026-11-23T11:05:00.000Z')).toBe('18.05')
+    expect(wibTime('2026-11-17T17:30:00Z')).toBe('00.30')
+    expect(clockText(42 * 60 + 13)).toBe('00:42:13')
+    expect(clockText(3 * 3600 + 5)).toBe('03:00:05')
+    expect(clockText(-4)).toBe('00:00:00')
   })
   it('agoText', () => {
     expect(agoText('2026-11-20', '2026-11-21')).toBe('kemarin')

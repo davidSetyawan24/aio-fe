@@ -74,18 +74,24 @@ export function recordOf(exerciseId, sessions) {
   return maxWeight === null ? null : { maxWeight, repsAt }
 }
 
-// PR: beban menang atas reps; tanpa riwayat = bukan PR.
-export function prOf(best, rec) {
+// PR: beban menang; selain itu reps kalau ADA set dengan beban yang pernah dipake & reps lebih banyak
+// (yang paling bagus di antara set itu). Tanpa riwayat = bukan PR. Sama persis kayak BE.
+export function prOf(best, rec, sets = [best]) {
   if (!rec) return null
   if (best[0] > rec.maxWeight) return { kind: 'beban', set: best, prev: rec.maxWeight }
-  const old = rec.repsAt[String(best[0])]
-  if (old !== undefined && best[1] > old) return { kind: 'reps', set: best, prev: old }
-  return null
+  let found = null
+  for (const set of sets) {
+    const prev = rec.repsAt[String(set[0])]
+    if (prev === undefined || set[1] <= prev) continue
+    if (!found || cmpSet(set, found.set) > 0) found = { kind: 'reps', set, prev }
+  }
+  return found
 }
 
-// PR pas sesi live: ngalahin rekor DAN lebih bagus dari set terbaik sesi ini.
+// PR pas sesi live (set yang barusan dicentang): aturan PR yang sama DAN lebih bagus dari set terbaik
+// gerakan itu yang udah dicentang di sesi ini → toast cuma sekali per kenaikan.
 export function livePr(set, rec, bestSoFar) {
-  const pr = prOf(set, rec)
+  const pr = prOf(set, rec, [set])
   if (!pr) return null
   if (bestSoFar && cmpSet(set, bestSoFar) <= 0) return null
   return pr
@@ -106,6 +112,26 @@ export function forgotSuggest(startedAt, lastSetAt, now) {
   return new Date(Math.min(base, new Date(now).getTime())).toISOString()
 }
 
+// ---- Editor set ----
+
+// Tombol − / +: ikut langkah, dibulatin 2 desimal (biar nggak 2.3000000000000003), nggak bisa < 0.
+export function stepValue(v, dir, step) {
+  return Math.max(0, Math.round(((Number(v) || 0) + dir * step) * 100) / 100)
+}
+
+// Beban yang diketik: koma / titik desimal ('22,5' / '22.5'). Kosong / ngaco → null.
+export function parseWeight(text) {
+  const t = String(text ?? '').trim().replace(',', '.')
+  if (!/^(\d+\.?\d*|\.\d+)$/.test(t)) return null
+  return Number(t)
+}
+
+// Reps yang diketik: angka bulat aja. Kosong / ngaco → null.
+export function parseReps(text) {
+  const t = String(text ?? '').trim()
+  return /^\d+$/.test(t) ? Number(t) : null
+}
+
 // ---- Format tampilan (angka Indonesia: titik ribuan, koma desimal) ----
 
 function num(v, d) {
@@ -122,6 +148,16 @@ export function restText(sec) {
 }
 export const durText = (min) => (min >= 60 ? `${Math.floor(min / 60)} j ${min % 60} m` : `${min} m`)
 export const volText = (v) => num(Math.round(v), 0)
+
+// Jam WIB "18.05" dari waktu ISO.
+export const wibTime = (iso) => new Date(new Date(iso).getTime() + WIB_MS).toISOString().slice(11, 16).replace(':', '.')
+
+// Durasi jalan "00:42:13".
+export function clockText(sec) {
+  const s = Math.max(0, Math.floor(sec))
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(Math.floor(s / 3600))}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}`
+}
 
 export function agoText(on, today) {
   const days = Math.round((new Date(`${today}T00:00:00Z`) - new Date(`${on}T00:00:00Z`)) / DAY_MS)
