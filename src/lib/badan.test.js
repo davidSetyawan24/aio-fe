@@ -3,7 +3,7 @@ import {
   METRIC_KEYS, METRICS, BODY_TYPES, ARAH, bodyTypeFromZepp,
   avg7, count7, weekDelta, tone, startValue, progress, weightGoal, eta, etaFor,
   checkFlags, bodySummary,
-  suggestLevel, paceRange, paceStatus, paceEta, foodPlan, clockSpan, sleepSummary,
+  suggestLevel, effectiveActivity, paceRange, paceStatus, paceEta, foodPlan, clockSpan, sleepSummary,
   LEVEL_INFO, WORK_INFO, PACE_INFO, PACE_STATE, ADEC, METRIC_LABEL, UNIT, ARAH_INFO, CHART_ORDER, DEFAULT_ON, fmt, monthLabel,
 } from './badan.js'
 
@@ -263,5 +263,27 @@ describe('paceRange', () => {
     expect(paceRange('recomp', null, 70)).toBeNull()
     expect(paceRange('bulking', 'agresif', 70)).toBeNull()
     expect(paceRange('cutting', 'normal', 100)).toEqual({ lo: 0.5, hi: 0.75, mid: 0.625 })
+  })
+})
+
+describe('effectiveActivity', () => {
+  const base = { workType: 'sit', workHours: 8, workDays: 5, gymPerWeek: 2, gymMinutes: 60, otherSport: null, notes: null, level: 'light', levelManual: false }
+  const auto = { perWeek: 5, minutes: 70 }
+
+  it('tanpa auto / tanpa aktivitas → apa adanya', () => {
+    expect(effectiveActivity(base, null)).toBe(base)
+    expect(effectiveActivity(null, auto)).toBeNull()
+  })
+
+  it('auto ngegantiin gym & pengali ikut saran baru (light → active)', () => {
+    expect(effectiveActivity(base, auto)).toEqual({ ...base, gymPerWeek: 5, gymMinutes: 70, level: 'active' })
+  })
+
+  it('pengali pilihan sendiri nggak diganti, gym tetep diganti', () => {
+    expect(effectiveActivity({ ...base, level: 'sedentary', levelManual: true }, auto)).toEqual({ ...base, gymPerWeek: 5, gymMinutes: 70, level: 'sedentary', levelManual: true })
+  })
+
+  it('auto perWeek 0 sah', () => {
+    expect(effectiveActivity({ ...base, level: 'light' }, { perWeek: 0, minutes: 0 })).toMatchObject({ gymPerWeek: 0, gymMinutes: 0, level: 'sedentary' })
   })
 })

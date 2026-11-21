@@ -87,14 +87,15 @@
           </label>
         </div>
         <div class="bt-asub">Gym</div>
-        <div class="bf-grid">
+        <p v-if="store.gymAuto" class="bt-gymauto" data-test="gym-auto">{{ store.gymAuto.perWeek }}×/minggu · ±{{ store.gymAuto.minutes }} menit · dari Gym</p>
+        <div v-else class="bf-grid">
           <label v-for="f in GYM_FIELDS" :key="f.k" class="bf-nf" :class="{ bad: errors[f.k] }">
             <span class="lb">{{ f.lb }}</span>
             <span class="iw"><input v-model="form[f.k]" class="bf-in" inputmode="numeric" :aria-label="f.lb" :data-test="f.t" autocomplete="off" @input="clear(f.k)" @keydown.enter.prevent="focusNext" /><em>{{ f.u }}</em></span>
             <span v-if="errors[f.k]" class="em-err" :data-test="`err-${f.k}`">{{ errors[f.k] }}</span>
           </label>
         </div>
-        <p class="bf-hint">Nanti otomatis dari Fitness Tracker.</p>
+        <p v-if="!store.gymAuto" class="bf-hint">Nanti otomatis dari Fitness Tracker.</p>
         <div class="bt-asub">Olahraga lain <small>opsional</small></div>
         <label class="bf-nf" :class="{ bad: errors.otherSport }">
           <span class="iw"><input v-model="form.otherSport" class="bf-in bt-txt" maxlength="120" placeholder="misal futsal Sabtu 2 jam" aria-label="Olahraga lain" data-test="a-other" autocomplete="off" @input="clear('otherSport')" @keydown.enter.prevent="focusNext" /></span>
@@ -178,7 +179,7 @@ const cut = computed(() => form.arah === 'cutting')
 const paceKeys = computed(() => Object.keys(PACES[form.arah] ?? {}))
 const speed = computed(() => speedPreview(form, props.summary?.weight ?? null, props.summary?.lastOn ?? null))
 const pctText = computed(() => `${speed.value.pct.map(fmtN).join('–')}%`)
-const level = computed(() => levelFor(form))
+const level = computed(() => levelFor(form, store.gymAuto))
 const food = computed(() => {
   const used = level.value.used
   // foodPlan nggak ngecek kecepatan yang nggak ada buat arahnya (mis. Bulking + Agresif) → jaga di sini juga.
@@ -283,9 +284,9 @@ async function run(kind, job, message, { reload = false } = {}) {
 function save() {
   if (busy.value) return
   for (const k of Object.keys(errors)) delete errors[k]
-  Object.assign(errors, targetErrors(form), activityErrors(form))
+  Object.assign(errors, targetErrors(form), activityErrors(form, store.gymAuto))
   if (Object.keys(errors).length) return doShake()
-  const activity = activityPayload(form)
+  const activity = activityPayload(form, store.gymAuto)
   const target = targetPayload(form)
   return run(
     'save',

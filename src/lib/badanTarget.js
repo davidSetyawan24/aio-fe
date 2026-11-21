@@ -14,6 +14,9 @@ const MOVING = new Set(['cutting', 'bulking'])
 /** Kolom angka aktivitas → rentang (sama kayak server, semua bilangan bulat). */
 const ACT_NUMS = { workHours: [0, 16], workDays: [0, 7], gymPerWeek: [0, 14], gymMinutes: [0, 300] }
 
+/** Kolom gym: kalau Gym punya angka otomatis, kolom ini disembunyiin & nggak dicek. */
+const GYM_KEYS = ['gymPerWeek', 'gymMinutes']
+
 /** Target + aktivitas dari server (boleh null) → isian form. */
 export function targetToForm(target, activity) {
   return {
@@ -75,40 +78,44 @@ const activityEmpty = (form) =>
   blank(form.workType) && Object.keys(ACT_NUMS).every((k) => blank(form[k])) && blank(form.otherSport) && blank(form.notes) && !form.levelManual
 
 /** Pesan per kolom aktivitas; `{}` = lolos (termasuk kalau kosong semua — aktivitas boleh nggak diisi). */
-export function activityErrors(form) {
+export function activityErrors(form, gymAuto = null) {
   if (activityEmpty(form)) return {}
   const out = {}
   if (!WORK_TYPES.includes(form.workType)) out.workType = 'Wajib diisi.'
   for (const [k, [lo, hi]] of Object.entries(ACT_NUMS)) {
+    if (gymAuto && GYM_KEYS.includes(k)) continue
     const v = actNum(form, k)
     if (v === null) out[k] = 'Wajib diisi.'
     else if (Number.isNaN(v)) out[k] = 'Angkanya nggak valid.'
     else if (v < lo || v > hi) out[k] = outOfRange(lo, hi)
     else if (!Number.isInteger(v)) out[k] = 'Angkanya harus bulat.'
   }
-  if (form.levelManual && !levelFor(form).used) out.level = 'Wajib diisi.'
+  if (form.levelManual && !levelFor(form, gymAuto).used) out.level = 'Wajib diisi.'
   return out
 }
 
 /** Pengali: saran dari kerja + gym (null kalau isiannya belum lengkap) & yang dipakai (ikut saran kecuali dipilih sendiri). */
-export function levelFor(form) {
-  const ready = WORK_TYPES.includes(form.workType) && ['workHours', 'workDays', 'gymPerWeek'].every((k) => validNum(form, k))
+export function levelFor(form, gymAuto = null) {
+  const need = gymAuto ? ['workHours', 'workDays'] : ['workHours', 'workDays', 'gymPerWeek']
+  const ready = WORK_TYPES.includes(form.workType) && need.every((k) => validNum(form, k))
   const suggested = ready
-    ? suggestLevel({ workType: form.workType, workHours: actNum(form, 'workHours'), workDays: actNum(form, 'workDays'), gymPerWeek: actNum(form, 'gymPerWeek') })
+    ? suggestLevel({ workType: form.workType, workHours: actNum(form, 'workHours'), workDays: actNum(form, 'workDays'), gymPerWeek: gymAuto ? gymAuto.perWeek : actNum(form, 'gymPerWeek') })
     : null
   return { suggested, used: form.levelManual ? form.level || null : suggested }
 }
 
 /** Body PUT /body/activity, atau null kalau bagian aktivitas kosong semua. Panggil abis `activityErrors` lolos. */
-export function activityPayload(form) {
+export function activityPayload(form, gymAuto = null) {
   if (activityEmpty(form)) return null
   const text = (s) => String(s ?? '').trim() || null
+  // Kolom gym disembunyiin pas ada angka otomatis: dikirim apa adanya (kosong → 0). Server tetep pakai angka otomatis selama aktif.
+  const num = (k) => (gymAuto && GYM_KEYS.includes(k) ? actNum(form, k) || 0 : actNum(form, k))
   return {
     workType: form.workType,
-    ...Object.fromEntries(Object.keys(ACT_NUMS).map((k) => [k, actNum(form, k)])),
+    ...Object.fromEntries(Object.keys(ACT_NUMS).map((k) => [k, num(k)])),
     otherSport: text(form.otherSport),
     notes: text(form.notes),
-    level: levelFor(form).used,
+    level: levelFor(form, gymAuto).used,
     levelManual: Boolean(form.levelManual),
   }
 }

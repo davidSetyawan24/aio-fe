@@ -118,3 +118,37 @@ describe('speedPreview', () => {
     expect(speedPreview({ ...form, arah: 'recomp' }, 74.9, '2026-11-20')).toBeNull()
   })
 })
+
+describe('dengan gym otomatis', () => {
+  const auto = { perWeek: 5, minutes: 70 }
+  const sit = { workType: 'sit', workHours: '8', workDays: '5' }
+  const form = (extra = {}) => ({ ...targetToForm(null, null), ...sit, ...extra })
+
+  it('levelFor pakai perWeek dari auto, bukan isian gym', () => {
+    expect(levelFor(form({ gymPerWeek: '2', gymMinutes: '60' }), auto)).toEqual({ suggested: 'active', used: 'active' })
+    expect(levelFor(form({ gymPerWeek: '2', gymMinutes: '60' }))).toEqual({ suggested: 'light', used: 'light' })
+  })
+
+  it('levelFor: kolom gym kosong tetep ada saran kalau ada auto', () => {
+    expect(levelFor(form(), auto).suggested).toBe('active')
+  })
+
+  it('activityErrors: kolom gym kosong / ngaco nggak dicek', () => {
+    expect(activityErrors(form(), auto)).toEqual({})
+    expect(activityErrors(form({ gymPerWeek: 'abc', gymMinutes: '999' }), auto)).toEqual({})
+    expect(activityErrors(form())).toEqual({ gymPerWeek: 'Wajib diisi.', gymMinutes: 'Wajib diisi.' })
+  })
+
+  it('activityErrors: kolom lain tetep dicek', () => {
+    expect(activityErrors(form({ workHours: '' }), auto)).toEqual({ workHours: 'Wajib diisi.' })
+  })
+
+  it('activityPayload: gym kosong → 0, ada angka → angkanya', () => {
+    expect(activityPayload(form(), auto)).toMatchObject({ gymPerWeek: 0, gymMinutes: 0, level: 'active', levelManual: false })
+    expect(activityPayload(form({ gymPerWeek: '2', gymMinutes: '60' }), auto)).toMatchObject({ gymPerWeek: 2, gymMinutes: 60 })
+  })
+
+  it('payload tanpa auto nggak berubah (null kalau kosong semua)', () => {
+    expect(activityPayload(targetToForm(null, null), auto)).toBeNull()
+  })
+})

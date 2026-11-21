@@ -250,6 +250,13 @@ export function suggestLevel(a) {
   return 'very_active'
 }
 
+/** Isian aktivitas yang beneran dipakai: kalau Gym punya angka otomatis, kali/minggu & menit/sesi diganti dia (kembar BE `effectiveActivity`). */
+export function effectiveActivity(activity, auto) {
+  if (!activity || !auto) return activity
+  const next = { ...activity, gymPerWeek: auto.perWeek, gymMinutes: auto.minutes }
+  return { ...next, level: next.levelManual ? next.level : suggestLevel(next) }
+}
+
 export function paceRange(arah, pace, weight) {
   const r = PACES[arah]?.[pace]
   if (!r) return null

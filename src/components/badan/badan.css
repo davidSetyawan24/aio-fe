@@ -384,6 +384,7 @@ select.bf-in { -webkit-appearance: none; appearance: none; cursor: pointer; font
 .bt-ferr { margin: 6px 8px 0; font-size: 11px; font-weight: 700; color: var(--red); line-height: 1.3; }
 .bt-asub { font-size: 13px; font-weight: 800; margin: 14px 8px 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .bt-asub small { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.bt-gymauto { margin: 0 8px; padding: 12px 14px; border-radius: 14px; background: var(--card); box-shadow: 0 0 0 1px var(--hair); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .bf-in.bt-txt { font-size: 15px; font-weight: 600; }
 textarea.bt-ta { display: block; min-height: 64px; resize: none; font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: 0; }
 .bt-mults { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 22px; background: var(--soft); }

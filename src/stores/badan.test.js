@@ -115,6 +115,19 @@ describe('badan store', () => {
     expect(store.paceEtaInfo).toEqual({ goal: 69, now: null, plan: '2027-02' })
   })
 
+  it('load: gymAuto dari server (default null) & makan pakai pengali dari server', async () => {
+    const weighings = ['2026-11-14', '2026-11-15'].map((d, i) => w(i + 1, d, '06:40', { weight: 74.9, fat: 25.6, muscle: null, bmr: 1650 }))
+    const target = { arah: 'recomp', pace: null, fat: null, muscle: null, weightMin: null, weightMax: null, startedOn: '2026-11-14' }
+    const activity = { workType: 'sit', workHours: 8, workDays: 5, gymPerWeek: 5, gymMinutes: 70, otherSport: null, notes: null, level: 'active', levelManual: false }
+    api.get.mockResolvedValue({ weighings, target, activity, sleeps: [] })
+    await store.load()
+    expect(store.gymAuto).toBeNull()
+    api.get.mockResolvedValue({ weighings, target, activity, gymAuto: { perWeek: 5, minutes: 70 }, sleeps: [] })
+    await store.load()
+    expect(store.gymAuto).toEqual({ perWeek: 5, minutes: 70 })
+    expect(store.food).toMatchObject({ state: 'ok', level: 'active', mult: 1.55 })
+  })
+
   it('saveActivity: PUT tanpa muat ulang', async () => {
     await store.saveActivity({ workType: 'sit' })
     expect(api.put).toHaveBeenCalledWith('/body/activity', { workType: 'sit' })

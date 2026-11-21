@@ -19,7 +19,7 @@ const DAVID_TARGET = { arah: 'cutting', pace: 'normal', fat: 20, muscle: 55, wei
 let api
 let mounted
 let host
-function make(props = {}, { rows = [], activity = null } = {}) {
+function make(props = {}, { rows = [], activity = null, gymAuto = null } = {}) {
   host = document.createElement('ion-app')
   document.body.appendChild(host)
   api = { get: vi.fn(async () => ({ weighings: [], target: null })), post: vi.fn(), patch: vi.fn(), put: vi.fn(async () => ({})), del: vi.fn(async () => ({})) }
@@ -28,6 +28,7 @@ function make(props = {}, { rows = [], activity = null } = {}) {
   const store = useBadanStore()
   store.weighings = rows
   store.activity = activity
+  store.gymAuto = gymAuto
   mounted = mount(BadanTargetSheet, { props: { open: true, target, summary, ...props }, attachTo: document.body })
   return mounted
 }
@@ -48,6 +49,9 @@ const submit = async () => {
   q('[data-test="target-form"]').dispatchEvent(new Event('submit', { cancelable: true }))
   await flushPromises()
 }
+
+const AUTO = { perWeek: 5, minutes: 70 }
+const withAuto = () => make({ target: DAVID_TARGET, summary: bodySummary(DAVID_ROWS, DAVID_TARGET) }, { rows: DAVID_ROWS, activity: DAVID_ACT, gymAuto: AUTO })
 
 beforeEach(() => toast.mockReset())
 afterEach(() => {
@@ -303,6 +307,34 @@ describe('BadanTargetSheet', () => {
       expect(api.put).toHaveBeenCalledTimes(1)
       expect(text('[data-test="err-workHours"]')).toBe('Angkanya di luar rentang wajar (0–16).')
       expect(mounted.emitted('close')).toBeFalsy()
+    })
+  })
+
+  describe('gym otomatis', () => {
+    it('ada gymAuto → kolom Kali/minggu & Menit/sesi diganti teks, sub-judul Gym tetep', () => {
+      withAuto()
+      expect(q('[data-test="a-gym"]')).toBeNull()
+      expect(q('[data-test="a-min"]')).toBeNull()
+      expect(text('[data-test="gym-auto"]')).toBe('5×/minggu · ±70 menit · dari Gym')
+      expect(text('.bt-sheet')).toContain('Gym')
+    })
+
+    it('gymAuto null → kolom biasa', () => {
+      david()
+      expect(q('[data-test="a-gym"]')).not.toBeNull()
+      expect(q('[data-test="a-min"]')).not.toBeNull()
+      expect(q('[data-test="gym-auto"]')).toBeNull()
+    })
+
+    it('simpen: gym dikirim apa adanya dari form (kosong → 0), muat ulang abis simpen', async () => {
+      make({ target: DAVID_TARGET }, { rows: DAVID_ROWS, gymAuto: AUTO })
+      await tap('[data-work="sit"]')
+      await type('[data-test="a-hours"]', '8')
+      await type('[data-test="a-days"]', '5')
+      await submit()
+      expect(api.put.mock.calls[0][0]).toBe('/body/activity')
+      expect(api.put.mock.calls[0][1]).toMatchObject({ gymPerWeek: 0, gymMinutes: 0, level: 'active', levelManual: false })
+      expect(api.get).toHaveBeenCalledWith('/body')
     })
   })
 })

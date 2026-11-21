@@ -25,7 +25,7 @@ const blankProfile = () => ({ height: null, age: null, gender: null })
 
 /** Badan: timbangan (terbaru dulu), target, aktivitas, tidur, profil. 409 (udah ada) dilempar apa adanya sebagai ApiError. */
 export const useBadanStore = defineStore('badan', {
-  state: () => ({ weighings: [], target: null, activity: null, sleeps: [], profile: blankProfile(), loaded: false }),
+  state: () => ({ weighings: [], target: null, activity: null, gymAuto: null, sleeps: [], profile: blankProfile(), loaded: false }),
 
   getters: {
     rows: (state) => state.weighings,
@@ -41,6 +41,7 @@ export const useBadanStore = defineStore('badan', {
       return this.sleepsSorted[0] ?? null
     },
     sleepSum: (state) => sleepSummary(state.sleeps),
+    /** `activity` dari server udah efektif (gym & pengali diganti angka otomatis kalau aktif), jadi langsung dipakai. */
     food: (state) => foodPlan(state.weighings, state.target, state.activity),
     pace() {
       return this.summary ? paceStatus(this.target, this.weighings, this.summary.lastOn) : null
@@ -56,6 +57,7 @@ export const useBadanStore = defineStore('badan', {
       this.weighings = data?.weighings ?? []
       this.target = data?.target ?? null
       this.activity = data?.activity ?? null
+      this.gymAuto = data?.gymAuto ?? null
       this.sleeps = data?.sleeps ?? []
       this.profile = { ...blankProfile(), ...data?.profile }
       this.loaded = true
