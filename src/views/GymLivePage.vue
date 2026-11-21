@@ -357,12 +357,14 @@ function stopTick() {
   clearInterval(tick)
   tick = null
   clearTimeout(guardTimer)
+  guard.value = false
+  guardUntil = 0
   document.removeEventListener('visibilitychange', onVisible)
 }
 /** Balik keliatan (mis. dari Spotify): sisa waktu dihitung ulang dari jam selesai, kalau udah lewat → tanpa bunyi. */
 function onVisible() {
   now.value = Date.now()
-  checkTimer(false)
+  checkTimer(true)
 }
 
 let entered = false

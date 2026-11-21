@@ -13,9 +13,12 @@ const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navi
 const sheet = vi.hoisted(() => ({ present: vi.fn(), onDidDismiss: vi.fn() }))
 const sheetCreate = vi.hoisted(() => vi.fn())
 const toastCreate = vi.hoisted(() => vi.fn())
+const hooks = vi.hoisted(() => ({ enter: [], leave: [] }))
 vi.mock('@ionic/vue', async (importOriginal) => ({
   ...(await importOriginal()),
   useIonRouter: () => ionRouter,
+  onIonViewWillEnter: (fn) => hooks.enter.push(fn),
+  onIonViewWillLeave: (fn) => hooks.leave.push(fn),
   actionSheetController: { create: sheetCreate },
   toastController: { create: toastCreate },
 }))
@@ -99,6 +102,8 @@ function answer(data) {
 }
 
 beforeEach(() => {
+  hooks.enter.length = 0
+  hooks.leave.length = 0
   for (const f of Object.values(ionRouter)) if (typeof f === 'function' && f.mockReset) f.mockReset()
   sheetCreate.mockReset().mockResolvedValue(sheet)
   sheet.present.mockReset()
@@ -490,6 +495,38 @@ describe('GymLivePage: tap kedua abis ✓ (R12a)', () => {
     await sleep(420)
     await editor(w).find('[data-test="weight-plus"]').trigger('click')
     expect(editor(w).find('[data-test="weight"]').element.value).not.toBe(before)
+  })
+})
+
+describe('GymLivePage: guard nggak nyangkut', () => {
+  it('✓ lalu keluar halaman <350 ms lalu masuk lagi → editor bisa dipencet', async () => {
+    const w = await mountPage()
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    hooks.leave.forEach((f) => f())
+    hooks.enter.forEach((f) => f())
+    await flushPromises()
+    expect(w.find('.gl-guard').exists()).toBe(false)
+    const before = editor(w).find('[data-test="weight"]').element.value
+    await editor(w).find('[data-test="weight-plus"]').trigger('click')
+    expect(editor(w).find('[data-test="weight"]').element.value).not.toBe(before)
+  })
+})
+
+describe('GymLivePage: balik keliatan sesaat abis habis', () => {
+  it('visibilitychange <1,5 dtk abis habis → tetap bunyi sekali', async () => {
+    beep.mockReset()
+    visibility('visible')
+    const live = draft()
+    live.timer = { endAt: Date.now() + 150, total: 120, name: 'Shoulder Press', beeped: false }
+    const spy = vi.spyOn(globalThis, 'setInterval').mockImplementation(() => 0)
+    const w = await mountPage({ live })
+    spy.mockRestore()
+    await sleep(300)
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(beep).toHaveBeenCalledTimes(1)
+    expect(rest(w).classes()).toContain('done')
   })
 })
 
