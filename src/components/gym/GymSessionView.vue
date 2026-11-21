@@ -3,7 +3,7 @@
     <p v-if="!report && failed" class="gy-fail" data-test="failed">{{ failed }} <button type="button" @click="load">Coba lagi</button></p>
     <p v-else-if="!report" class="gy-wait" data-test="wait">Bentar ya…</p>
     <template v-else>
-      <GymSessionEdit v-if="editing" ref="edit" :key="report.session.id" :report="report" @saved="$emit('stop-edit')" />
+      <GymSessionEdit v-if="editing" ref="edit" :key="id" :report="report" @saved="$emit('stop-edit')" />
       <template v-else>
         <GymReport mode="detail" :report="report" />
         <div class="gy-btn2">

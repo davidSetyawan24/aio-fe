@@ -136,4 +136,27 @@ describe('GymSessionEdit', () => {
     expect(api.put).toHaveBeenCalledTimes(1)
     expect(q(w, 'save').attributes('disabled')).toBeDefined()
   })
+
+  it('jam nggak disentuh dikirim balik persis (detik ikut), cuma kg yang berubah', async () => {
+    const base = makeReport()
+    const r = makeReport({ session: { ...base.session, startedAt: '2026-11-23T11:05:12.000Z', endedAt: '2026-11-23T12:17:45.000Z' } })
+    const w = mk(r)
+    await rows(w)[0].find('[data-test="kg"]').setValue('27,5')
+    await q(w, 'form').trigger('submit')
+    await flushPromises()
+    const body = api.put.mock.calls[0][1]
+    expect(body.startedAt).toBe('2026-11-23T11:05:12.000Z')
+    expect(body.endedAt).toBe('2026-11-23T12:17:45.000Z')
+  })
+
+  it('jam yang diubah dihitung dari HH:MM, yang lain tetep asli', async () => {
+    const base = makeReport()
+    const w = mk(makeReport({ session: { ...base.session, startedAt: '2026-11-23T11:05:12.000Z', endedAt: '2026-11-23T12:17:45.000Z' } }))
+    await q(w, 'end').setValue('19:30')
+    await q(w, 'form').trigger('submit')
+    await flushPromises()
+    const body = api.put.mock.calls[0][1]
+    expect(body.startedAt).toBe('2026-11-23T11:05:12.000Z')
+    expect(body.endedAt).toBe('2026-11-23T12:30:00.000Z')
+  })
 })

@@ -465,7 +465,8 @@ export const useGymStore = defineStore('gym', {
     /** Ubah sesi selesai (jam + set). Sukses → Report baru; riwayat & halaman Gym dimuat ulang di belakang. */
     async saveSession(id, body) {
       const res = await gymApi.put(`/gym/sessions/${id}`, body)
-      this.reports[id] = res
+      // Ubah sesi ini ngegeser banding/PR sesi lain → simpenan lain dibuang, cuma yang barusan disimpen yang tersisa.
+      this.reports = { [id]: res }
       this.hist.stale = true
       this.load().catch(() => {})
       return res
@@ -473,6 +474,7 @@ export const useGymStore = defineStore('gym', {
 
     async deleteSession(id) {
       await gymApi.del(`/gym/sessions/${id}`)
+      this.reports = {}
       this.hist.stale = true
       this.load().catch(() => {})
     },

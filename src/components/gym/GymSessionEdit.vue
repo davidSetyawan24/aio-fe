@@ -65,8 +65,9 @@ defineExpose({ busy: computed(() => saving.value) })
 /** Cek lokal (pesannya sama kayak server) → body PUT, atau null kalau ada yang salah. */
 function build() {
   err.startedAt = err.endedAt = err.sets = ''
-  const startedAt = wibIso(t.startDate, start.value)
-  const endedAt = wibIso(t.endDate, end.value)
+  // Jam yang nggak disentuh dikirim balik persis aslinya (detik ikut), cuma yang diubah dihitung ulang dari HH:MM.
+  const startedAt = start.value === t.start ? session.startedAt : wibIso(t.startDate, start.value)
+  const endedAt = end.value === t.end ? session.endedAt : wibIso(t.endDate, end.value)
   if (!startedAt) err.startedAt = 'Jam mulainya diisi dulu.'
   if (!endedAt) err.endedAt = 'Jam selesainya diisi dulu.'
   const sets = []

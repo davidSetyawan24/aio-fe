@@ -125,4 +125,30 @@ describe('GymSummaryPage', () => {
     await w.findAll('[data-test="info-pr"]')[0].trigger('click')
     expect(document.querySelector('[data-test="info-sheet"] h2').textContent).toBe('PR (rekor pribadi)')
   })
+
+  it('sesi udah dihapus (404) → pesan ramah + Balik ke Gym', async () => {
+    const w = await mountPage({ cached: false })
+    expect(api.get).toHaveBeenCalled()
+    w.unmount()
+    stubMedia(390)
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    api.get.mockRejectedValue(Object.assign(new Error('Sesinya nggak ketemu.'), { status: 404 }))
+    router.push('/tabs/menu/gym/selesai/20')
+    const w2 = mount(GymSummaryPage, { global: { plugins: [pinia, router] }, attachTo: document.body })
+    mounted.push(w2)
+    await flushPromises()
+    expect(w2.find('[data-test="missing"]').text()).toContain('Sesinya udah nggak ada.')
+    await w2.find('[data-test="missing"] button').trigger('click')
+    expect(ionRouter.replace).toHaveBeenCalledWith('/tabs/menu/gym')
+  })
+
+  it('simpenan dibuang pas halaman kebuka → diambil lagi', async () => {
+    const w = await mountPage()
+    const calls = api.get.mock.calls.length
+    useGymStore().reports = {}
+    await flushPromises()
+    expect(api.get.mock.calls.length).toBe(calls + 1)
+    expect(w.find('[data-test="hero"]').exists()).toBe(true)
+  })
 })

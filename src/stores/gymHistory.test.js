@@ -102,4 +102,18 @@ describe('gym store: riwayat & detail sesi', () => {
     expect(store.hist.stale).toBe(false)
     expect(store.hist.weeks).toHaveLength(1)
   })
+
+  it('saveSession: simpenan Report lain dibuang, cuma yang barusan disimpen tersisa', async () => {
+    store.reports[1] = report(1)
+    store.reports[2] = report(2)
+    await store.saveSession(5, { startedAt: 'a', endedAt: 'b', sets: [], deleteSetIds: [] })
+    expect(Object.keys(store.reports)).toEqual(['5'])
+  })
+
+  it('deleteSession: semua simpenan Report dibuang (termasuk yang dihapus)', async () => {
+    store.reports[5] = report(5)
+    store.reports[2] = report(2)
+    await store.deleteSession(5)
+    expect(store.reports).toEqual({})
+  })
 })

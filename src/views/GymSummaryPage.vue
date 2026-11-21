@@ -6,7 +6,8 @@
           <button type="button" class="gy-back" data-test="back" @click="toGym"><PhCaretLeft :size="18" weight="bold" />Gym</button>
         </div>
 
-        <p v-if="failed" class="gy-fail" data-test="failed">Nggak bisa muat ringkasannya. <button type="button" @click="load">Coba lagi</button></p>
+        <p v-if="missing" class="gy-fail" data-test="missing">Sesinya udah nggak ada. <button type="button" @click="toGym">Balik ke Gym</button></p>
+        <p v-else-if="failed" class="gy-fail" data-test="failed">Nggak bisa muat ringkasannya. <button type="button" @click="load">Coba lagi</button></p>
         <p v-else-if="!report" class="gy-wait" data-test="wait">Bentar ya…</p>
         <template v-else>
           <GymReport :report="report" mode="summary" />
@@ -18,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { IonContent, IonPage, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCheck } from '@phosphor-icons/vue'
 import { useRoute } from 'vue-router'
@@ -33,19 +34,24 @@ const ionRouter = useIonRouter()
 const route = useRoute()
 const id = Number(route.params.id)
 const failed = ref(false)
+const missing = ref(false)
 
 // Report dari halaman sesi (abis Selesai) langsung dipake; kalau nggak ada (buka lewat link / reload) baru diambil.
 const report = computed(() => store.reports[id] ?? null)
 
 async function load() {
   failed.value = false
+  missing.value = false
   try {
     await store.report(id)
-  } catch {
-    failed.value = true
+  } catch (e) {
+    if (e?.status === 404) missing.value = true
+    else failed.value = true
   }
 }
 load()
+// Simpenan dibuang (abis ubah / hapus sesi lain) → ambil lagi dari server.
+watch(report, (r) => !r && !missing.value && !failed.value && load())
 
 const toGym = () => ionRouter.replace(GYM)
 </script>

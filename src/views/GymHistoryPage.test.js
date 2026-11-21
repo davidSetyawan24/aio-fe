@@ -41,9 +41,10 @@ async function mountPage({ width = 390, url = '/tabs/menu/gym/riwayat', first, m
       if (fail && u === '/gym/sessions') throw new Error('x')
       if (u === '/gym/sessions') return first ?? { weeks: [makeWeek(W1, [30, 29]), makeWeek(W2, [28]), makeWeek(W3, [27])], next: W3 }
       if (u.startsWith('/gym/sessions?beforeWeek=')) return more ?? { weeks: [makeWeek(W4, [26])], next: null }
-      return report
+      const sid = Number(u.split('/').pop())
+      return { ...report, session: { ...report.session, id: sid } }
     }),
-    post: vi.fn(), patch: vi.fn(), put: vi.fn(async () => report), del: vi.fn(async () => null),
+    post: vi.fn(), patch: vi.fn(), put: vi.fn(async (u) => ({ ...report, session: { ...report.session, id: Number(u.split('/').pop()) } })), del: vi.fn(async () => null),
   }
   setGymApi(api)
   const pinia = createPinia()
