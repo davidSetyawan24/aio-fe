@@ -322,7 +322,7 @@ describe('GymLivePage: Selesai', () => {
     const opts = sheetCreate.mock.calls[0][0]
     expect(opts.header).toBe('Belum ada set yang dicentang — sesi ini dibuang?')
     expect(opts.buttons.map((b) => b.text)).toEqual(['Buang sesi', 'Lanjut latihan'])
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(store.live).toBeNull()
     expect(ionRouter.navigate).toHaveBeenCalledWith('/tabs/menu/gym', 'back', 'replace')
   })

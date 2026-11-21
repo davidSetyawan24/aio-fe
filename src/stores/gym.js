@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import { ApiError, api as defaultApi } from '@/lib/api.js'
 import { FORGOT_MIN, PROGRAM_LABEL, forgotSuggest } from '@/lib/gym.js'
+import { useHomeStore } from '@/stores/home.js'
 import {
   OfflineError,
   addExercise,
@@ -131,6 +132,12 @@ function notify(store, text) {
   store.notice = { id: (store.notice?.id ?? 0) + 1, text }
 }
 
+/** Sesi udah nggak jalan lagi → kartu "Sesi … lagi jalan" di Beranda ikut ilang (nggak nunggu Beranda dimuat ulang). */
+function clearHomeGym() {
+  const home = useHomeStore()
+  if (home.data?.gym) home.data.gym = null
+}
+
 /** Timer 15 dtk nyala selama ada antrian, mati kalau kosong. */
 function syncTimer(store) {
   const r = rt(store)
@@ -177,10 +184,11 @@ async function flushOnce(store) {
   const res = await flushLive(live, gymApi, { onChange })
   if (!same(store.live, live)) return res
   if (res.joined) {
-    fromServer(res.joined, store.data?.exercises ?? [], live, uid)
+    fromServer(res.joined, store.exercises, live, uid)
     notify(store, `Disambung ke sesi ${PROGRAM_LABEL[res.joined.program] ?? res.joined.program} yang udah jalan`)
   }
   if (res.lost) notify(store, `${res.lost} set nggak kesimpen — sesinya udah diselesaiin.`)
+  if (res.gone) notify(store, 'Sesinya udah nggak ada.')
   if (res.rejected) notify(store, `${res.rejected} set nggak kesimpen. Coba centang lagi.`)
   // Ada yang ditolak server (sesi udah selesai / dihapus di device lain) → muat ulang abis kunci ini lepas biar draf ikut server.
   if (res.dropped) store.load().catch(() => {})
@@ -293,7 +301,8 @@ export const useGymStore = defineStore('gym', {
         program: live.program,
         startedAt: live.startedAt,
         lastAt,
-        sets: live.items.reduce((n, it) => n + it.rows.filter((r) => r.done).length, 0),
+        // Draf HP bisa basi (set dicentang di device lain) → ambil yang paling banyak, biar nggak ditawarin "buang aja?".
+        sets: Math.max(live.items.reduce((n, it) => n + it.rows.filter((r) => r.done).length, 0), act?.sets ?? 0),
         suggest: forgotSuggest(live.startedAt, lastAt, new Date(nowMs)),
       }
       return this.forgot
@@ -317,7 +326,7 @@ export const useGymStore = defineStore('gym', {
       this.live = newLive({
         program,
         programs: this.data?.programs ?? [],
-        exercises: this.data?.exercises ?? [],
+        exercises: this.exercises,
         now: new Date(),
         uid,
       })
@@ -425,6 +434,7 @@ export const useGymStore = defineStore('gym', {
           this.forgot = null
           persist(this)
         }
+        clearHomeGym()
         this.reports[res.session.id] = res
         this.hist.stale = true
         return res
@@ -455,9 +465,11 @@ export const useGymStore = defineStore('gym', {
         }
         if (live.serverId != null) {
           try {
-            await gymApi.del(`/gym/sessions/${live.serverId}`)
+            // `running=1`: cuma kebuang kalau masih jalan — sesi yang udah diselesaiin di device lain nggak ikut kehapus.
+            await gymApi.del(`/gym/sessions/${live.serverId}?running=1`)
           } catch (e) {
             if (retryLater(e)) ghosts.push(ghost)
+            else if (e.status === 409) notify(this, 'Sesinya udah diselesaiin di device lain.')
             else if (e.status !== 404) throw e
           }
         } else if (live.queue.some((o) => o.op === 'start' && o.tried)) {
@@ -470,6 +482,7 @@ export const useGymStore = defineStore('gym', {
           this.forgot = null
           persist(this)
         }
+        clearHomeGym()
       }).finally(() => {
         this.finishing = false
       })

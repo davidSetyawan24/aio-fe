@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
 import { GHOST_KEY, LIVE_KEY, OFFLINE_TEXT, OfflineError, load as loadDraft, loadGhosts } from '@/lib/gymLive.js'
 import { EXERCISES_KEY, FLUSH_EVERY_MS, setGymApi, setGymStorage, setGymUid, useGymStore } from './gym.js'
+import { useHomeStore } from './home.js'
 
 const ex = (id, name, last = null) => ({ id, name, restSec: 120, step: 2.5, dumbbell: false, last, record: null })
 const EXERCISES = [
@@ -211,6 +212,16 @@ describe('gym store: antrian', () => {
 })
 
 describe('gym store: ditolak server', () => {
+  it('set ditolak 404 (sesinya dihapus di device lain) → kabar "Sesinya udah nggak ada.", bukan "Coba centang lagi"', async () => {
+    okServer()
+    await started()
+    api.post.mockRejectedValue(new ApiError('Sesinya nggak ketemu.', 404))
+    store.check(0, 0)
+    await store.flush()
+    await tick()
+    expect(store.notice.text).toBe('Sesinya udah nggak ada.')
+  })
+
   it('set ditolak 422 → baris balik belum ✓ + notice "Coba centang lagi"', async () => {
     okServer()
     await started()
@@ -321,6 +332,21 @@ describe('gym store: load + draf HP', () => {
 })
 
 describe('gym store: daftar gerakan kesimpen di HP (nama & rekor pas offline)', () => {
+  it('disambung ke sesi device lain pas app dibuka tanpa GET /gym → patokan gerakan dari simpenan HP', async () => {
+    storage.setItem(EXERCISES_KEY, JSON.stringify(EXERCISES))
+    api.get.mockRejectedValue(net())
+    store.restore()
+    store.start('push')
+    const other = session({ id: 7, clientId: 'ipad', program: 'pull', planned: [2] })
+    api.post.mockImplementation(async (url) => {
+      if (url === '/gym/sessions') throw new ApiError('Masih ada sesi Pull yang jalan.', 409, { active: other })
+      throw net()
+    })
+    await store.flush()
+    expect(store.live).toMatchObject({ serverId: 7, joined: true })
+    expect(store.live.items[0].rows[0]).toMatchObject({ weight: 30, reps: 8, done: false })
+  })
+
   it('load → daftar gerakan disimpen; app dibuka lagi tanpa sinyal → masih kebaca', async () => {
     expect(store.exercises).toEqual([])
     await store.load()
@@ -398,11 +424,11 @@ describe('gym store: selesai & buang', () => {
     expect(store.live).not.toBeNull()
   })
 
-  it('discard: DELETE sesi server, draf dibersihin; 404 dianggep udah kebuang', async () => {
+  it('discard: DELETE sesi server (cuma kalau masih jalan), draf dibersihin; 404 dianggep udah kebuang', async () => {
     okServer()
     await started()
     await store.discard()
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(store.live).toBeNull()
     expect(storage.map.has(LIVE_KEY)).toBe(false)
 
@@ -412,6 +438,37 @@ describe('gym store: selesai & buang', () => {
     api.del.mockRejectedValue(new ApiError('Sesinya nggak ketemu.', 404))
     await store.discard()
     expect(store.live).toBeNull()
+  })
+
+  it('discard 409 (udah diselesaiin di device lain) → draf HP dibuang tanpa hantu, kabar, muat ulang', async () => {
+    okServer()
+    await started()
+    api.del.mockRejectedValue(new ApiError('Sesinya udah diselesaiin.', 409))
+    const loads = api.get.mock.calls.length
+    await store.discard()
+    await tick()
+    expect(store.live).toBeNull()
+    expect(storage.map.has(LIVE_KEY)).toBe(false)
+    expect(loadGhosts(storage)).toEqual([])
+    expect(store.notice.text).toBe('Sesinya udah diselesaiin di device lain.')
+    expect(api.get.mock.calls.length).toBeGreaterThan(loads)
+  })
+
+  it('finish / discard sukses → kartu sesi di Beranda ikut dikosongin', async () => {
+    const home = useHomeStore()
+    okServer()
+    await started()
+    store.check(0, 0)
+    home.data = { gym: { active: { id: 100, program: 'push', startedAt: 'x', sets: 1 } } }
+    await store.finish()
+    expect(home.data.gym).toBeNull()
+
+    await store.load()
+    store.start('push')
+    await tick()
+    home.data = { gym: { active: { id: 100, program: 'push', startedAt: 'x', sets: 0 } } }
+    await store.discard()
+    expect(home.data.gym).toBeNull()
   })
 
   it('discard pas start belum pernah nyampe server (offline) → cukup dibuang di HP', async () => {

@@ -298,13 +298,14 @@ const settled = (e) => [404, 409, 422].includes(e?.status)
 /**
  * Kirim antrian urut (start dulu). Berhenti di error yang perlu dicoba lagi nanti.
  * `onChange` dipanggil sebelum tiap request & abis tiap perubahan, biar store langsung nyimpen draf.
- * Hasil: `{ done, joined: Session|null, lost, rejected, dropped }`:
- * `lost` = set yang ditolak karena sesinya udah diselesaiin (409), `rejected` = set yang ditolak 404/422 —
+ * Hasil: `{ done, joined: Session|null, lost, gone, rejected, dropped }`:
+ * `lost` = set yang ditolak karena sesinya udah diselesaiin (409), `gone` = sesinya udah nggak ada (404, dihapus di
+ * device lain), `rejected` = set yang ditolak 422 —
  * dua-duanya barisnya balik jadi belum ✓ (angka tetep) biar nggak keliatan kesimpen; set yang udah dihapus
  * sendiri nggak diitung. `dropped` = semua item yang ditolak pasti sama server.
  */
 export async function flush(live, api, { onChange = () => {} } = {}) {
-  const result = { done: false, joined: null, lost: 0, rejected: 0, dropped: 0 }
+  const result = { done: false, joined: null, lost: 0, gone: 0, rejected: 0, dropped: 0 }
   const drop = (op) => {
     const k = live.queue.indexOf(op)
     if (k >= 0) live.queue.splice(k, 1)
@@ -363,7 +364,7 @@ export async function flush(live, api, { onChange = () => {} } = {}) {
         return result
       } else {
         result.dropped++
-        if (op.op === 'add') rejectAdd(live, op, e.status === 409 ? 'lost' : 'rejected', result)
+        if (op.op === 'add') rejectAdd(live, op, e.status === 409 ? 'lost' : e.status === 404 ? 'gone' : 'rejected', result)
       }
       drop(op)
       onChange()

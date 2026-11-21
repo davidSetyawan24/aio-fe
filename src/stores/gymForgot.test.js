@@ -42,7 +42,7 @@ function withDraft(rows, queue) {
 
 describe('checkForgot', () => {
   it('server: set terakhir 61 menit lalu → tampil (usulan = set terakhir + 5 menit)', async () => {
-    server(active())
+    server(active({ sets: 1 }))
     withDraft([row('a', iso(72), 1)])
     await store.checkForgot(at(72 + 61))
     expect(store.forgot).toMatchObject({ program: 'push', startedAt: T0, lastAt: iso(72), sets: 1, suggest: iso(77) })
@@ -69,6 +69,13 @@ describe('checkForgot', () => {
     withDraft([row('a', iso(0), 1), row('b', iso(110))], [{ op: 'add', key: 'b' }])
     await store.checkForgot(at(120))
     expect(store.forgot).toBeNull()
+  })
+
+  it('draf HP basi (cuma 1 set ✓) tapi server punya 5 set → sets 5 (biar nggak ditawarin buang)', async () => {
+    server(active({ sets: 5 }))
+    withDraft([row('a', iso(72), 1)])
+    await store.checkForgot(at(72 + 61))
+    expect(store.forgot.sets).toBe(5)
   })
 
   it('belum ada set sama sekali: dihitung dari jam mulai, sets 0', async () => {

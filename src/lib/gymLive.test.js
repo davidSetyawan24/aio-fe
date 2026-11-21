@@ -371,14 +371,14 @@ describe('flush: antrian kirim', () => {
     expect(live.items[0].rows[0]).toMatchObject({ done: false, doneAt: null, weight: 22.5, reps: 10 }) // nggak keliatan kesimpen
   })
 
-  it('add 404 / 422 → baris balik belum ✓ (angka tetep), rejected naik, bukan lost', async () => {
-    for (const status of [404, 422]) {
+  it('add 404 / 422 → baris balik belum ✓ (angka tetep); 404 = sesinya udah nggak ada (gone), 422 = rejected, bukan lost', async () => {
+    for (const [status, gone, rejected] of [[404, 1, 0], [422, 0, 1]]) {
       const live = start()
       live.queue = []
       live.serverId = 100
       checkRow(live, 0, 0, at(2), { weight: 25, reps: 8 })
       const api = { post: async () => { throw new ApiError('x', status) } }
-      expect(await flush(live, api)).toMatchObject({ done: true, lost: 0, rejected: 1, dropped: 1 })
+      expect(await flush(live, api)).toMatchObject({ done: true, lost: 0, gone, rejected, dropped: 1 })
       expect(live.lost).toBe(0)
       expect(live.items[0].rows[0]).toMatchObject({ done: false, weight: 25, reps: 8 })
       expect(checkRow(live, 0, 0, at(5))).toBe(true) // bisa dicentang lagi

@@ -243,7 +243,7 @@ describe('GymForgotDialog', () => {
     expect(q('[data-test="forgot-done"]')).toBeNull()
     q('[data-test="forgot-discard"]').click()
     await flushPromises()
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(store.live).toBeNull()
     expect(isOpen()).toBe(false)
   })
