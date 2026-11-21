@@ -427,7 +427,7 @@ describe('gym store: selesai & buang', () => {
     await started()
     okServer()
     await store.discard()
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(store.live).toBeNull()
   })
 
@@ -455,7 +455,7 @@ describe('gym store: selesai & buang', () => {
     api.del.mockResolvedValue(null)
     api.get.mockImplementation(async (url) => (url === '/gym/active' ? { id: 100, program: 'push', sets: 0 } : gymData()))
     await store.flush()
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(storage.map.has(GHOST_KEY)).toBe(false)
   })
 
@@ -492,7 +492,7 @@ describe('gym store: selesai & buang', () => {
     await store.load()
     store.start('pull')
     await store.flush()
-    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100?running=1')
     expect(store.live).toMatchObject({ serverId: 200, program: 'pull', joined: false })
     expect(storage.map.has(GHOST_KEY)).toBe(false)
   })

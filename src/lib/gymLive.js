@@ -408,7 +408,7 @@ function afterWrite(live, op, res, sent, isAdd) {
 /**
  * Hantu = `{ clientId, program, startedAt, serverId }` dari sesi yang dibuang pas belum ada sinyal.
  * id server belum tau → kirim ulang start dengan `clientId` yang sama buat dapet id-nya.
- * Sebelum DELETE dicek `GET /gym/active`: cuma dihapus kalau sesi itu MASIH jalan. Sesi orang (device lain),
+ * Sebelum DELETE dicek `GET /gym/active`: cuma dihapus kalau sesi itu MASIH jalan (DELETE pakai `?running=1`: server nolak 409 kalau udah diselesaiin, hantunya dibuang). Sesi orang (device lain),
  * sesi yang nggak pernah kecatet, atau yang udah diselesaiin di device lain → hantunya dibuang tanpa ngehapus apa-apa.
  * Balikin true kalau semua beres.
  */
@@ -443,7 +443,7 @@ export async function clearGhosts(ghosts, api, { onChange = () => {} } = {}) {
         done(g)
         continue
       }
-      await api.del(`/gym/sessions/${g.serverId}`)
+      await api.del(`/gym/sessions/${g.serverId}?running=1`)
       done(g)
     } catch (e) {
       if (!settled(e)) return false

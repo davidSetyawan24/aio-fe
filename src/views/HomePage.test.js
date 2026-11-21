@@ -79,6 +79,18 @@ describe('HomePage', () => {
     expect(w2.find('[data-test="home-body"]').exists()).toBe(false)
   })
 
+  it('kartu sesi Gym: paling atas (sebelum Perlu diurus) kalau gym.active ada, nggak ada kalau null', async () => {
+    const gym = { active: { id: 5, program: 'push', startedAt: new Date(Date.now() - 600_000).toISOString(), sets: 4 } }
+    const w = await mountPage(async () => ({ ...data(), gym }))
+    const card = w.find('[data-test="home-gym"]')
+    expect(card.text()).toContain('Sesi Push lagi jalan')
+    expect(card.text()).toContain('4 set')
+    const html = w.find('.h-page').html()
+    expect(html.indexOf('data-test="home-gym"')).toBeLessThan(html.indexOf('data-test="slot-attn"'))
+    const w2 = await mountPage(async () => ({ ...data(), gym: null }))
+    expect(w2.find('[data-test="home-gym"]').exists()).toBe(false)
+  })
+
   it('PC ≥1100: kartu Badan pas di bawah "Duit hari ini" (sebelum Duit yang belum balik)', async () => {
     const orig = window.matchMedia
     window.matchMedia = (q) => ({ matches: /min-width:\s*(1100|768)px/.test(q), addEventListener: () => {}, removeEventListener: () => {} })

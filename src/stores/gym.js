@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { toRaw } from 'vue'
 import { ApiError, api as defaultApi } from '@/lib/api.js'
-import { PROGRAM_LABEL } from '@/lib/gym.js'
+import { FORGOT_MIN, PROGRAM_LABEL, forgotSuggest } from '@/lib/gym.js'
 import {
   OfflineError,
   addExercise,
@@ -12,6 +12,7 @@ import {
   editRow,
   flush as flushLive,
   fromServer,
+  lastActivityAt,
   load as loadDraft,
   loadGhosts,
   makeUid,
@@ -24,6 +25,9 @@ export { OFFLINE_TEXT, OfflineError } from '@/lib/gymLive.js'
 
 /** Daftar gerakan terakhir dari server (nama, langkah, rekor) — biar sesi live tetep kebaca pas app dibuka tanpa sinyal. */
 export const EXERCISES_KEY = 'aio-gym-exercises'
+
+/** "Lanjut sesi" di dialog lupa Selesai: kapan, buat sesi & set terakhir yang mana (biar reload nggak nanya lagi). */
+export const FORGOT_KEY = 'aio-gym-forgot'
 
 /** Antrian yang belum kekirim dicoba lagi tiap 15 detik. */
 export const FLUSH_EVERY_MS = 15000
@@ -114,6 +118,15 @@ function mergeExercise(store, exercise) {
   saveExercises(list)
 }
 
+function readSnooze(st) {
+  try {
+    const v = JSON.parse(st.getItem(FORGOT_KEY) ?? 'null')
+    return v && typeof v.key === 'string' && typeof v.lastAt === 'string' && Number.isFinite(v.at) ? v : null
+  } catch {
+    return null
+  }
+}
+
 function notify(store, text) {
   store.notice = { id: (store.notice?.id ?? 0) + 1, text }
 }
@@ -202,6 +215,7 @@ export const useGymStore = defineStore('gym', {
   // `reports`: Report sesi selesai per id (ringkasan / detail). `hist`: riwayat per minggu (`stale` = ada yang berubah, muat ulang).
   state: () => ({
     data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false, exCache: null,
+    forgot: null,
     reports: {},
     hist: { weeks: [], next: null, loaded: false, stale: false },
   }),
@@ -239,6 +253,61 @@ export const useGymStore = defineStore('gym', {
         })
       } finally {
         kick(this)
+      }
+    },
+
+    /**
+     * Sesi yang kelamaan diem (> 60 menit sejak set terakhir, termasuk yang masih ngantri di HP) → `forgot` keisi
+     * (dialog lupa Selesai). Abis "Lanjut sesi": diem sampe ada set baru atau 60 menit lagi.
+     * Offline → pake draf HP aja.
+     */
+    async checkForgot(now = new Date()) {
+      const nowMs = new Date(now).getTime()
+      this.restore()
+      let act
+      try {
+        act = await gymApi.get('/gym/active')
+      } catch {
+        act = undefined // nggak ada sinyal
+      }
+      if (act && !this.live) await this.load().catch(() => {})
+      const live = this.live
+      // Nggak ada sesi, atau udah diselesaiin di tempat lain (draf bersih tapi server bilang kosong) → nggak ada yang ditanyain.
+      if (!live || (act === null && live.serverId != null && !live.queue.length)) {
+        this.forgot = null
+        if (live) await this.load().catch(() => {}) // cocokin: draf bersih ikut hilang
+        return null
+      }
+      let last = Date.parse(lastActivityAt(live))
+      if (act) last = Math.max(last, Date.parse(act.lastSetAt ?? act.startedAt))
+      const lastAt = new Date(last).toISOString()
+      const snooze = readSnooze(storage)
+      const snoozed = snooze && snooze.key === live.clientId && snooze.lastAt === lastAt && nowMs - snooze.at < FORGOT_MIN * 60000
+      if (nowMs - last <= FORGOT_MIN * 60000 || snoozed) {
+        this.forgot = null
+        return null
+      }
+      if (this.forgot?.key === live.clientId && this.forgot.lastAt === lastAt) return this.forgot
+      this.forgot = {
+        key: live.clientId,
+        program: live.program,
+        startedAt: live.startedAt,
+        lastAt,
+        sets: live.items.reduce((n, it) => n + it.rows.filter((r) => r.done).length, 0),
+        suggest: forgotSuggest(live.startedAt, lastAt, new Date(nowMs)),
+      }
+      return this.forgot
+    },
+
+    /** "Lanjut sesi": dialognya ditutup & nggak muncul lagi sampe ada set baru / 60 menit lagi. */
+    snoozeForgot(now = new Date()) {
+      const f = this.forgot
+      this.forgot = null
+      if (!f) return
+      try {
+        storage.setItem(FORGOT_KEY, JSON.stringify({ key: f.key, lastAt: f.lastAt, at: new Date(now).getTime() }))
+      } catch {
+        // penyimpenan penuh: cuma nggak nginget abis reload
       }
     },
 
@@ -353,6 +422,7 @@ export const useGymStore = defineStore('gym', {
         }
         if (same(this.live, live)) {
           this.live = null
+          this.forgot = null
           persist(this)
         }
         this.reports[res.session.id] = res
@@ -397,6 +467,7 @@ export const useGymStore = defineStore('gym', {
         saveGhosts(storage, ghosts)
         if (same(this.live, live)) {
           this.live = null
+          this.forgot = null
           persist(this)
         }
       }).finally(() => {

@@ -7,6 +7,8 @@
           <NotifBell />
         </header>
 
+        <HomeGym :active="store.data?.gym?.active ?? null" />
+
         <div v-if="error && !store.data" class="h-error-box">
           <p class="h-error">{{ error }}</p>
           <button class="h-retry" data-test="retry" :disabled="loading" @click="load">Coba lagi</button>
@@ -33,6 +35,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave, onIonViewWillEnter } from '@ionic/vue'
 import HomeAttention from '@/components/HomeAttention.vue'
+import HomeGym from '@/components/HomeGym.vue'
 import HomeBody from '@/components/HomeBody.vue'
 import HomeMoney from '@/components/HomeMoney.vue'
 import HomeToday from '@/components/HomeToday.vue'

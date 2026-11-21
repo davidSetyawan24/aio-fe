@@ -144,6 +144,14 @@ describe('GymPage', () => {
     expect(w.text()).not.toContain('Semua riwayat')
   })
 
+  it('sesi pertama lagi jalan (belum ada riwayat): kartu live aja, tanpa kartu "Belum ada sesi"', async () => {
+    const w = await mountPage({ data: emptyData(), live: liveDraft() })
+    expect(w.find('[data-test="livecard"]').exists()).toBe(true)
+    expect(w.find('[data-test="empty"]').exists()).toBe(false)
+    expect(w.text()).not.toContain('Belum ada sesi')
+    expect(w.find('[data-test="first-run"]').text()).toContain('Riwayat muncul abis lo Selesai')
+  })
+
   it('tap Push → sheet Pilih latihan: daftar gerakan + sesi lalu + chip istirahat', async () => {
     const w = await mountPage()
     await w.find('[data-pick="push"]').trigger('click')

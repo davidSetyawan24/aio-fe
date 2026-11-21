@@ -337,10 +337,7 @@ async function ensureLive() {
 watch(live, (v) => {
   if (!v && active && !leaving) toGym()
 })
-watch(
-  () => store.notice?.id,
-  () => store.notice && showToast(store.notice.text),
-)
+// Kabar dari store (notice) ditampilin di App (toast sekali per kabar), bukan di sini.
 
 const TICK_MS = 300
 function startTick() {

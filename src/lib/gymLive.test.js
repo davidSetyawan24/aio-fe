@@ -583,7 +583,7 @@ describe('clearGhosts: sesi yang dibuang pas offline', () => {
     let saved = 0
     expect(await clearGhosts(ghosts, srv.api, { onChange: () => saved++ })).toBe(true)
     expect(ghosts).toEqual([])
-    expect(srv.calls.map((c) => `${c.m} ${c.url}`)).toEqual(['post /gym/sessions', 'get /gym/active', 'del /gym/sessions/7'])
+    expect(srv.calls.map((c) => `${c.m} ${c.url}`)).toEqual(['post /gym/sessions', 'get /gym/active', 'del /gym/sessions/7?running=1'])
     expect(srv.calls[0].body).toEqual({ program: 'push', startedAt: T0, clientId: 'g1' })
     expect(saved).toBeGreaterThan(0)
   })
@@ -606,7 +606,7 @@ describe('clearGhosts: sesi yang dibuang pas offline', () => {
     const post = async () => { throw new ApiError('Masih ada sesi Push yang jalan.', 409, { active: { id: 7, clientId: 'g1', endedAt: null } }) }
     const ghosts = [ghost()]
     expect(await clearGhosts(ghosts, { post, get: activeOf(7), del: async (u) => urls.push(u) })).toBe(true)
-    expect(urls).toEqual(['/gym/sessions/7'])
+    expect(urls).toEqual(['/gym/sessions/7?running=1'])
   })
 
   it('kirim ulang start balikin sesi yang udah diselesaiin (di device lain) → NGGAK dihapus', async () => {
@@ -634,10 +634,17 @@ describe('clearGhosts: sesi yang dibuang pas offline', () => {
     }
   })
 
+  it('DELETE kena 409 (udah diselesaiin di tempat lain pas dicek) → hantu dibuang tanpa error', async () => {
+    const ghosts = [ghost({ serverId: 5 })]
+    const api = { get: activeOf(5), del: async () => { throw new ApiError('Sesinya udah diselesaiin.', 409) } }
+    expect(await clearGhosts(ghosts, api)).toBe(true)
+    expect(ghosts).toEqual([])
+  })
+
   it('id udah tau & masih jalan → DELETE; 404 = udah nggak ada; putus → false, hantu tetep (id yang udah dapet diinget)', async () => {
     const urls = []
     expect(await clearGhosts([ghost({ serverId: 5 })], { get: activeOf(5), del: async (u) => urls.push(u) })).toBe(true)
-    expect(urls).toEqual(['/gym/sessions/5'])
+    expect(urls).toEqual(['/gym/sessions/5?running=1'])
     const gone = [ghost({ serverId: 5 })]
     const api404 = { get: activeOf(5), del: async () => { throw new ApiError('Sesinya nggak ketemu.', 404) } }
     expect(await clearGhosts(gone, api404)).toBe(true)

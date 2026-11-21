@@ -220,11 +220,11 @@ describe('GymLivePage: layar live', () => {
     expect(w.find('[data-test="pending"]').text()).toBe('⏳ 2 set belum kekirim')
   })
 
-  it('kabar dari store (notice) → toast', async () => {
+  it('kabar dari store (notice) ditampilin App, bukan halaman ini (biar nggak dobel)', async () => {
     await mountPage()
     store.notice = { id: 1, text: '1 set nggak kesimpen. Coba centang lagi.' }
     await flushPromises()
-    expect(toasts()).toContain('1 set nggak kesimpen. Coba centang lagi.')
+    expect(toasts()).not.toContain('1 set nggak kesimpen. Coba centang lagi.')
   })
 
   it('‹ Gym → balik ke Gym, sesi tetep jalan', async () => {

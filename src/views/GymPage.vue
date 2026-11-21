@@ -8,11 +8,7 @@
         <span class="eyebrow rise"><span class="dot" />Kesehatan</span>
         <h1 class="h1 rise" style="--i: 1">Gym.<span data-test="sub">{{ sub }}</span></h1>
 
-        <button v-if="liveInfo" type="button" class="gy-livecard rise" data-test="livecard" @click="goLive">
-          <span class="em">{{ PROGRAM_EMOJI[liveInfo.program] }}</span>
-          <span class="grow"><b>Sesi {{ PROGRAM_LABEL[liveInfo.program] }} lagi jalan</b><small><i class="dot" />{{ clock }} · {{ liveInfo.sets }} set</small></span>
-          <span class="gobtn">Lanjut <PhCaretRight :size="16" weight="bold" /></span>
-        </button>
+        <GymLiveCard v-if="liveInfo" :program="liveInfo.program" :started-at="liveInfo.startedAt" :sets="liveInfo.sets" @go="goLive" />
 
         <p v-if="failed" class="gy-fail" data-test="failed">Nggak bisa muat data gym. <button type="button" @click="load">Coba lagi</button></p>
         <p v-else-if="!data" class="gy-wait" data-test="wait">Bentar ya…</p>
@@ -29,6 +25,7 @@
                 <div class="gy-label rise" style="--i: 7"><span>Riwayat</span><button type="button" class="gy-lk" data-test="go-history" @click="go('riwayat')">Semua <PhCaretRight :size="14" weight="bold" /></button></div>
                 <div class="shell rise" style="--i: 7"><div class="gy-core"><GymHistoryRows :sessions="data.recent" @open="(id) => go(`riwayat/${id}`)" /></div></div>
               </template>
+              <p v-else-if="liveInfo" class="gy-wait" data-test="first-run">Ini sesi pertama lo. Riwayat muncul abis lo Selesai.</p>
               <template v-else>
                 <div class="gy-label"><span>Riwayat</span></div>
                 <div class="shell"><div class="gy-core gy-empty" data-test="empty"><div class="em">🏋️</div><h2>Belum ada sesi</h2><p>Pilih latihan di atas buat mulai. Angka tiap set kesimpen di sini, sesi berikutnya tinggal nerusin.</p></div></div>
@@ -64,9 +61,10 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue'
+import GymLiveCard from '@/components/gym/GymLiveCard.vue'
 import GymHistoryRows from '@/components/gym/GymHistoryRows.vue'
 import GymChart from '@/components/gym/GymChart.vue'
 import GymPickSheet from '@/components/gym/GymPickSheet.vue'
@@ -75,7 +73,7 @@ import GymWeek from '@/components/gym/GymWeek.vue'
 import '@/components/gym/gym.css'
 import { HARI, weekdayOf } from '@/lib/agenda.js'
 import { dShort } from '@/lib/badanView.js'
-import { PROGRAM_EMOJI, PROGRAM_LABEL, bestSet, setText } from '@/lib/gym.js'
+import { bestSet, setText } from '@/lib/gym.js'
 import { wibNow } from '@/lib/home.js'
 import { useMedia } from '@/lib/media.js'
 import { useGymStore } from '@/stores/gym.js'
@@ -86,10 +84,8 @@ const ionRouter = useIonRouter()
 const wide = useMedia('(min-width: 768px)')
 const failed = ref(false)
 const today = ref(wibNow().date)
-const now = ref(Date.now())
 const pick = reactive({ open: false, key: 'push' })
 let starting = false
-let tick = null
 
 // Draf sesi di HP (bisa ada walau lagi offline) langsung dibuka biar kartu "lagi jalan" nongol dari awal.
 store.restore()
@@ -103,12 +99,6 @@ const liveInfo = computed(() => {
   if (l) return { program: l.program, startedAt: l.startedAt, sets: l.items.reduce((n, it) => n + it.rows.filter((r) => r.done).length, 0) }
   const a = store.data?.active
   return a ? { program: a.program, startedAt: a.startedAt, sets: a.sets.length } : null
-})
-const clock = computed(() => {
-  if (!liveInfo.value) return ''
-  const sec = Math.max(0, Math.floor((now.value - new Date(liveInfo.value.startedAt).getTime()) / 1000))
-  const p = (n) => String(n).padStart(2, '0')
-  return `${p(Math.floor(sec / 3600))}:${p(Math.floor(sec / 60) % 60)}:${p(sec % 60)}`
 })
 
 /** Gerakan di kartu grafik mini: namanya + beban terberat titik terakhir. */
@@ -148,27 +138,12 @@ function startSession(key) {
   ionRouter.push(`${BASE}/sesi`)
 }
 
-function startTick() {
-  if (!tick) tick = setInterval(() => (now.value = Date.now()), 1000)
-}
-function stopTick() {
-  clearInterval(tick)
-  tick = null
-}
-
 let entered = false
-onMounted(() => {
-  startTick()
-  load()
-})
-onIonViewWillLeave(stopTick)
+onMounted(load)
 onIonViewWillEnter(() => {
   today.value = wibNow().date
-  now.value = Date.now()
-  startTick()
   pick.open = false
   if (entered) load()
   entered = true
 })
-onBeforeUnmount(stopTick)
 </script>

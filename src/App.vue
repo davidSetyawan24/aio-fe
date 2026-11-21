@@ -19,21 +19,25 @@
       </ion-menu>
       <ion-router-outlet id="main" />
     </ion-split-pane>
+    <GymForgotDialog />
     <UpdateBanner :no-sidebar="showSplash || isLogin" />
   </ion-app>
 </template>
 
 <script setup>
-import { computed, watchEffect } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonApp, IonMenu, IonRouterOutlet, IonSplitPane } from '@ionic/vue'
 import AioLogo from '@/components/AioLogo.vue'
 import AppSplash from '@/components/AppSplash.vue'
+import GymForgotDialog from '@/components/gym/GymForgotDialog.vue'
 import UpdateBanner from '@/components/UpdateBanner.vue'
 import { PhCaretRight } from '@phosphor-icons/vue'
 import { tabItems } from '@/modules/registry.js'
 import { setStatusBarColor, statusBarColor } from '@/lib/theme.js'
+import { showToast } from '@/lib/personalForm.js'
 import { useAuthStore } from '@/stores/auth.js'
+import { useGymStore } from '@/stores/gym.js'
 import { useThemeStore } from '@/stores/theme.js'
 
 const auth = useAuthStore()
@@ -47,6 +51,13 @@ const isActive = (path) => route.path === path || route.path.startsWith(`${path}
 // Warna status bar / bar Safari ikut tema, kecuali login & splash/offline yang selalu gelap.
 const theme = useThemeStore()
 watchEffect(() => setStatusBarColor(document, statusBarColor(theme.resolved, isLogin.value || showSplash.value)))
+
+// Kabar dari store Gym (mis. "Disambung ke sesi Push yang udah jalan") bisa muncul dari halaman mana aja → toast di sini, sekali per kabar.
+const gym = useGymStore()
+watch(
+  () => gym.notice?.id,
+  () => gym.notice && showToast(gym.notice.text),
+)
 </script>
 
 <style scoped>
