@@ -95,7 +95,7 @@
             <span v-if="errors[f.k]" class="em-err" :data-test="`err-${f.k}`">{{ errors[f.k] }}</span>
           </label>
         </div>
-        <p v-if="!store.gymAuto" class="bf-hint">Nanti otomatis dari Fitness Tracker.</p>
+        <p v-if="!store.gymAuto" class="bf-hint">Nanti otomatis dari Gym.</p>
         <div class="bt-asub">Olahraga lain <small>opsional</small></div>
         <label class="bf-nf" :class="{ bad: errors.otherSport }">
           <span class="iw"><input v-model="form.otherSport" class="bf-in bt-txt" maxlength="120" placeholder="misal futsal Sabtu 2 jam" aria-label="Olahraga lain" data-test="a-other" autocomplete="off" @input="clear('otherSport')" @keydown.enter.prevent="focusNext" /></span>

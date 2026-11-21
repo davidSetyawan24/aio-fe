@@ -324,6 +324,8 @@ describe('BadanTargetSheet', () => {
       expect(q('[data-test="a-gym"]')).not.toBeNull()
       expect(q('[data-test="a-min"]')).not.toBeNull()
       expect(q('[data-test="gym-auto"]')).toBeNull()
+      expect(text('.bt-sheet')).toContain('Nanti otomatis dari Gym.')
+      expect(text('.bt-sheet')).not.toContain('Fitness Tracker')
     })
 
     it('simpen: gym dikirim apa adanya dari form (kosong → 0), muat ulang abis simpen', async () => {
