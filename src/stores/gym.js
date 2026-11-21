@@ -5,6 +5,7 @@ import { PROGRAM_LABEL } from '@/lib/gym.js'
 import {
   OfflineError,
   addExercise,
+  clearGhosts,
   addRow,
   checkRow,
   deleteRow,
@@ -12,16 +13,17 @@ import {
   flush as flushLive,
   fromServer,
   load as loadDraft,
+  loadGhosts,
   makeUid,
   newLive,
   save as saveDraft,
+  saveGhosts,
 } from '@/lib/gymLive.js'
 
 export { OFFLINE_TEXT, OfflineError } from '@/lib/gymLive.js'
 
 /** Antrian yang belum kekirim dicoba lagi tiap 15 detik. */
 export const FLUSH_EVERY_MS = 15000
-export const DISCARD_OFFLINE_TEXT = 'Belum ada sinyal. Coba buang sesinya lagi bentar.'
 
 const browserStorage = {
   getItem: (k) => localStorage.getItem(k),
@@ -46,13 +48,13 @@ export function setGymUid(fn) {
   uid = fn
 }
 
-// Hal-hal per store yang bukan state (kunci antrian, timer).
+// Hal-hal per store yang bukan state (kunci antrian, timer, hantu sesi yang dibuang offline).
 const RUNTIME = new WeakMap()
 function rt(store) {
   const key = toRaw(store)
   let r = RUNTIME.get(key)
   if (!r) {
-    r = { chain: Promise.resolve(), flushing: null, again: false, timer: null }
+    r = { chain: Promise.resolve(), flushing: null, again: false, timer: null, ghosts: null }
     RUNTIME.set(key, r)
   }
   return r
@@ -69,6 +71,15 @@ const same = (a, b) => a != null && toRaw(a) === toRaw(b)
 /** Error yang artinya "coba lagi nanti": nggak ada jawaban HTTP (putus / timeout) atau server lagi error. */
 const retryLater = (e) => !e?.status || e.status >= 500
 
+/** Sesi yang dibuang pas offline & masih harus dihapus di server (kesimpen di HP, tahan app ditutup). */
+function ghostsOf(store) {
+  const r = rt(store)
+  if (!r.ghosts) r.ghosts = loadGhosts(storage)
+  return r.ghosts
+}
+
+const busy = (store) => !!store.live?.queue.length || ghostsOf(store).length > 0
+
 function persist(store) {
   saveDraft(storage, store.live)
   store.pending = store.live ? store.live.queue.filter((o) => o.op !== 'start').length : 0
@@ -81,9 +92,9 @@ function notify(store, text) {
 /** Timer 15 dtk nyala selama ada antrian, mati kalau kosong. */
 function syncTimer(store) {
   const r = rt(store)
-  const busy = !!store.live?.queue.length
-  if (busy && !r.timer) r.timer = setInterval(() => kick(store), FLUSH_EVERY_MS)
-  else if (!busy && r.timer) {
+  const on = busy(store)
+  if (on && !r.timer) r.timer = setInterval(() => kick(store), FLUSH_EVERY_MS)
+  else if (!on && r.timer) {
     clearInterval(r.timer)
     r.timer = null
   }
@@ -105,12 +116,17 @@ function listen(store) {
 /** Kirim antrian di belakang (nggak ditunggu). */
 function kick(store) {
   listen(store)
-  if (store.live?.queue.length) store.flush().catch(() => {})
+  if (busy(store)) store.flush().catch(() => {})
   else syncTimer(store)
 }
 
-/** Satu putaran kirim antrian; dipanggil di dalem kunci. */
+/** Satu putaran kirim antrian; dipanggil di dalem kunci. Hantu dihapus duluan (biar start baru nggak nyambung ke hantu). */
 async function flushOnce(store) {
+  const ghosts = ghostsOf(store)
+  if (ghosts.length) {
+    const clear = await clearGhosts(ghosts, gymApi, { onChange: () => saveGhosts(storage, ghosts) })
+    if (!clear) return null
+  }
   const live = store.live
   if (!live?.queue.length) return null
   const onChange = () => {
@@ -123,6 +139,7 @@ async function flushOnce(store) {
     notify(store, `Disambung ke sesi ${PROGRAM_LABEL[res.joined.program] ?? res.joined.program} yang udah jalan`)
   }
   if (res.lost) notify(store, `${res.lost} set nggak kesimpen — sesinya udah diselesaiin.`)
+  if (res.rejected) notify(store, `${res.rejected} set nggak kesimpen. Coba centang lagi.`)
   // Ada yang ditolak server (sesi udah selesai / dihapus di device lain) → muat ulang abis kunci ini lepas biar draf ikut server.
   if (res.dropped) store.load().catch(() => {})
   persist(store)
@@ -131,6 +148,10 @@ async function flushOnce(store) {
 
 /** Cocokin draf HP sama sesi jalan di server (hasil `GET /gym`). */
 function reconcile(store, data) {
+  const ghost = (s) =>
+    ghostsOf(store).some((g) => g.clientId === s.clientId || (g.serverId != null && g.serverId === s.id))
+  // Sesi yang udah dibuang di HP ini tapi belum kehapus di server → anggep nggak ada (bentar lagi dihapus).
+  if (data?.active && ghost(data.active)) data.active = null
   const active = data?.active ?? null
   const local = store.live
   const exercises = data?.exercises ?? []
@@ -147,7 +168,8 @@ function reconcile(store, data) {
 
 /** Gym: data `GET /gym`, sesi yang lagi jalan di HP ini (`live`), jumlah set yang belum kekirim, kabar buat toast. */
 export const useGymStore = defineStore('gym', {
-  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null }),
+  // `finishing`: lagi Selesai / Buang sesi → ✓ & ubah set ditolak (UI matiin tombolnya).
+  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false }),
 
   actions: {
     /** Buka draf sesi dari HP (tanpa jaringan) kalau di memori belum ada. */
@@ -201,35 +223,35 @@ export const useGymStore = defineStore('gym', {
 
     /** ✓ set (angka boleh dioper sekalian). false = angkanya belum bener. */
     check(i, j, vals = null) {
-      if (!this.live || !checkRow(this.live, i, j, new Date(), vals)) return false
+      if (!this.live || this.finishing || !checkRow(this.live, i, j, new Date(), vals)) return false
       persist(this)
       kick(this)
       return true
     },
 
     edit(i, j, vals) {
-      if (!this.live || !editRow(this.live, i, j, vals)) return false
+      if (!this.live || this.finishing || !editRow(this.live, i, j, vals)) return false
       persist(this)
       kick(this)
       return true
     },
 
     remove(i, j) {
-      if (!this.live || !deleteRow(this.live, i, j, uid)) return false
+      if (!this.live || this.finishing || !deleteRow(this.live, i, j, uid)) return false
       persist(this)
       kick(this)
       return true
     },
 
     addSet(i) {
-      if (!this.live) return -1
+      if (!this.live || this.finishing) return -1
       const j = addRow(this.live, i, uid)
       persist(this)
       return j
     },
 
     addExercise(exercise) {
-      if (!this.live) return -1
+      if (!this.live || this.finishing) return -1
       const i = addExercise(this.live, exercise, uid)
       persist(this)
       return i
@@ -261,6 +283,7 @@ export const useGymStore = defineStore('gym', {
      * Error lain (mis. 422 belum ada set) dilempar apa adanya. Sukses → draf dibersihin, balikin `Report`.
      */
     async finish(endedAt) {
+      this.finishing = true
       const report = await locked(rt(this), async () => {
         const live = this.live
         if (!live) throw new ApiError('Sesinya nggak ketemu.', 404)
@@ -277,37 +300,51 @@ export const useGymStore = defineStore('gym', {
           persist(this)
         }
         return res
+      }).finally(() => {
+        this.finishing = false
       })
       syncTimer(this)
       this.load().catch(() => {})
       return report
     },
 
-    /** Buang sesi yang jalan (mis. 0 set). Belum kecatet di server → cukup dibuang di HP. */
+    /**
+     * Buang sesi yang jalan (mis. 0 set) — langsung kebuang di HP walau nggak ada sinyal.
+     * Kalau sesinya (mungkin) udah kecatet di server tapi belum bisa dihapus, dicatet jadi hantu dan
+     * dihapus di belakang pas sinyal balik (`clearGhosts`; sesi dari device lain nggak pernah ikut kehapus).
+     */
     async discard() {
+      this.finishing = true
       await locked(rt(this), async () => {
         const live = this.live
         if (!live) return
-        if (live.serverId == null) {
-          // Start bisa aja udah nyampe server walau jawabannya ilang → coba kirim dulu biar dapet id-nya.
-          const res = await flushOnce(this)
-          if (res?.joined) return // ternyata ada sesi lain yang jalan (dari device lain) → jangan dibuang
+        const ghosts = ghostsOf(this)
+        const ghost = {
+          clientId: live.clientId,
+          program: live.program,
+          startedAt: live.startedAt,
+          serverId: live.serverId,
         }
         if (live.serverId != null) {
           try {
             await gymApi.del(`/gym/sessions/${live.serverId}`)
           } catch (e) {
-            if (retryLater(e)) throw new OfflineError(DISCARD_OFFLINE_TEXT)
-            if (e.status !== 404) throw e
+            if (retryLater(e)) ghosts.push(ghost)
+            else if (e.status !== 404) throw e
           }
+        } else if (live.queue.some((o) => o.op === 'start' && o.tried)) {
+          ghosts.push(ghost) // start mungkin udah nyampe walau jawabannya ilang
         }
-        // id tetep kosong = belum pernah kecatet di server (belum ada set yang kekirim) → cukup dibuang di HP.
+        // start belum pernah dicoba = belum pernah kecatet di server → cukup dibuang di HP.
+        saveGhosts(storage, ghosts)
         if (same(this.live, live)) {
           this.live = null
           persist(this)
         }
+      }).finally(() => {
+        this.finishing = false
       })
-      syncTimer(this)
+      kick(this)
       this.load().catch(() => {})
     },
 

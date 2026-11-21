@@ -8,6 +8,7 @@
 import { LIMITS } from './gym.js'
 
 export const LIVE_KEY = 'aio-gym-live'
+export const GHOST_KEY = 'aio-gym-ghosts'
 export const OFFLINE_TEXT = 'Belum ada sinyal. Set lo aman di HP ini, coba Selesai lagi bentar.'
 
 /** Belum ada sinyal: antrian / request ke server belum bisa jalan, data tetep aman di HP. */
@@ -26,7 +27,11 @@ export function makeUid() {
 const iso = (t) => new Date(t).toISOString()
 const row = (key, weight, reps, prev) => ({ key, weight, reps, done: false, doneAt: null, serverId: null, prev })
 const blankRow = (uid) => row(uid(), null, null, null)
-const patokanOf = (exercise) => exercise?.last?.sets ?? []
+const patokanOf = (exercise) => (exercise?.last?.sets ?? []).map(([w, r]) => [Number(w), Number(r)])
+/** Beban disimpen 2 desimal di server → di HP juga dibulatin ke 2 desimal biar angkanya sama persis. */
+const round2 = (w) => (typeof w === 'number' && Number.isFinite(w) ? Math.round(w * 100) / 100 : w)
+const sameSet = (a, b) =>
+  Math.round(Number(a.weight) * 100) === Math.round(Number(b.weight) * 100) && Number(a.reps) === Number(b.reps)
 
 function patokanRows(exercise, uid) {
   const sets = patokanOf(exercise)
@@ -88,7 +93,7 @@ export function checkRow(live, i, j, now, vals = null) {
   const item = live.items[i]
   const r = item?.rows[j]
   if (!r || r.done) return false
-  const weight = vals ? vals.weight : r.weight
+  const weight = round2(vals ? vals.weight : r.weight)
   const reps = vals ? vals.reps : r.reps
   if (!validSet(weight, reps)) return false
   Object.assign(r, { weight, reps, done: true, doneAt: iso(now) })
@@ -99,9 +104,11 @@ export function checkRow(live, i, j, now, vals = null) {
 }
 
 /** Ubah angka. Belum ✓ = cuma di HP (boleh kosong). Udah ✓ = wajib bener; udah kekirim → antri `edit`. */
-export function editRow(live, i, j, { weight, reps }) {
+export function editRow(live, i, j, vals) {
   const r = live.items[i]?.rows[j]
   if (!r) return false
+  const weight = round2(vals.weight)
+  const reps = vals.reps
   if (!r.done) {
     Object.assign(r, { weight, reps })
     return true
@@ -174,8 +181,8 @@ export function lastActivityAt(live) {
 const bySetOrder = (a, b) => a.doneAt.localeCompare(b.doneAt) || a.id - b.id
 const serverRow = (s, prev) => ({
   key: s.clientId,
-  weight: s.weight,
-  reps: s.reps,
+  weight: Number(s.weight),
+  reps: Number(s.reps),
   done: true,
   doneAt: s.doneAt,
   serverId: s.id,
@@ -247,7 +254,7 @@ export function fromServer(session, exercises, local, uid = makeUid) {
       if (s) {
         matched.add(s.id)
         r.serverId = s.id
-        if (!pending.has(r.key)) Object.assign(r, { weight: s.weight, reps: s.reps, doneAt: s.doneAt })
+        if (!pending.has(r.key)) Object.assign(r, { weight: Number(s.weight), reps: Number(s.reps), doneAt: s.doneAt })
         return true
       }
       return r.serverId == null || pending.has(r.key) // udah di server tapi ilang = dihapus di device lain
@@ -291,11 +298,13 @@ const settled = (e) => [404, 409, 422].includes(e?.status)
 /**
  * Kirim antrian urut (start dulu). Berhenti di error yang perlu dicoba lagi nanti.
  * `onChange` dipanggil sebelum tiap request & abis tiap perubahan, biar store langsung nyimpen draf.
- * Hasil: `{ done, joined: Session|null, lost, dropped }` (`lost` = set yang ditolak karena sesinya udah diselesaiin,
- * `dropped` = semua item yang ditolak pasti sama server, termasuk `lost`).
+ * Hasil: `{ done, joined: Session|null, lost, rejected, dropped }`:
+ * `lost` = set yang ditolak karena sesinya udah diselesaiin (409), `rejected` = set yang ditolak 404/422 —
+ * dua-duanya barisnya balik jadi belum ✓ (angka tetep) biar nggak keliatan kesimpen; set yang udah dihapus
+ * sendiri nggak diitung. `dropped` = semua item yang ditolak pasti sama server.
  */
 export async function flush(live, api, { onChange = () => {} } = {}) {
-  const result = { done: false, joined: null, lost: 0, dropped: 0 }
+  const result = { done: false, joined: null, lost: 0, rejected: 0, dropped: 0 }
   const drop = (op) => {
     const k = live.queue.indexOf(op)
     if (k >= 0) live.queue.splice(k, 1)
@@ -322,13 +331,15 @@ export async function flush(live, api, { onChange = () => {} } = {}) {
           onChange()
           continue
         }
-        const res = await api.post(setsUrl(), addBody(found.item, found.row))
-        afterWrite(live, op, res, true)
+        const body = addBody(found.item, found.row)
+        const res = await api.post(setsUrl(), body)
+        afterWrite(live, op, res, body, true)
       } else if (op.op === 'edit') {
         const found = findRow(live, op.key)
         if (found) {
-          const res = await api.patch(`${setsUrl()}/${op.serverId}`, { weight: found.row.weight, reps: found.row.reps })
-          afterWrite(live, op, res ?? { id: op.serverId, weight: found.row.weight, reps: found.row.reps }, false)
+          const sent = { weight: found.row.weight, reps: found.row.reps }
+          await api.patch(`${setsUrl()}/${op.serverId}`, sent)
+          afterWrite(live, op, null, sent, false)
         }
       } else if (op.op === 'cancel') {
         const res = await api.post(setsUrl(), op.body)
@@ -352,10 +363,7 @@ export async function flush(live, api, { onChange = () => {} } = {}) {
         return result
       } else {
         result.dropped++
-        if (op.op === 'add') {
-          live.lost = (live.lost ?? 0) + 1
-          result.lost++
-        }
+        if (op.op === 'add') rejectAdd(live, op, e.status === 409 ? 'lost' : 'rejected', result)
       }
       drop(op)
       onChange()
@@ -365,8 +373,22 @@ export async function flush(live, api, { onChange = () => {} } = {}) {
   return result
 }
 
-/** Abis add / edit kekirim: pasang id server, dan kabarin server lagi kalau barisnya berubah / dihapus selama request jalan. */
-function afterWrite(live, op, res, isAdd) {
+/** Add ditolak pasti: set nggak ada di server → barisnya balik belum ✓ (angka tetep). Udah dihapus sendiri → diem aja. */
+function rejectAdd(live, op, kind, result) {
+  live.queue = live.queue.filter((o) => !(o.op === 'cancel' && o.key === op.key))
+  const found = findRow(live, op.key)
+  if (!found) return
+  Object.assign(found.row, { done: false, doneAt: null })
+  result[kind]++
+  if (kind === 'lost') live.lost = (live.lost ?? 0) + 1
+}
+
+/**
+ * Abis add / edit kekirim: pasang id server, dan kabarin server lagi kalau barisnya berubah / dihapus selama request jalan.
+ * Patokannya angka yang DIKIRIM (`sent`), bukan jawaban server → nggak bisa muter terus walau server ngebulatin angka.
+ * Khusus add: jawaban kirim ulang (`clientId` udah ada) bisa bawa angka lama → beda sama baris = PATCH sekali.
+ */
+function afterWrite(live, op, res, sent, isAdd) {
   const found = findRow(live, op.key)
   if (!found) {
     if (!isAdd) return // dihapus pas PATCH jalan → `del` udah ngantri
@@ -377,8 +399,69 @@ function afterWrite(live, op, res, isAdd) {
   }
   const r = found.row
   if (isAdd) r.serverId = res.id
-  const differs = Number(res.weight) !== r.weight || Number(res.reps) !== r.reps
+  const differs = !sameSet(sent, r) || (isAdd && res && !sameSet(res, r))
   if (differs && !hasOp(live, r.key, ['edit'], op)) live.queue.push({ op: 'edit', key: r.key, serverId: r.serverId })
+}
+
+// ---- Sesi yang dibuang tapi belum bisa dihapus di server ("hantu") ----
+
+/**
+ * Hantu = `{ clientId, program, startedAt, serverId }` dari sesi yang dibuang pas belum ada sinyal.
+ * id server belum tau → kirim ulang start dengan `clientId` yang sama buat dapet id-nya, lalu DELETE.
+ * Jawaban 409 (ada sesi lain yang jalan) / sesi dengan `clientId` beda = sesi kita nggak pernah kecatet →
+ * hantunya dibuang, sesi orang (device lain) NGGAK pernah dihapus. Balikin true kalau semua beres.
+ */
+export async function clearGhosts(ghosts, api, { onChange = () => {} } = {}) {
+  const done = (g) => {
+    const k = ghosts.indexOf(g)
+    if (k >= 0) ghosts.splice(k, 1)
+    onChange()
+  }
+  while (ghosts.length) {
+    const g = ghosts[0]
+    try {
+      if (g.serverId == null) {
+        let s
+        try {
+          s = await api.post('/gym/sessions', { program: g.program, startedAt: g.startedAt, clientId: g.clientId })
+        } catch (e) {
+          if (e?.status !== 409) throw e
+          done(g)
+          continue
+        }
+        if (!s || s.clientId !== g.clientId) {
+          done(g)
+          continue
+        }
+        g.serverId = s.id
+        onChange()
+      }
+      await api.del(`/gym/sessions/${g.serverId}`)
+      done(g)
+    } catch (e) {
+      if (!settled(e)) return false
+      done(g) // 404 = udah nggak ada
+    }
+  }
+  return true
+}
+
+export function saveGhosts(storage, ghosts) {
+  try {
+    if (ghosts.length) storage.setItem(GHOST_KEY, JSON.stringify(ghosts))
+    else storage.removeItem(GHOST_KEY)
+  } catch {
+    // storage penuh / diblok: hantu tetep ada di memori sampe app ditutup
+  }
+}
+
+export function loadGhosts(storage) {
+  try {
+    const list = JSON.parse(storage.getItem(GHOST_KEY) ?? '[]')
+    return Array.isArray(list) ? list.filter((g) => g && typeof g.clientId === 'string') : []
+  } catch {
+    return []
+  }
 }
 
 // ---- Simpen di HP ----

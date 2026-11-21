@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from './api.js'
 import {
-  LIVE_KEY, OFFLINE_TEXT, OfflineError, addExercise, addRow, checkRow, deleteRow, editRow, flush, fromServer,
-  lastActivityAt, load, newLive, save,
+  GHOST_KEY, LIVE_KEY, OFFLINE_TEXT, OfflineError, addExercise, addRow, checkRow, clearGhosts, deleteRow, editRow,
+  flush, fromServer, lastActivityAt, load, loadGhosts, newLive, save, saveGhosts,
 } from './gymLive.js'
 
 // ---- data contoh ----
@@ -116,6 +116,12 @@ describe('newLive: draf sesi baru di HP', () => {
       { key: 'k3', weight: 22.5, reps: 9, done: false, doneAt: null, serverId: null, prev: [22.5, 9] },
     ])
     expect(live.items[1].rows).toHaveLength(3)
+  })
+
+  it('angka patokan dari server berupa teks (Decimal) tetep jadi angka & bisa dicentang', () => {
+    const live = newLive({ program: 'push', programs: PROGRAMS, exercises: [ex(1, 'X', { on: '2026-11-16', sets: [['22.5', 10]] })], now: at(0), uid: seq() })
+    expect(live.items[0].rows[0]).toMatchObject({ weight: 22.5, reps: 10, prev: [22.5, 10] })
+    expect(checkRow(live, 0, 0, at(1))).toBe(true)
   })
 
   it('gerakan tanpa riwayat → satu baris kosong', () => {
@@ -358,10 +364,96 @@ describe('flush: antrian kirim', () => {
     srv.sessions[0].endedAt = at(1).toISOString()
     checkRow(live, 0, 0, at(2))
     const res = await flush(live, srv.api)
-    expect(res).toMatchObject({ done: true, lost: 1, dropped: 1 })
+    expect(res).toMatchObject({ done: true, lost: 1, rejected: 0, dropped: 1 })
     expect(live.lost).toBe(1)
     expect(live.queue).toEqual([])
     expect(srv.sets).toEqual([])
+    expect(live.items[0].rows[0]).toMatchObject({ done: false, doneAt: null, weight: 22.5, reps: 10 }) // nggak keliatan kesimpen
+  })
+
+  it('add 404 / 422 → baris balik belum ✓ (angka tetep), rejected naik, bukan lost', async () => {
+    for (const status of [404, 422]) {
+      const live = start()
+      live.queue = []
+      live.serverId = 100
+      checkRow(live, 0, 0, at(2), { weight: 25, reps: 8 })
+      const api = { post: async () => { throw new ApiError('x', status) } }
+      expect(await flush(live, api)).toMatchObject({ done: true, lost: 0, rejected: 1, dropped: 1 })
+      expect(live.lost).toBe(0)
+      expect(live.items[0].rows[0]).toMatchObject({ done: false, weight: 25, reps: 8 })
+      expect(checkRow(live, 0, 0, at(5))).toBe(true) // bisa dicentang lagi
+    }
+  })
+
+  it('add lagi di jalan, barisnya dihapus sendiri, lalu ditolak 409 → diem (nggak diitung), cancel ikut kebuang', async () => {
+    const live = start()
+    live.queue = []
+    live.serverId = 100
+    checkRow(live, 0, 0, at(2))
+    let release
+    const gate = new Promise((r) => (release = r))
+    const api = { post: async () => { await gate; throw new ApiError('Sesinya udah diselesaiin.', 409) } }
+    const running = flush(live, api)
+    await Promise.resolve()
+    deleteRow(live, 0, 0)
+    expect(live.queue.map((o) => o.op)).toEqual(['cancel'])
+    release()
+    expect(await running).toMatchObject({ done: true, lost: 0, rejected: 0 })
+    expect(live.queue).toEqual([])
+  })
+
+  it('beban 3 desimal dibulatin 2 desimal; server yang ngebulatin nggak bikin PATCH muter terus', async () => {
+    const live = start()
+    let calls = 0
+    const r2 = (x) => Math.round(x * 100) / 100
+    const api = {
+      post: async (url, b) => (calls++, url === '/gym/sessions' ? { id: 100 } : { id: 500, ...b, weight: r2(b.weight) }),
+      patch: async (url, b) => {
+        if (++calls > 20) throw new ApiError('loop', 0)
+        return { id: 500, ...b, weight: r2(b.weight) }
+      },
+    }
+    checkRow(live, 0, 0, at(2), { weight: 22.555, reps: 10 })
+    expect(live.items[0].rows[0].weight).toBe(22.56)
+    expect(await flush(live, api)).toMatchObject({ done: true })
+    expect(calls).toBe(2)
+    editRow(live, 0, 0, { weight: 102.505, reps: 9 })
+    expect(live.items[0].rows[0].weight).toBe(102.51)
+    expect(await flush(live, api)).toMatchObject({ done: true })
+    expect(calls).toBe(3)
+  })
+
+  it('server yang jawab angka aneh terus → paling banyak 1 PATCH susulan, nggak muter', async () => {
+    const live = start()
+    let patches = 0
+    const api = {
+      post: async (url, b) => (url === '/gym/sessions' ? { id: 100 } : { id: 500, ...b, weight: b.weight + 1 }),
+      patch: async (url, b) => {
+        if (++patches > 5) throw new ApiError('loop', 0)
+        return { id: 500, ...b, weight: b.weight + 1 }
+      },
+    }
+    checkRow(live, 0, 0, at(2))
+    expect(await flush(live, api)).toMatchObject({ done: true })
+    expect(patches).toBe(1)
+  })
+
+  it('PATCH jawab tanpa data + angka diubah lagi pas PATCH jalan → angka terakhir tetep nyampe', async () => {
+    const srv = fakeServer()
+    const live = start()
+    checkRow(live, 0, 0, at(2))
+    await flush(live, srv.api)
+    editRow(live, 0, 0, { weight: 25, reps: 8 })
+    let release
+    const gate = new Promise((r) => (release = r))
+    const slow = { ...srv.api, patch: async (url, body) => (await gate, await srv.api.patch(url, body), null) }
+    const running = flush(live, slow)
+    await Promise.resolve()
+    editRow(live, 0, 0, { weight: 25, reps: 9 })
+    release()
+    await running
+    expect(live.queue).toEqual([])
+    expect(srv.serverSets()).toEqual([[1, 25, 9]])
   })
 
   it('edit / del ditolak pasti (409 / 404) → dibuang, dropped naik, bukan lost', async () => {
@@ -470,6 +562,59 @@ describe('fromServer: gabung sesi server + draf HP', () => {
     expect(merged.program).toBe('pull')
     expect(merged.items.map((i) => [i.exerciseId, i.extra])).toEqual([[9, false], [2, false], [1, true], [3, true]])
     expect(merged.items[merged.open].exerciseId).toBe(2)
+  })
+})
+
+describe('clearGhosts: sesi yang dibuang pas offline', () => {
+  const ghost = (over = {}) => ({ clientId: 'g1', program: 'push', startedAt: T0, serverId: null, ...over })
+
+  it('id belum tau → kirim ulang start (clientId sama) buat dapet id → DELETE', async () => {
+    const srv = fakeServer()
+    srv.sessions.push({ id: 7, clientId: 'g1', program: 'push', planned: [1], startedAt: T0, endedAt: null })
+    srv.api.del = async (url) => (srv.calls.push({ m: 'del', url }), null)
+    const ghosts = [ghost()]
+    let saved = 0
+    expect(await clearGhosts(ghosts, srv.api, { onChange: () => saved++ })).toBe(true)
+    expect(ghosts).toEqual([])
+    expect(srv.calls.map((c) => `${c.m} ${c.url}`)).toEqual(['post /gym/sessions', 'del /gym/sessions/7'])
+    expect(srv.calls[0].body).toEqual({ program: 'push', startedAt: T0, clientId: 'g1' })
+    expect(saved).toBeGreaterThan(0)
+  })
+
+  it('409 (sesi lain dari device lain lagi jalan) / balikan clientId beda → sesi orang NGGAK dihapus', async () => {
+    for (const post of [
+      async () => { throw new ApiError('Masih ada sesi Pull yang jalan.', 409, { active: { id: 9, clientId: 'ipad' } }) },
+      async () => ({ id: 9, clientId: 'ipad' }),
+    ]) {
+      let deleted = false
+      const ghosts = [ghost()]
+      expect(await clearGhosts(ghosts, { post, del: async () => (deleted = true) })).toBe(true)
+      expect(ghosts).toEqual([])
+      expect(deleted).toBe(false)
+    }
+  })
+
+  it('id udah tau → langsung DELETE; 404 = udah nggak ada; putus → false, hantu tetep (id yang udah dapet diinget)', async () => {
+    const urls = []
+    expect(await clearGhosts([ghost({ serverId: 5 })], { del: async (u) => urls.push(u) })).toBe(true)
+    expect(urls).toEqual(['/gym/sessions/5'])
+    const gone = [ghost({ serverId: 5 })]
+    expect(await clearGhosts(gone, { del: async () => { throw new ApiError('Sesinya nggak ketemu.', 404) } })).toBe(true)
+    expect(gone).toEqual([])
+    const stuck = [ghost()]
+    const api = { post: async () => ({ id: 8, clientId: 'g1' }), del: async () => { throw new ApiError('x', 0) } }
+    expect(await clearGhosts(stuck, api)).toBe(false)
+    expect(stuck).toEqual([ghost({ serverId: 8 })])
+  })
+
+  it('saveGhosts / loadGhosts bolak-balik; kosong = kunci dihapus; isi rusak = []', () => {
+    const storage = memStorage()
+    saveGhosts(storage, [ghost()])
+    expect(loadGhosts(storage)).toEqual([ghost()])
+    saveGhosts(storage, [])
+    expect(storage.map.has(GHOST_KEY)).toBe(false)
+    storage.setItem(GHOST_KEY, '{rusak')
+    expect(loadGhosts(storage)).toEqual([])
   })
 })
 

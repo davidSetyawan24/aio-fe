@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
-import { LIVE_KEY, OFFLINE_TEXT, OfflineError, load as loadDraft } from '@/lib/gymLive.js'
-import { DISCARD_OFFLINE_TEXT, FLUSH_EVERY_MS, setGymApi, setGymStorage, setGymUid, useGymStore } from './gym.js'
+import { GHOST_KEY, LIVE_KEY, OFFLINE_TEXT, OfflineError, load as loadDraft, loadGhosts } from '@/lib/gymLive.js'
+import { FLUSH_EVERY_MS, setGymApi, setGymStorage, setGymUid, useGymStore } from './gym.js'
 
 const ex = (id, name, last = null) => ({ id, name, restSec: 120, step: 2.5, dumbbell: false, last, record: null })
 const EXERCISES = [
@@ -205,6 +205,19 @@ describe('gym store: antrian', () => {
 })
 
 describe('gym store: ditolak server', () => {
+  it('set ditolak 422 → baris balik belum ✓ + notice "Coba centang lagi"', async () => {
+    okServer()
+    await started()
+    api.post.mockRejectedValue(new ApiError('Bebannya kegedean (maks 999 kg).', 422))
+    api.get.mockResolvedValue(gymData(session())) // sesinya masih jalan di server
+    store.check(0, 0)
+    await store.flush()
+    await tick()
+    expect(store.notice.text).toBe('1 set nggak kesimpen. Coba centang lagi.')
+    expect(store.live.items[0].rows[0]).toMatchObject({ done: false, weight: 22.5, reps: 10 })
+    expect(store.pending).toBe(0)
+  })
+
   it('cuma edit yang ditolak (sesi udah selesai di device lain) → muat ulang, draf basi dibuang', async () => {
     okServer()
     await started()
@@ -405,15 +418,103 @@ describe('gym store: selesai & buang', () => {
     expect(store.live.serverId).toBe(7)
   })
 
-  it('discard pas DELETE putus → OfflineError, draf tetep', async () => {
+  it('discard pas DELETE putus → langsung kebuang di HP, dicatet hantu, DELETE nyusul pas online', async () => {
     okServer()
     await started()
     api.del.mockRejectedValue(net())
-    const err = await store.discard().catch((e) => e)
-    expect(err).toBeInstanceOf(OfflineError)
-    expect(err.message).toBe(DISCARD_OFFLINE_TEXT)
-    expect(store.live).not.toBeNull()
-    expect(storage.map.has(LIVE_KEY)).toBe(true)
+    await store.discard()
+    expect(store.live).toBeNull()
+    expect(storage.map.has(LIVE_KEY)).toBe(false)
+    expect(loadGhosts(storage)).toEqual([expect.objectContaining({ clientId: 'k1', serverId: 100 })])
+    api.del.mockReset()
+    api.del.mockResolvedValue(null)
+    await store.flush()
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(storage.map.has(GHOST_KEY)).toBe(false)
+  })
+
+  it('dibuang offline (start udah dicoba) → app ditutup-buka → hantu dihapus duluan, sesi baru nggak nyambung ke hantu', async () => {
+    api.post.mockRejectedValue(net())
+    await started()
+    await store.discard()
+    await tick() // kiriman & muat ulang di belakang punya store lama kelar dulu (offline → hantu tetep)
+    expect(store.live).toBeNull()
+    expect(loadGhosts(storage)).toEqual([expect.objectContaining({ clientId: 'k1', serverId: null, program: 'push' })])
+
+    // server ternyata nerima start Push tadi (jawabannya ilang)
+    const sessions = [session({ id: 100, clientId: 'k1' })]
+    api.post.mockImplementation(async (url, body) => {
+      if (url !== '/gym/sessions') return { id: 900, ...body }
+      const same = sessions.find((x) => x.clientId === body.clientId)
+      if (same) return same
+      if (sessions.length) throw new ApiError('Masih ada sesi Push yang jalan.', 409, { active: sessions[0] })
+      const made = session({ id: 200, clientId: body.clientId, program: body.program })
+      sessions.push(made)
+      return made
+    })
+    api.del.mockImplementation(async (url) => {
+      sessions.splice(sessions.findIndex((x) => url.endsWith(`/${x.id}`)), 1)
+      return null
+    })
+    setActivePinia(createPinia())
+    store = useGymStore()
+    api.get.mockImplementation(async () => gymData(sessions.find((x) => !x.endedAt) ?? null))
+    await store.load()
+    store.start('pull')
+    await store.flush()
+    expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
+    expect(store.live).toMatchObject({ serverId: 200, program: 'pull', joined: false })
+    expect(storage.map.has(GHOST_KEY)).toBe(false)
+  })
+
+  it('hantu belum kehapus (server error) tapi GET nampilin sesinya → nggak diadopsi jadi sesi jalan', async () => {
+    api.post.mockRejectedValue(net())
+    await started()
+    await store.discard()
+    api.post.mockRejectedValue(new ApiError('x', 500))
+    api.get.mockResolvedValue(gymData(session({ clientId: 'k1' })))
+    await store.load()
+    expect(store.live).toBeNull()
+    expect(store.data.active).toBeNull()
+  })
+})
+
+describe('gym store: lagi Selesai', () => {
+  it('pas finish jalan: ✓ / ubah / hapus / tambah set / tambah gerakan ditolak; gagal → bisa lagi', async () => {
+    okServer()
+    await started()
+    store.check(0, 0)
+    await store.flush()
+    let reject
+    api.post.mockImplementationOnce(() => new Promise((_, rj) => (reject = rj)))
+    const running = store.finish()
+    expect(store.finishing).toBe(true)
+    await tick()
+    expect(store.check(0, 1)).toBe(false)
+    expect(store.edit(0, 0, { weight: 30, reps: 5 })).toBe(false)
+    expect(store.remove(0, 0)).toBe(false)
+    expect(store.addSet(0)).toBe(-1)
+    expect(store.addExercise(ex(9, 'Cable Fly'))).toBe(-1)
+    expect(store.live.items[0].rows[1].done).toBe(false)
+    expect(store.live.queue).toEqual([])
+    reject(net())
+    await expect(running).rejects.toBeInstanceOf(OfflineError)
+    expect(store.finishing).toBe(false)
+    expect(store.check(0, 1)).toBe(true)
+  })
+
+  it('pas discard jalan juga ditolak', async () => {
+    okServer()
+    await started()
+    let release
+    api.del.mockImplementationOnce(() => new Promise((r) => (release = r)))
+    const running = store.discard()
+    await tick()
+    expect(store.finishing).toBe(true)
+    expect(store.check(0, 0)).toBe(false)
+    release(null)
+    await running
+    expect(store.finishing).toBe(false)
   })
 })
 
