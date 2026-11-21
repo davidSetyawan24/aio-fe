@@ -5,7 +5,8 @@
     <div class="gy-sheet gl-addsheet" :class="{ show: open, dialog: wide }" data-test="add-sheet" role="dialog" aria-modal="true" aria-label="Tambah gerakan" :aria-hidden="String(!open)">
       <div class="gy-handle" />
       <div class="gy-ovhead">
-        <div class="grow"><h2>Tambah gerakan</h2><p>Cuma buat sesi ini — program {{ PROGRAM_LABEL[program] }} nggak berubah. Gerakannya punya riwayat sendiri.</p></div>
+        <div class="grow"><h2>Tambah gerakan</h2><p v-if="inProgram">Masuk ke program {{ PROGRAM_LABEL[program] }}. Gerakannya punya riwayat sendiri, setelannya ikut yang udah ada.</p>
+          <p v-else>Cuma buat sesi ini — program {{ PROGRAM_LABEL[program] }} nggak berubah. Gerakannya punya riwayat sendiri.</p></div>
         <button type="button" class="gy-xbtn" aria-label="Tutup" data-test="add-close" @click="$emit('close')"><PhX :size="18" weight="bold" /></button>
       </div>
       <label class="gl-search">
@@ -20,7 +21,7 @@
       </div>
       <div v-if="inSession" class="gl-xlist">
         <button type="button" class="gl-xrow" data-test="in-session" @click="$emit('add', inSession)">
-          <span class="grow"><b>{{ inSession.name }}</b><small>Udah ada di sesi ini</small></span>
+          <span class="grow"><b>{{ inSession.name }}</b><small>{{ inProgram ? 'Udah ada di program ini' : 'Udah ada di sesi ini' }}</small></span>
           <span class="pl"><PhCaretRight :size="16" weight="bold" /></span>
         </button>
       </div>
@@ -59,6 +60,8 @@ const props = defineProps({
   exercises: { type: Array, required: true },
   /** Id gerakan yang udah ada di sesi (nggak ditawarin lagi). */
   exclude: { type: Array, default: () => [] },
+  /** 'program' = nambah ke program (Atur program): semua gerakan yang belum ada di program itu ditawarin. */
+  mode: { type: String, default: 'session' },
 })
 const emit = defineEmits(['close', 'add'])
 
@@ -69,6 +72,7 @@ const creating = ref(false)
 const norm = (t) => String(t ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
 const name = computed(() => q.value.trim().replace(/\s+/g, ' '))
 const key = computed(() => norm(q.value))
+const inProgram = computed(() => props.mode === 'program')
 const inPrograms = computed(() => new Set(props.programs.flatMap((p) => p.exerciseIds)))
 
 const groups = computed(() => {
@@ -76,10 +80,10 @@ const groups = computed(() => {
   const hit = (x) => !key.value || norm(x.name).includes(key.value)
   const pool = props.exercises.filter((x) => !skip.has(x.id) && hit(x))
   // Gerakan di luar program yang belum pernah dipake cuma nongol pas dicari (biar daftarnya nggak penuh).
-  const mine = pool.filter((x) => !inPrograms.value.has(x.id) && (x.last || key.value))
+  const mine = pool.filter((x) => !inPrograms.value.has(x.id) && (inProgram.value || x.last || key.value))
   const other = pool.filter((x) => inPrograms.value.has(x.id))
   return [
-    { label: 'Pernah lo pake', items: mine },
+    { label: inProgram.value ? 'Gerakan tambahan' : 'Pernah lo pake', items: mine },
     { label: 'Dari program lain', items: other },
   ].filter((g) => g.items.length)
 })

@@ -479,8 +479,16 @@ export const useGymStore = defineStore('gym', {
       this.load().catch(() => {})
     },
 
+    /** Grafik satu gerakan: `{ exercise, points, record, flat }` langsung dari server (404 dilempar apa adanya). */
+    exerciseChart(id) {
+      return gymApi.get(`/gym/exercises/${id}`)
+    },
+
     async saveProgram(key, exerciseIds) {
       const res = await gymApi.put(`/gym/programs/${key}`, { exerciseIds })
+      // Isi program langsung ikut jawaban server (kalau muat ulang di belakang gagal, daftarnya tetep bener).
+      const prog = this.data?.programs.find((p) => p.key === key)
+      if (prog && Array.isArray(res?.exerciseIds)) prog.exerciseIds = res.exerciseIds
       await this.load().catch(() => {})
       return res
     },

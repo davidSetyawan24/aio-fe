@@ -20,30 +20,42 @@ import { dShort } from '@/lib/badanView.js'
 import { kgText } from '@/lib/gym.js'
 import './gym.css'
 
-/** Garis beban terberat per sesi (`Point[]`). `mini` = ringkas buat kartu di halaman Gym (cuma titik terakhir yang dilabelin). */
+/**
+ * Garis per sesi (`Point[]`): `mode` 'kg' = beban terberat (label `22,5×10`), 'orm' = 1RM (label angka).
+ * `mini` = ringkas buat kartu di halaman Gym (cuma titik terakhir yang dilabelin). `wide` = kanvas lebar buat PC.
+ */
 const props = defineProps({
   points: { type: Array, required: true },
+  mode: { type: String, default: 'kg' },
   mini: { type: Boolean, default: false },
+  wide: { type: Boolean, default: false },
 })
 
-const label = (p) => `${kgText(p.best[0])}×${p.best[1]}`
+const orm = computed(() => props.mode === 'orm')
+const val = (p) => (orm.value ? Number(p.e1rm) : Number(p.best[0]))
+const label = (p) => (orm.value ? kgText(p.e1rm) : `${kgText(p.best[0])}×${p.best[1]}`)
 const shape = computed(() => {
   const pts = props.points
   if (!pts.length) return null
   const mini = props.mini
-  const W = 340, H = mini ? 120 : 220
+  const W = mini || !props.wide ? 340 : 760, H = mini ? 120 : props.wide ? 300 : 220
   const L = mini ? 6 : 30, R = 34, T = mini ? 22 : 30, B = mini ? 8 : 26
-  const vals = pts.map((p) => p.best[0])
+  const vals = pts.map(val)
   let lo = Math.min(...vals), hi = Math.max(...vals)
   if (hi - lo < 2.5) { lo -= 2.5; hi += 2.5 } else { const pad = (hi - lo) * 0.2; lo -= pad; hi += pad }
   const x = (i) => L + (pts.length === 1 ? (W - L - R) / 2 : (i / (pts.length - 1)) * (W - L - R))
   const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B)
   const anchor = (i) => (i === 0 && pts.length > 1 ? 'start' : i === pts.length - 1 ? 'end' : 'middle')
-  const xy = pts.map((p, i) => ({ i, x: +x(i).toFixed(1), y: +y(p.best[0]).toFixed(1), last: i === pts.length - 1 }))
+  const xy = pts.map((p, i) => ({ i, x: +x(i).toFixed(1), y: +y(val(p)).toFixed(1), last: i === pts.length - 1 }))
   const line = xy.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join('')
   const area = `${line}L${xy[xy.length - 1].x},${H - B}L${xy[0].x},${H - B}Z`
   const labels = xy
-    .filter((p) => (mini ? p.last : p.i === 0 || p.last || label(pts[p.i]) !== label(pts[p.i - 1])))
+    .filter((p) => {
+      if (mini) return p.last
+      // titik kedua dari akhir disembunyiin di HP biar nggak numpuk sama label terakhir
+      if (p.i === pts.length - 2 && pts.length > 2 && !props.wide) return false
+      return p.i === 0 || p.last || label(pts[p.i]) !== label(pts[p.i - 1])
+    })
     .map((p) => ({ ...p, text: label(pts[p.i]), anchor: anchor(p.i) }))
   const grid = []
   const axis = []

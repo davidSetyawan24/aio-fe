@@ -1,0 +1,86 @@
+/* Grafik gerakan + Atur program */
+.gy-expick { --t: #ECEBE6; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; margin-top: 14px; padding: 10px 14px 10px 12px; border: 0; border-radius: 24px; background: var(--card); color: var(--text); box-shadow: 0 0 0 1px var(--hair), var(--lift); text-align: left; cursor: pointer; font-family: var(--ion-font-family); transition: transform .2s var(--spring); }
+.gy-expick:active { transform: scale(.98); }
+.gy-expick .pem { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 21px; background: var(--t); flex-shrink: 0; }
+:root.theme-dark .gy-expick .pem, :root.theme-dark .gy-pcol .pem { background: color-mix(in srgb, var(--t) 16%, transparent); }
+.gy-expick .grow { flex: 1; min-width: 0; }
+.gy-expick small { display: block; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.gy-expick b { display: block; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gy-expick .go { color: var(--muted); display: grid; }
+
+.gy-pad { padding: 14px; }
+.gy-seg { display: flex; padding: 4px; border-radius: 99px; background: var(--soft); }
+.gy-seg button { flex: 1; height: 44px; border: 0; border-radius: 99px; background: transparent; font: 700 13.5px var(--ion-font-family); color: var(--muted); cursor: pointer; white-space: nowrap; padding: 0 8px; transition: background .25s var(--spring), color .2s; }
+.gy-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 14px -6px rgba(0, 0, 0, .18); }
+.gy-flatrow { margin-top: 12px; }
+.gy-cnote { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 12px 14px; border-radius: 18px; background: var(--soft); font-size: 13px; font-weight: 600; line-height: 1.5; }
+.gy-cnote .em { font-size: 18px; line-height: 1.3; }
+.gy-cnote .gy-info { margin-left: 4px; }
+
+.gy-rec { display: grid; grid-template-columns: 1fr 1fr; }
+.gy-rec > div { padding: 14px; }
+.gy-rec > div + div { box-shadow: inset 1px 0 0 var(--hair); }
+.gy-rec .k { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.gy-rec .v { font-size: 21px; font-weight: 800; letter-spacing: -0.03em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.gy-rec .v small { font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.gy-rec .s { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.gy-slist .srw { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 56px; padding: 8px 14px; }
+.gy-slist .srw + .srw { box-shadow: inset 0 1px 0 var(--hair); }
+.gy-slist .srw .d { font-size: 13px; font-weight: 700; color: var(--muted); }
+.gy-slist .srw .s { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gy-slist .srw .v { font-size: 15.5px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.gy-cgrid > section > .gy-label:first-child { margin-top: 18px; }
+.gl-xrow .ck { width: 28px; height: 22px; border-radius: 99px; background: var(--lime); color: var(--lime-ink); display: grid; place-items: center; flex-shrink: 0; }
+
+/* Atur program */
+.gy-pseg { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 14px -18px 0; padding: 0 18px 2px; }
+.gy-pseg::-webkit-scrollbar { display: none; }
+.gy-pseg button { flex-shrink: 0; height: 44px; padding: 0 16px 0 10px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 800 14px var(--ion-font-family); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.gy-pseg button.on { background: var(--ink); color: var(--on-ink); }
+.gy-pcols { margin-top: 12px; display: block; }
+.gy-pcol .gy-pch { display: none; }
+.gy-pcol .gy-core { overflow: hidden; }
+.gy-prow { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 64px; padding: 4px 4px 4px 0; background: var(--card); }
+.gy-prow + .gy-prow { box-shadow: inset 0 1px 0 var(--hair); }
+.gy-prow ion-reorder { width: 44px; height: 56px; display: grid; place-items: center; color: var(--muted); flex-shrink: 0; touch-action: none; }
+.gy-prow .main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 10px 0 0; border: 0; background: none; color: var(--text); text-align: left; font-family: var(--ion-font-family); cursor: pointer; }
+.gy-prow .grow { flex: 1; min-width: 0; }
+.gy-prow b { display: block; font-size: 15px; font-weight: 800; }
+.gy-prow small { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.gy-prow .go { color: var(--muted); display: grid; }
+.gy-padd { box-shadow: inset 0 1px 0 var(--hair); }
+.gy-padd:first-child { box-shadow: none; }
+.gy-pempty { padding: 18px 16px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.gy-pnote { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 0; padding: 12px 14px; border-radius: 18px; background: var(--soft); font-size: 13px; font-weight: 600; line-height: 1.45; }
+ion-reorder-group .gy-prow { -webkit-user-select: none; user-select: none; }
+
+/* sheet Atur gerakan */
+.gy-fld { display: block; margin-top: 4px; padding: 10px 14px; border-radius: 18px; background: var(--soft); }
+.gy-fld .lb { display: block; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.gy-fld input { width: 100%; border: 0; outline: 0; background: transparent; padding: 0; margin-top: 2px; color: var(--text); font: 800 16px var(--ion-font-family); }
+.gy-fld:focus-within { box-shadow: inset 0 0 0 2px var(--ink); background: var(--card); }
+.gy-fld.bad { box-shadow: inset 0 0 0 2px var(--red); }
+.gy-ferr { margin: 6px 6px 0; font-size: 12.5px; font-weight: 700; color: var(--red); }
+.gy-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.gy-opt { height: 44px; padding: 0 14px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 700 14px var(--ion-font-family); cursor: pointer; font-variant-numeric: tabular-nums; }
+.gy-opt.on { background: var(--ink); color: var(--on-ink); }
+.gy-switch { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 12px 14px; border: 0; border-radius: 18px; background: var(--soft); color: var(--text); text-align: left; cursor: pointer; font-family: var(--ion-font-family); }
+.gy-switch .grow { flex: 1; min-width: 0; }
+.gy-switch b { display: block; font-size: 14.5px; font-weight: 800; }
+.gy-switch small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 1px; line-height: 1.4; }
+.gy-sw { width: 50px; height: 30px; border-radius: 99px; background: rgba(127, 127, 120, .35); position: relative; flex-shrink: 0; transition: background .2s; }
+.gy-sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 99px; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2); transition: transform .25s var(--spring); }
+.gy-sw.on { background: var(--green); }
+.gy-sw.on::after { transform: translateX(20px); }
+
+@media (hover: hover) {
+  .gy-expick:hover, .gy-prow .main:hover b { opacity: .85; }
+  .gy-opt:hover:not(.on) { background: var(--hair); }
+}
+@media (min-width: 768px) { .gy-pseg { margin: 14px 0 0; padding: 0; flex-wrap: wrap; } }
+@media (min-width: 1100px) {
+  .gy-cgrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: 0 24px; align-items: start; }
+  .gy-pcols { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-items: start; }
+  .gy-pcol .gy-pch { display: flex; align-items: center; gap: 10px; padding: 14px 14px 6px; font-size: 17px; font-weight: 800; background: var(--card); }
+  .gy-pcol .gy-pch .pem { --t: #ECEBE6; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; background: var(--t); }
+}

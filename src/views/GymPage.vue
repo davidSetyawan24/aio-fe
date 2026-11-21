@@ -41,7 +41,7 @@
                   <div class="gy-core">
                     <button type="button" class="gy-minichart" data-test="mini" @click="openChart">
                       <span class="gy-mctop"><b>{{ mini.name }}</b><span>terakhir <b>{{ setText(mini.last) }}</b></span></span>
-                      <GymMiniChart :points="data.mini.points" mini />
+                      <GymChart :points="data.mini.points" mini />
                     </button>
                   </div>
                 </div>
@@ -68,7 +68,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue'
 import GymHistoryRows from '@/components/gym/GymHistoryRows.vue'
-import GymMiniChart from '@/components/gym/GymMiniChart.vue'
+import GymChart from '@/components/gym/GymChart.vue'
 import GymPickSheet from '@/components/gym/GymPickSheet.vue'
 import GymTiles from '@/components/gym/GymTiles.vue'
 import GymWeek from '@/components/gym/GymWeek.vue'
