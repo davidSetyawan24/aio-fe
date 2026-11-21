@@ -209,6 +209,10 @@ describe('GymLivePage: layar live', () => {
     expect(card(w, 2).find('[data-test="addset"]').attributes('disabled')).toBeDefined()
     expect(w.find('[data-test="addex"]').attributes('disabled')).toBeDefined()
     expect(w.find('[data-test="finish"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-test="finish"]').text()).toBe('Nyimpen…')
+    store.finishing = false
+    await flushPromises()
+    expect(w.find('[data-test="finish"]').text()).toBe('Selesai')
   })
 
   it('ada set belum kekirim → chip "⏳ N set belum kekirim"', async () => {
@@ -403,8 +407,8 @@ describe('GymLivePage: timer istirahat', () => {
     const w = await mountPage()
     await editor(w).find('[data-test="check"]').trigger('click')
     const first = store.live.timer.endAt
-    await card(w, 3).find('[data-test="exhead"]').trigger('click')
     await sleep(420)
+    await card(w, 3).find('[data-test="exhead"]').trigger('click')
     await editor(w).find('[data-test="check"]').trigger('click')
     await flushPromises()
     expect(store.live.timer.name).toBe('Pec Deck')
@@ -495,6 +499,34 @@ describe('GymLivePage: tap kedua abis ✓ (R12a)', () => {
     await sleep(420)
     await editor(w).find('[data-test="weight-plus"]').trigger('click')
     expect(editor(w).find('[data-test="weight"]').element.value).not.toBe(before)
+  })
+})
+
+describe('GymLivePage: dobel-tap ✓ set terakhir nggak nyasar ke tombol yang baru muncul', () => {
+  it('✓ set terakhir → "Gerakan beres. Lanjut?" & "Tambah set" diabaikan ±350 ms, abis itu jalan', async () => {
+    const live = draft()
+    live.items[2].rows.slice(0, 2).forEach((r, k) => Object.assign(r, { done: true, doneAt: STARTED, serverId: 520 + k }))
+    const w = await mountPage({ live })
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    expect(store.live.items[2].rows.every((r) => r.done)).toBe(true)
+    const next = card(w, 2).find('[data-test="nextex"]')
+    expect(next.exists()).toBe(true)
+    await next.trigger('click')
+    await card(w, 2).find('[data-test="addset"]').trigger('click')
+    expect(store.live.open).toBe(2)
+    expect(store.live.items[2].rows).toHaveLength(3)
+    await sleep(420)
+    await card(w, 2).find('[data-test="nextex"]').trigger('click')
+    expect(store.live.open).toBe(3)
+  })
+
+  it('kepala gerakan lain juga diabaikan pas jeda itu', async () => {
+    const w = await mountPage()
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    await card(w, 4).find('[data-test="exhead"]').trigger('click')
+    expect(store.live.open).toBe(2)
   })
 })
 

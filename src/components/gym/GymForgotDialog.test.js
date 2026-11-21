@@ -141,6 +141,15 @@ describe('GymForgotDialog', () => {
     expect(api.post).toHaveBeenCalledWith('/gym/sessions/100/finish', { endedAt: '2026-11-23T17:20:00.000Z' })
   })
 
+  it('lagi nyimpen → tombol Selesai jadi "Nyimpen…"', async () => {
+    vi.setSystemTime(new Date(NOW))
+    await mountDialog()
+    expect(q('[data-test="forgot-done"]').textContent.trim()).toBe('Selesai')
+    store.finishing = true
+    await flushPromises()
+    expect(q('[data-test="forgot-done"]').textContent.trim()).toBe('Nyimpen…')
+  })
+
   it('belum login → nggak ngecek apa-apa & dialog tutup', async () => {
     await mountDialog({ authed: false })
     expect(api.get).not.toHaveBeenCalled()

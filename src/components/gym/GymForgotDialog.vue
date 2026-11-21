@@ -15,7 +15,7 @@
               <input v-model="time" type="time" data-test="forgot-time" :disabled="store.finishing" />
             </label>
             <p v-if="err" class="gy-ferr" data-test="forgot-err">{{ err }}</p>
-            <button type="submit" class="gy-save" data-test="forgot-done" :disabled="store.finishing">Selesai <span><PhCheck :size="20" weight="bold" /></span></button>
+            <button type="submit" class="gy-save" data-test="forgot-done" :disabled="store.finishing">{{ store.finishing ? 'Nyimpen…' : 'Selesai' }} <span><PhCheck :size="20" weight="bold" /></span></button>
           </form>
         </template>
         <template v-else>

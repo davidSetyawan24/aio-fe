@@ -140,4 +140,4 @@
 }
 
 /* Abis ✓: editor set berikutnya belum nerima tap sebentar (tap kedua yang kebut). */
-.gl-guard .gl-sedit { pointer-events: none; }
+.gl-guard .gl-ex, .gl-guard .gl-addex { pointer-events: none; }

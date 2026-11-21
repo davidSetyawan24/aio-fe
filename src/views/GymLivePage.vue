@@ -8,7 +8,7 @@
             <small>{{ live ? `${PROGRAM_EMOJI[live.program]} Sesi ${PROGRAM_LABEL[live.program]}` : 'Sesi' }}</small>
             <b>{{ clock }}</b>
           </div>
-          <button type="button" class="gl-fin" data-test="finish" :disabled="!live || store.finishing" @click="askFinish"><span class="i"><PhFlag :size="16" weight="bold" /></span>Selesai</button>
+          <button type="button" class="gl-fin" data-test="finish" :disabled="!live || store.finishing" @click="askFinish"><span class="i"><PhFlag :size="16" weight="bold" /></span>{{ store.finishing ? 'Nyimpen…' : 'Selesai' }}</button>
         </div>
         <div v-if="store.pending > 0" class="gl-pending"><span data-test="pending">⏳ {{ store.pending }} set belum kekirim</span></div>
       </div>
@@ -171,7 +171,10 @@ function onChange(i, j, vals) {
   if (!items.value[i]?.rows[j]?.done) store.edit(i, j, vals)
 }
 
-/** Tap kedua yang kebut abis ✓ jangan kena editor set berikutnya yang baru muncul (±350 ms). */
+/**
+ * Tap kedua yang kebut abis ✓ jangan kena apa pun yang baru muncul di posisi ✓ (editor set berikutnya,
+ * "Gerakan beres. Lanjut?", "Tambah set", kepala gerakan lain) → semua tap di daftar gerakan diabaikan ±350 ms.
+ */
 const GUARD_MS = 350
 const guard = ref(false)
 let guardUntil = 0
@@ -183,7 +186,7 @@ function startGuard() {
   guardTimer = setTimeout(() => (guard.value = false), GUARD_MS)
 }
 function onGuardClick(e) {
-  if (Date.now() >= guardUntil || !e.target?.closest?.('[data-test="editor"]')) return
+  if (Date.now() >= guardUntil) return
   e.stopPropagation()
   e.preventDefault()
 }
