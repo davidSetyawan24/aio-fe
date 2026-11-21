@@ -199,7 +199,12 @@ function reconcile(store, data) {
 export const useGymStore = defineStore('gym', {
   // `finishing`: lagi Selesai / Buang sesi → ✓ & ubah set ditolak (UI matiin tombolnya).
   // `exCache`: daftar gerakan simpenan HP, dipake kalau `data` belum ada (offline).
-  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false, exCache: null }),
+  // `reports`: Report sesi selesai per id (ringkasan / detail). `hist`: riwayat per minggu (`stale` = ada yang berubah, muat ulang).
+  state: () => ({
+    data: null, live: null, pending: 0, loaded: false, notice: null, finishing: false, exCache: null,
+    reports: {},
+    hist: { weeks: [], next: null, loaded: false, stale: false },
+  }),
 
   getters: {
     /** Daftar gerakan: dari server kalau udah dimuat, selain itu simpenan HP. */
@@ -350,6 +355,8 @@ export const useGymStore = defineStore('gym', {
           this.live = null
           persist(this)
         }
+        this.reports[res.session.id] = res
+        this.hist.stale = true
         return res
       }).finally(() => {
         this.finishing = false
@@ -413,6 +420,61 @@ export const useGymStore = defineStore('gym', {
       const res = await gymApi.patch(`/gym/exercises/${id}`, body)
       await this.load().catch(() => {})
       return res
+    },
+
+    /** Report satu sesi selesai: dari simpenan kalau ada (mis. baru Selesai), `force` = ambil dari server. 404 → simpenan dibuang. */
+    async report(id, { force = false } = {}) {
+      if (!force && this.reports[id]) return this.reports[id]
+      try {
+        const res = await gymApi.get(`/gym/sessions/${id}`)
+        this.reports[id] = res
+        return res
+      } catch (e) {
+        if (e?.status === 404) delete this.reports[id]
+        throw e
+      }
+    },
+
+    /** Riwayat halaman pertama (isi lama diganti). Yang kelamaan datengnya dibuang kalau ada muat ulang lain di belakangnya. */
+    async loadHistory() {
+      const r = rt(this)
+      const seq = (r.histSeq = (r.histSeq ?? 0) + 1)
+      const res = await gymApi.get('/gym/sessions')
+      if (seq !== r.histSeq) return
+      this.hist = { weeks: res.weeks, next: res.next, loaded: true, stale: false }
+    },
+
+    /** Sambung riwayat ke minggu-minggu sebelumnya (pake `next`). */
+    async moreHistory() {
+      const r = rt(this)
+      const next = this.hist.next
+      if (!next || r.histMore) return
+      const seq = r.histSeq
+      r.histMore = true
+      try {
+        const res = await gymApi.get(`/gym/sessions?beforeWeek=${next}`)
+        if (seq !== r.histSeq) return
+        const have = new Set(this.hist.weeks.map((w) => w.start))
+        this.hist.weeks = [...this.hist.weeks, ...res.weeks.filter((w) => !have.has(w.start))]
+        this.hist.next = res.next
+      } finally {
+        r.histMore = false
+      }
+    },
+
+    /** Ubah sesi selesai (jam + set). Sukses → Report baru; riwayat & halaman Gym dimuat ulang di belakang. */
+    async saveSession(id, body) {
+      const res = await gymApi.put(`/gym/sessions/${id}`, body)
+      this.reports[id] = res
+      this.hist.stale = true
+      this.load().catch(() => {})
+      return res
+    },
+
+    async deleteSession(id) {
+      await gymApi.del(`/gym/sessions/${id}`)
+      this.hist.stale = true
+      this.load().catch(() => {})
     },
 
     async saveProgram(key, exerciseIds) {
