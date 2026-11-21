@@ -11,8 +11,11 @@
         <p v-if="failed && !data" class="gy-fail" data-test="failed">Nggak bisa muat programnya. <button type="button" @click="load">Coba lagi</button></p>
         <p v-else-if="!data" class="gy-wait" data-test="wait">Bentar ya…</p>
         <template v-else>
-          <div v-if="!wide" class="gy-pseg rise" style="--i: 2" role="tablist">
-            <button v-for="k in PROGRAMS" :key="k" type="button" role="tab" :class="{ on: prog === k }" :aria-selected="String(prog === k)" :data-prog="k" @click="prog = k"><span>{{ PROGRAM_EMOJI[k] }}</span>{{ PROGRAM_LABEL[k] }}</button>
+          <!-- HP: tab latihan bisa digeser; bayangan kanan = masih ada tab di kanan (Lower). -->
+          <div v-if="!wide" class="gy-psegw rise" :class="{ more: segMore }" style="--i: 2" data-test="pseg">
+            <div ref="seg" class="gy-pseg" role="tablist" @scroll.passive="checkSeg">
+              <button v-for="k in PROGRAMS" :key="k" type="button" role="tab" :class="{ on: prog === k }" :aria-selected="String(prog === k)" :data-prog="k" @click="pickProg(k, $event)"><span>{{ PROGRAM_EMOJI[k] }}</span>{{ PROGRAM_LABEL[k] }}</button>
+            </div>
           </div>
           <div class="gy-pcols rise" style="--i: 3">
             <div v-for="k in shown" :key="k" class="gy-pcol" :data-col="k">
@@ -49,7 +52,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { IonContent, IonPage, IonReorder, IonReorderGroup, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhDotsSixVertical, PhPlus } from '@phosphor-icons/vue'
 import GymAddExerciseSheet from '@/components/gym/GymAddExerciseSheet.vue'
@@ -77,6 +80,21 @@ let chain = Promise.resolve()
 const ver = {}
 
 const data = computed(() => store.data)
+
+// Tab latihan HP: tanda "masih ada di kanan" + tab yang dipilih digeser biar keliatan penuh.
+const seg = ref(null)
+const segMore = ref(false)
+function checkSeg() {
+  const el = seg.value
+  segMore.value = !!el && el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+}
+function pickProg(k, e) {
+  prog.value = k
+  e?.currentTarget?.scrollIntoView?.({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+}
+watch([seg, data], () => nextTick(checkSeg))
+onMounted(() => window.addEventListener('resize', checkSeg))
+onBeforeUnmount(() => window.removeEventListener('resize', checkSeg))
 const shown = computed(() => (wide.value ? PROGRAMS : [prog.value]))
 const idsOf = (k) => local.value[k] ?? data.value?.programs.find((p) => p.key === k)?.exerciseIds ?? []
 const rowsOf = (k) => {

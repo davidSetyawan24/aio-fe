@@ -17,8 +17,8 @@
           <div class="gy-label rise" style="--i: 1"><span>Pilih latihan</span><small v-if="liveInfo" data-test="busy">selesaiin sesi yang jalan dulu</small></div>
           <GymTiles :programs="data.programs" :today="today" :disabled="!!liveInfo" @pick="openPick" />
 
-          <div class="gy-gmain">
-            <section>
+          <div class="gy-gmain" :class="{ 'no-chart': !hasChart }">
+            <section class="gy-ga">
               <template v-if="data.firstOn">
                 <div class="gy-label rise" style="--i: 6"><span>Minggu ini</span></div>
                 <GymWeek :week="data.week" :today="today" />
@@ -31,18 +31,18 @@
                 <div class="shell"><div class="gy-core gy-empty" data-test="empty"><div class="em">🏋️</div><h2>Belum ada sesi</h2><p>Pilih latihan di atas buat mulai. Angka tiap set kesimpen di sini, sesi berikutnya tinggal nerusin.</p></div></div>
               </template>
             </section>
-            <section>
-              <template v-if="data.firstOn && mini">
-                <div class="gy-label rise" style="--i: 8"><span>Grafik gerakan</span><button type="button" class="gy-lk" @click="openChart">Buka <PhCaretRight :size="14" weight="bold" /></button></div>
-                <div class="shell rise" style="--i: 8">
-                  <div class="gy-core">
-                    <button type="button" class="gy-minichart" data-test="mini" @click="openChart">
-                      <span class="gy-mctop"><b>{{ mini.name }}</b><span>terakhir <b>{{ setText(mini.last) }}</b></span></span>
-                      <GymChart :points="data.mini.points" mini />
-                    </button>
-                  </div>
+            <section v-if="hasChart" class="gy-gb">
+              <div class="gy-label rise" style="--i: 8"><span>Grafik gerakan</span><button type="button" class="gy-lk" @click="openChart">Buka <PhCaretRight :size="14" weight="bold" /></button></div>
+              <div class="shell rise" style="--i: 8">
+                <div class="gy-core">
+                  <button type="button" class="gy-minichart" data-test="mini" @click="openChart">
+                    <span class="gy-mctop"><b>{{ mini.name }}</b><span>terakhir <b>{{ setText(mini.last) }}</b></span></span>
+                    <GymChart :points="data.mini.points" mini />
+                  </button>
                 </div>
-              </template>
+              </div>
+            </section>
+            <section class="gy-gc">
               <div class="gy-label rise" style="--i: 9"><span>Program</span></div>
               <div class="shell rise" style="--i: 9">
                 <div class="gy-core">
@@ -108,6 +108,7 @@ const mini = computed(() => {
   const x = store.data.exercises.find((e) => e.id === m.exerciseId)
   return { name: x?.name ?? 'Gerakan', last: bestSet([m.points[m.points.length - 1].best]) }
 })
+const hasChart = computed(() => !!(store.data?.firstOn && mini.value))
 
 async function load() {
   failed.value = false

@@ -90,8 +90,16 @@ function bump(key, dir) {
   emit('change', vals())
 }
 function typed(key, e) {
-  if (key === 'weight') weightText.value = e.target.value
-  else repsText.value = e.target.value
+  const el = e.target
+  if (key === 'weight') {
+    // Titik (tempel "22.5" / keyboard laptop) ditampilin koma kayak angka Indonesia lain; kursor nggak loncat.
+    if (el.value.includes('.')) {
+      const at = el.selectionStart
+      el.value = el.value.replaceAll('.', ',')
+      if (at != null) el.setSelectionRange?.(at, at)
+    }
+    weightText.value = el.value
+  } else repsText.value = el.value
   emit('change', vals())
 }
 

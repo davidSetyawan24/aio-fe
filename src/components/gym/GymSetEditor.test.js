@@ -68,6 +68,13 @@ describe('GymSetEditor', () => {
     expect(off(w, 'check')).toBe(true)
   })
 
+  it('tempel / ketik titik "22.5" → ditampilin "22,5", angka tetep 22.5', async () => {
+    const w = mountEditor({ weight: null, reps: null, prev: null })
+    await w.find('[data-test="weight"]').setValue('22.5')
+    expect(w.find('[data-test="weight"]').element.value).toBe('22,5')
+    expect(last(w, 'change')).toEqual({ weight: 22.5, reps: null })
+  })
+
   it('beban kegedean / reps > 100 → ✓ mati, + mati di batas', async () => {
     const w = mountEditor({ weight: 999, reps: 100 })
     expect(off(w, 'weight-plus')).toBe(true)

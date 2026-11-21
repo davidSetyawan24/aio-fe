@@ -33,7 +33,11 @@
 .gl-xrow .ck { width: 28px; height: 22px; border-radius: 99px; background: var(--lime); color: var(--lime-ink); display: grid; place-items: center; flex-shrink: 0; }
 
 /* Atur program */
-.gy-pseg { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 14px -18px 0; padding: 0 18px 2px; }
+.gy-psegw { position: relative; margin-top: 14px; }
+.gy-psegw::after { content: ''; position: absolute; top: 0; bottom: 2px; right: -18px; width: 56px; pointer-events: none; opacity: 0; transition: opacity .2s;
+  background: linear-gradient(to right, color-mix(in srgb, var(--app-bg) 0%, transparent), var(--app-bg) 80%); }
+.gy-psegw.more::after { opacity: 1; }
+.gy-pseg { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 0 18px 2px; scroll-padding-inline: 18px; }
 .gy-pseg::-webkit-scrollbar { display: none; }
 .gy-pseg button { flex-shrink: 0; height: 44px; padding: 0 16px 0 10px; border: 0; border-radius: 99px; background: var(--soft); color: var(--text); font: 800 14px var(--ion-font-family); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .gy-pseg button.on { background: var(--ink); color: var(--on-ink); }
@@ -77,10 +81,12 @@ ion-reorder-group .gy-prow { -webkit-user-select: none; user-select: none; }
   .gy-expick:hover, .gy-prow .main:hover b { opacity: .85; }
   .gy-opt:hover:not(.on) { background: var(--hair); }
 }
-@media (min-width: 768px) { .gy-pseg { margin: 14px 0 0; padding: 0; flex-wrap: wrap; } }
+@media (min-width: 768px) { .gy-pseg { margin: 0; padding: 0; flex-wrap: wrap; } }
 @media (min-width: 1100px) {
   .gy-cgrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); gap: 0 24px; align-items: start; }
-  .gy-pcols { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; align-items: start; }
+  /* auto-fit: kolom kosong dilipet, 5 program ngisi lebar penuh */
+  .gy-pcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; align-items: start; }
   .gy-pcol .gy-pch { display: flex; align-items: center; gap: 10px; padding: 14px 14px 6px; font-size: 17px; font-weight: 800; background: var(--card); }
   .gy-pcol .gy-pch .pem { --t: #ECEBE6; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; background: var(--t); }
 }
+@media (min-width: 1600px) { .gy-pcols { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

@@ -1,7 +1,9 @@
 /* Gaya layar sesi live Gym (diawali gl- biar nggak kena kelas global). Tombol gede: dipake sambil keringetan. */
 
 /* bar atas kaca */
-.gl-bar { position: sticky; top: 0; z-index: 10; padding: calc(env(safe-area-inset-top) + 8px) 14px 10px 10px; background: var(--glass);
+.gl-bar { position: sticky; top: 0; z-index: 10; padding: calc(env(safe-area-inset-top) + 8px) 14px 10px 10px;
+  /* kaca lebih pekat dari --glass: angka kartu yang digulung ke belakang nggak tembus ke jam / judul */
+  background: color-mix(in srgb, var(--app-bg) 96%, transparent);
   backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); box-shadow: 0 1px 0 var(--hair); font-family: var(--ion-font-family); }
 .gl-barrow { display: flex; align-items: center; gap: 8px; }
 .gl-bar .gy-back { margin-left: 0; flex-shrink: 0; }

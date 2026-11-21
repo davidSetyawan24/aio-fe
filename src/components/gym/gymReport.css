@@ -105,6 +105,6 @@
   .gy-hstats > div:first-child { padding-left: 0; box-shadow: none; }
   .gy-hero .ttl { font-size: 40px; }
   .gy-hstats .v { font-size: 38px; }
-  .gy-histgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 0 24px; align-items: start; }
+  .gy-histgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 0 24px; align-items: start; }
 }
 @media (min-width: 1600px) { .gy-hero .ttl { font-size: 44px; } }

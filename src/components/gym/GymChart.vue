@@ -9,7 +9,7 @@
       <path class="area" :d="shape.area" />
       <path class="ln" :d="shape.line" />
       <circle v-for="p in shape.pts" :key="p.i" class="pt" :class="{ last: p.last }" :cx="p.x" :cy="p.y" :r="mini ? 3.5 : 5" />
-      <text v-for="p in shape.labels" :key="`l${p.i}`" class="lbl" :class="{ dim: !p.last }" :x="p.x" :y="p.y - 11" :text-anchor="p.anchor">{{ p.text }}</text>
+      <text v-for="p in shape.labels" :key="`l${p.i}`" class="lbl" :class="{ dim: !p.last }" :x="p.lx" :y="p.ly" :text-anchor="p.anchor">{{ p.text }}</text>
     </svg>
   </div>
 </template>
@@ -31,6 +31,8 @@ const props = defineProps({
   wide: { type: Boolean, default: false },
 })
 
+/** Lebar kira-kira satu huruf label (font 11px tebel, satuan viewBox). */
+const LABEL_CHAR = 6.4
 const orm = computed(() => props.mode === 'orm')
 const val = (p) => (orm.value ? Number(p.e1rm) : Number(p.best[0]))
 const label = (p) => (orm.value ? kgText(p.e1rm) : `${kgText(p.best[0])}×${p.best[1]}`)
@@ -49,14 +51,45 @@ const shape = computed(() => {
   const xy = pts.map((p, i) => ({ i, x: +x(i).toFixed(1), y: +y(val(p)).toFixed(1), last: i === pts.length - 1 }))
   const line = xy.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join('')
   const area = `${line}L${xy[xy.length - 1].x},${H - B}L${xy[0].x},${H - B}Z`
-  const labels = xy
+  // Label di atas titik, kecuali garis di sebelahnya lebih tinggi (titik lembah / ujung yang garisnya naik) → di bawah, biar nggak ketimpa garis.
+  const below = (p) => {
+    const nb = [xy[p.i - 1], xy[p.i + 1]].filter(Boolean)
+    return !mini && nb.length > 0 && nb.every((q) => q.y < p.y - 0.5)
+  }
+  const cands = xy
     .filter((p) => {
       if (mini) return p.last
       // titik kedua dari akhir disembunyiin di HP biar nggak numpuk sama label terakhir
       if (p.i === pts.length - 2 && pts.length > 2 && !props.wide) return false
       return p.i === 0 || p.last || label(pts[p.i]) !== label(pts[p.i - 1])
     })
-    .map((p) => ({ ...p, text: label(pts[p.i]), anchor: anchor(p.i) }))
+    .map((p) => {
+      const at = { ...p, text: label(pts[p.i]), anchor: anchor(p.i), lx: p.x, ly: +(below(p) ? p.y + 19 : p.y - 11).toFixed(1) }
+      // Titik di tengah tanjakan / turunan: label digeser ke sisi yang kosong (kiri-atas kalau naik, kanan-atas kalau turun).
+      const prev = xy[p.i - 1], next = xy[p.i + 1]
+      if (!mini && prev && next && at.anchor === 'middle') {
+        if (prev.y > p.y + 0.5 && next.y < p.y - 0.5) Object.assign(at, { anchor: 'end', lx: p.x - 6 })
+        else if (prev.y < p.y - 0.5 && next.y > p.y + 0.5) Object.assign(at, { anchor: 'start', lx: p.x + 6 })
+      }
+      return at
+    })
+  // Yang tabrakan ke samping (lebar label kira-kira) disembunyiin: terakhir dulu, lalu pertama, lalu sisanya urut.
+  const box = (p) => {
+    const w = p.text.length * LABEL_CHAR + 6
+    const x0 = p.anchor === 'start' ? p.lx : p.anchor === 'end' ? p.lx - w : p.lx - w / 2
+    return [x0, x0 + w]
+  }
+  const order = [...cands.filter((p) => p.last), ...cands.filter((p) => p.i === 0 && !p.last), ...cands.filter((p) => p.i !== 0 && !p.last)]
+  const kept = []
+  for (const p of order) {
+    const [a0, a1] = box(p)
+    const hit = kept.some((q) => {
+      const [b0, b1] = box(q)
+      return a0 < b1 && b0 < a1 && Math.abs(p.ly - q.ly) < 13
+    })
+    if (!hit) kept.push(p)
+  }
+  const labels = kept.sort((a, b) => a.i - b.i)
   const grid = []
   const axis = []
   if (!mini) {

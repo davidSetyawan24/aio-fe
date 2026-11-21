@@ -86,6 +86,19 @@ describe('GymProgramPage (HP)', () => {
     expect(w.find('[data-test="lower-note"]').text()).toContain('Lower awalnya salinan Leg. Tambah/hapus/urutin di sini nggak ngubah Leg.')
   })
 
+  it('chip kepotong di kanan → bayangan "masih ada" nyala; digeser mentok → ilang', async () => {
+    const w = await mountPage()
+    const el = w.find('.gy-pseg').element
+    Object.defineProperty(el, 'scrollWidth', { configurable: true, value: 470 })
+    Object.defineProperty(el, 'clientWidth', { configurable: true, value: 354 })
+    el.scrollLeft = 0
+    await w.find('.gy-pseg').trigger('scroll')
+    expect(w.find('[data-test="pseg"]').classes()).toContain('more')
+    el.scrollLeft = 116
+    await w.find('.gy-pseg').trigger('scroll')
+    expect(w.find('[data-test="pseg"]').classes()).not.toContain('more')
+  })
+
   it('urutin (ion-reorder) → PUT urutan baru; urutan langsung berubah (optimistis)', async () => {
     const w = await mountPage()
     const complete = vi.fn()

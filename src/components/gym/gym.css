@@ -1,10 +1,12 @@
 /* Gaya bareng halaman Gym (semua diawali gy- biar nggak kena kelas global). */
 .gy-page { padding-bottom: 170px; }
 .gy-toprow { display: flex; align-items: center; min-height: 44px; }
+/* judul halaman Gym: subjudul kecil di bawah (bukan nyambung segede judul) */
+.gy-page .h1 > span { display: block; font-size: 15px; letter-spacing: -0.01em; margin-top: 8px; line-height: 1.4; }
 .gy-back { display: inline-flex; align-items: center; gap: 2px; height: 44px; margin-left: -6px; padding: 0 8px 0 6px; border: 0; background: none; color: var(--muted); font: 700 14.5px var(--ion-font-family); cursor: pointer; }
 .gy-label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 8px 10px; gap: 10px; }
 .gy-label small { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 700; }
-.gy-label .gy-lk { font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 700; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; padding: 0; min-height: 44px; font-family: inherit; }
+.gy-label .gy-lk { font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 700; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; padding: 0; min-height: 44px; margin: -14px 0; font-family: inherit; }
 .gy-chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .gy-chip.mut { background: var(--soft); color: var(--muted); }
 .gy-chip.pr { background: var(--lime); color: var(--lime-ink); }
@@ -134,8 +136,17 @@
   .gy-tile .grow { flex: none; width: 100%; margin-top: 18px; }
   .gy-tile b { font-size: 24px; }
   .gy-tile .go { display: none; }
-  .gy-gmain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 0 24px; align-items: start; }
+  /* kiri: Minggu ini + Riwayat; kanan: Grafik di atas Program */
+  .gy-gmain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: auto 1fr; grid-template-areas: 'a b' 'a c'; gap: 0 24px; align-items: start; }
+  .gy-gmain.no-chart { grid-template-areas: 'a c' 'a c'; }
+  .gy-ga { grid-area: a; }
+  .gy-gb { grid-area: b; }
+  .gy-gc { grid-area: c; }
   .gy-gmain > section > .gy-label:first-child { margin-top: 28px; }
 }
-@media (min-width: 1600px) { .gy-gmain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); } }
+/* lebar: tiga kolom penuh (Minggu ini + Riwayat | Grafik | Program), nggak ada kolom kosong */
+@media (min-width: 1600px) {
+  .gy-gmain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: 'a b c'; }
+  .gy-gmain.no-chart { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: 'a c'; }
+}
 @media (min-width: 2200px) { .gy-tile { min-height: 190px; } }
