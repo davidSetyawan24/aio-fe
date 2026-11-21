@@ -407,9 +407,10 @@ function afterWrite(live, op, res, sent, isAdd) {
 
 /**
  * Hantu = `{ clientId, program, startedAt, serverId }` dari sesi yang dibuang pas belum ada sinyal.
- * id server belum tau → kirim ulang start dengan `clientId` yang sama buat dapet id-nya, lalu DELETE.
- * Jawaban 409 (ada sesi lain yang jalan) / sesi dengan `clientId` beda = sesi kita nggak pernah kecatet →
- * hantunya dibuang, sesi orang (device lain) NGGAK pernah dihapus. Balikin true kalau semua beres.
+ * id server belum tau → kirim ulang start dengan `clientId` yang sama buat dapet id-nya.
+ * Sebelum DELETE dicek `GET /gym/active`: cuma dihapus kalau sesi itu MASIH jalan. Sesi orang (device lain),
+ * sesi yang nggak pernah kecatet, atau yang udah diselesaiin di device lain → hantunya dibuang tanpa ngehapus apa-apa.
+ * Balikin true kalau semua beres.
  */
 export async function clearGhosts(ghosts, api, { onChange = () => {} } = {}) {
   const done = (g) => {
@@ -426,15 +427,21 @@ export async function clearGhosts(ghosts, api, { onChange = () => {} } = {}) {
           s = await api.post('/gym/sessions', { program: g.program, startedAt: g.startedAt, clientId: g.clientId })
         } catch (e) {
           if (e?.status !== 409) throw e
-          done(g)
-          continue
+          s = e.fields?.active ?? null // 409 tapi yang jalan ternyata sesi kita sendiri → tetep diurus
         }
-        if (!s || s.clientId !== g.clientId) {
-          done(g)
+        if (!s || s.clientId !== g.clientId || s.endedAt != null) {
+          done(g) // bukan sesi kita / udah diselesaiin (mis. di device lain) → jangan dihapus
           continue
         }
         g.serverId = s.id
         onChange()
+      }
+      // Cuma dihapus kalau masih jalan: DELETE juga ngehapus riwayat, jadi sesi yang udah diselesaiin
+      // di device lain (latihan beneran) nggak boleh ikut kehapus.
+      const active = await api.get('/gym/active')
+      if (active?.id !== g.serverId) {
+        done(g)
+        continue
       }
       await api.del(`/gym/sessions/${g.serverId}`)
       done(g)

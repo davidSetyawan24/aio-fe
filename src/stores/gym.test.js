@@ -35,6 +35,7 @@ let api, storage, store, nextId
 /** Server palsu yang nurut: start → sesi 100, set → id urut. */
 function okServer() {
   nextId = 500
+  api.get.mockImplementation(async (url) => (url === '/gym/active' ? { id: 100, program: 'push', sets: 0 } : gymData()))
   api.post.mockImplementation(async (url, body) => {
     if (url === '/gym/sessions') return session({ clientId: body.clientId })
     if (url.endsWith('/sets')) return { id: nextId++, ...body }
@@ -51,7 +52,11 @@ beforeEach(() => {
   storage = memStorage()
   setGymStorage(storage)
   api = {
-    get: vi.fn(async () => gymData()),
+    // `/gym/active` bawaan: nggak ada sinyal (dipake hantu); okServer() nyalain jawabannya
+    get: vi.fn(async (url) => {
+      if (url === '/gym/active') throw net()
+      return gymData()
+    }),
     post: vi.fn(never),
     patch: vi.fn(async (url, body) => ({ id: 1, ...body })),
     put: vi.fn(async () => null),
@@ -428,6 +433,7 @@ describe('gym store: selesai & buang', () => {
     expect(loadGhosts(storage)).toEqual([expect.objectContaining({ clientId: 'k1', serverId: 100 })])
     api.del.mockReset()
     api.del.mockResolvedValue(null)
+    api.get.mockImplementation(async (url) => (url === '/gym/active' ? { id: 100, program: 'push', sets: 0 } : gymData()))
     await store.flush()
     expect(api.del).toHaveBeenCalledWith('/gym/sessions/100')
     expect(storage.map.has(GHOST_KEY)).toBe(false)
@@ -458,7 +464,11 @@ describe('gym store: selesai & buang', () => {
     })
     setActivePinia(createPinia())
     store = useGymStore()
-    api.get.mockImplementation(async () => gymData(sessions.find((x) => !x.endedAt) ?? null))
+    api.get.mockImplementation(async (url) => {
+      const running = sessions.find((x) => !x.endedAt) ?? null
+      if (url === '/gym/active') return running && { id: running.id, program: running.program, sets: 0 }
+      return gymData(running)
+    })
     await store.load()
     store.start('pull')
     await store.flush()
@@ -476,6 +486,23 @@ describe('gym store: selesai & buang', () => {
     await store.load()
     expect(store.live).toBeNull()
     expect(store.data.active).toBeNull()
+  })
+})
+
+describe('gym store: hantu vs latihan yang udah diselesaiin', () => {
+  it('dibuang offline → di iPad dilanjut & diselesaiin → HP online: latihannya NGGAK kehapus', async () => {
+    okServer()
+    await started()
+    api.del.mockRejectedValue(net())
+    await store.discard()
+    await tick()
+    expect(loadGhosts(storage)).toHaveLength(1)
+    api.del.mockReset()
+    api.del.mockResolvedValue(null)
+    api.get.mockImplementation(async (url) => (url === '/gym/active' ? null : gymData()))
+    await store.flush()
+    expect(api.del).not.toHaveBeenCalled()
+    expect(storage.map.has(GHOST_KEY)).toBe(false)
   })
 })
 
