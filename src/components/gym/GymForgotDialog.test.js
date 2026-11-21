@@ -94,6 +94,40 @@ describe('GymForgotDialog', () => {
     warn.mockRestore()
   })
 
+  it('sesi habis / logout pas dialog kebuka (auth jadi guest) → dialog hilang & forgot dibersihin', async () => {
+    await mountDialog()
+    expect(isOpen()).toBe(true)
+    useAuthStore().status = 'guest'
+    await flushPromises()
+    expect(isOpen()).toBe(false)
+    expect(store.forgot).toBeNull()
+  })
+
+  it('lintas tengah malam: usulan 00.15 (D+1), sekarang 01.20 → pilih 23.50 = hari D (bukan masa depan)', async () => {
+    vi.setSystemTime(new Date('2026-11-23T18:20:00.000Z')) // 24 Nov 01.20 WIB
+    await mountDialog({ rows: [row('a', '2026-11-23T17:10:00.000Z')] }) // set terakhir 00.10, usulan 00.15
+    const input = q('input[type="time"]')
+    expect(input.value).toBe('00:15')
+    input.value = '23:50'
+    input.dispatchEvent(new Event('input'))
+    await flushPromises()
+    q('[data-test="forgot-done"]').click()
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/gym/sessions/100/finish', { endedAt: '2026-11-23T16:50:00.000Z' }) // 23 Nov 23.50 WIB
+  })
+
+  it('lintas tengah malam: pilih 00.20 (belum lewat sekarang) → tetap hari D+1', async () => {
+    vi.setSystemTime(new Date('2026-11-23T18:20:00.000Z'))
+    await mountDialog({ rows: [row('a', '2026-11-23T17:10:00.000Z')] })
+    const input = q('input[type="time"]')
+    input.value = '00:20'
+    input.dispatchEvent(new Event('input'))
+    await flushPromises()
+    q('[data-test="forgot-done"]').click()
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/gym/sessions/100/finish', { endedAt: '2026-11-23T17:20:00.000Z' })
+  })
+
   it('belum login → nggak ngecek apa-apa & dialog tutup', async () => {
     await mountDialog({ authed: false })
     expect(api.get).not.toHaveBeenCalled()

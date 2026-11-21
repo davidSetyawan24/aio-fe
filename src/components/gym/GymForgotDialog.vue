@@ -54,7 +54,7 @@ const GYM = '/tabs/menu/gym'
 const info = ref(null)
 const time = ref('')
 const err = ref('')
-const open = computed(() => !!store.forgot)
+const open = computed(() => !!store.forgot && auth.status === 'authed')
 const label = computed(() => PROGRAM_LABEL[info.value?.program] ?? '')
 const hhmm = (iso) => wibTime(iso).replace('.', ':')
 
@@ -73,7 +73,15 @@ watch(
 function check() {
   if (auth.status === 'authed') store.checkForgot().catch(() => {})
 }
-watch(() => auth.status, check, { immediate: true })
+watch(
+  () => auth.status,
+  (status) => {
+    // Sesi habis / logout: dialog jangan nutupin layar login.
+    if (status !== 'authed') store.forgot = null
+    check()
+  },
+  { immediate: true },
+)
 function onVisible() {
   if (document.visibilityState === 'visible') check()
 }
@@ -84,11 +92,18 @@ function forgetHomeCard() {
   if (home.data) home.data.gym = null
 }
 
+/** Jam pilihan di tanggal WIB usulan; kalau jadinya masa depan (usulan lewat tengah malam, jam pilihan sebelum itu) mundur sehari. */
+function pickedAt(suggest, hhmmText) {
+  const at = wibIso(wibDate(suggest), hhmmText)
+  if (at && new Date(at).getTime() > Date.now()) return new Date(new Date(at).getTime() - 86400000).toISOString()
+  return at
+}
+
 async function done() {
   const f = info.value
   if (!f || store.finishing) return
   // Jam nggak disentuh → kirim usulan persis (detik ikut); diganti → tanggal WIB usulan + jam pilihan.
-  const endedAt = time.value === hhmm(f.suggest) ? f.suggest : wibIso(wibDate(f.suggest), time.value)
+  const endedAt = time.value === hhmm(f.suggest) ? f.suggest : pickedAt(f.suggest, time.value)
   if (!endedAt) {
     err.value = 'Jam selesainya diisi dulu.'
     return
