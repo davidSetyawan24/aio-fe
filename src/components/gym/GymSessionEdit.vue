@@ -35,7 +35,7 @@ import { computed, reactive, ref } from 'vue'
 import { PhArrowCounterClockwise, PhCheck, PhTrash } from '@phosphor-icons/vue'
 import { ApiError } from '@/lib/api.js'
 import { kgText, parseReps, parseWeight } from '@/lib/gym.js'
-import { editTimes, wibIso } from '@/lib/gymReport.js'
+import { editTimes, nearestWibIso } from '@/lib/gymReport.js'
 import { showToast, useShake } from '@/lib/personalForm.js'
 import { useGymStore } from '@/stores/gym.js'
 import './gym.css'
@@ -66,8 +66,9 @@ defineExpose({ busy: computed(() => saving.value) })
 function build() {
   err.startedAt = err.endedAt = err.sets = ''
   // Jam yang nggak disentuh dikirim balik persis aslinya (detik ikut), cuma yang diubah dihitung ulang dari HH:MM.
-  const startedAt = start.value === t.start ? session.startedAt : wibIso(t.startDate, start.value)
-  const endedAt = end.value === t.end ? session.endedAt : wibIso(t.endDate, end.value)
+  // Tanggalnya = yang paling deket ke jam aslinya (23.55 → 00.10 = hari berikutnya).
+  const startedAt = start.value === t.start ? session.startedAt : nearestWibIso(session.startedAt, start.value)
+  const endedAt = end.value === t.end ? session.endedAt : nearestWibIso(session.endedAt, end.value)
   if (!startedAt) err.startedAt = 'Jam mulainya diisi dulu.'
   if (!endedAt) err.endedAt = 'Jam selesainya diisi dulu.'
   const sets = []

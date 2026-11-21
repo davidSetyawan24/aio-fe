@@ -51,3 +51,17 @@ export function wibIso(date, hhmm) {
   if (!/^\d{2}:\d{2}$/.test(hhmm ?? '')) return null
   return new Date(new Date(`${date}T${hhmm}:00Z`).getTime() - WIB_MS).toISOString()
 }
+
+/**
+ * "HH:MM" pilihan → ISO UTC di tanggal WIB yang paling deket ke `anchor` (D−1, D, D+1; D = tanggal WIB patokan),
+ * diutamain yang nggak lewat dari sekarang. Biar jam lewat tengah malam (23.50 → 00.10) nyambung ke hari yang bener.
+ */
+export function nearestWibIso(anchor, hhmm, nowMs = Date.now()) {
+  const day = wibDate(anchor)
+  if (!wibIso(day, hhmm)) return null
+  const ref = Date.parse(anchor)
+  const cands = [-1, 0, 1].map((k) => Date.parse(wibIso(addDays(day, k), hhmm)))
+  const pool = cands.filter((t) => t <= nowMs)
+  const best = (pool.length ? pool : cands).reduce((a, b) => (Math.abs(b - ref) < Math.abs(a - ref) ? b : a))
+  return new Date(best).toISOString()
+}

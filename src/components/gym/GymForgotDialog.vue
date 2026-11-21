@@ -33,8 +33,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { PhCheck, PhTrash } from '@phosphor-icons/vue'
 import { ApiError } from '@/lib/api.js'
-import { PROGRAM_LABEL, wibDate, wibTime } from '@/lib/gym.js'
-import { wibIso } from '@/lib/gymReport.js'
+import { PROGRAM_LABEL, wibTime } from '@/lib/gym.js'
+import { nearestWibIso } from '@/lib/gymReport.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -92,18 +92,11 @@ function forgetHomeCard() {
   if (home.data) home.data.gym = null
 }
 
-/** Jam pilihan di tanggal WIB usulan; kalau jadinya masa depan (usulan lewat tengah malam, jam pilihan sebelum itu) mundur sehari. */
-function pickedAt(suggest, hhmmText) {
-  const at = wibIso(wibDate(suggest), hhmmText)
-  if (at && new Date(at).getTime() > Date.now()) return new Date(new Date(at).getTime() - 86400000).toISOString()
-  return at
-}
-
 async function done() {
   const f = info.value
   if (!f || store.finishing) return
-  // Jam nggak disentuh → kirim usulan persis (detik ikut); diganti → tanggal WIB usulan + jam pilihan.
-  const endedAt = time.value === hhmm(f.suggest) ? f.suggest : pickedAt(f.suggest, time.value)
+  // Jam nggak disentuh → kirim usulan persis (detik ikut); diganti → jam pilihan di tanggal WIB paling deket ke usulan (≤ sekarang).
+  const endedAt = time.value === hhmm(f.suggest) ? f.suggest : nearestWibIso(f.suggest, time.value)
   if (!endedAt) {
     err.value = 'Jam selesainya diisi dulu.'
     return

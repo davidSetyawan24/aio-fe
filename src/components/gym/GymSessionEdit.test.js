@@ -149,6 +149,15 @@ describe('GymSessionEdit', () => {
     expect(body.endedAt).toBe('2026-11-23T12:17:45.000Z')
   })
 
+  it('jam selesai diubah lewat tengah malam (23.55 → 00.10) → tanggal ikut maju ke hari berikutnya', async () => {
+    const base = makeReport()
+    const w = mk(makeReport({ session: { ...base.session, startedAt: '2026-11-17T16:00:00.000Z', endedAt: '2026-11-17T16:55:00.000Z' } }))
+    await q(w, 'end').setValue('00:10')
+    await q(w, 'form').trigger('submit')
+    await flushPromises()
+    expect(api.put.mock.calls[0][1].endedAt).toBe('2026-11-17T17:10:00.000Z') // 18 Nov 00.10 WIB
+  })
+
   it('jam yang diubah dihitung dari HH:MM, yang lain tetep asli', async () => {
     const base = makeReport()
     const w = mk(makeReport({ session: { ...base.session, startedAt: '2026-11-23T11:05:12.000Z', endedAt: '2026-11-23T12:17:45.000Z' } }))

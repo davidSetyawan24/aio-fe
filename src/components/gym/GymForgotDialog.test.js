@@ -116,6 +116,19 @@ describe('GymForgotDialog', () => {
     expect(api.post).toHaveBeenCalledWith('/gym/sessions/100/finish', { endedAt: '2026-11-23T16:50:00.000Z' }) // 23 Nov 23.50 WIB
   })
 
+  it('lintas tengah malam: usulan 23.50 (D), sekarang 01.20 (D+1), pilih 00.10 → D+1 00.10 (bukan D 00.10)', async () => {
+    vi.setSystemTime(new Date('2026-11-23T18:20:00.000Z')) // 24 Nov 01.20 WIB
+    await mountDialog({ rows: [row('a', '2026-11-23T16:45:00.000Z')] }) // set terakhir 23.45, usulan 23.50
+    const input = q('input[type="time"]')
+    expect(input.value).toBe('23:50')
+    input.value = '00:10'
+    input.dispatchEvent(new Event('input'))
+    await flushPromises()
+    q('[data-test="forgot-done"]').click()
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/gym/sessions/100/finish', { endedAt: '2026-11-23T17:10:00.000Z' }) // 24 Nov 00.10 WIB
+  })
+
   it('lintas tengah malam: pilih 00.20 (belum lewat sekarang) → tetap hari D+1', async () => {
     vi.setSystemTime(new Date('2026-11-23T18:20:00.000Z'))
     await mountDialog({ rows: [row('a', '2026-11-23T17:10:00.000Z')] })
