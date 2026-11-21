@@ -1,0 +1,328 @@
+import { defineStore } from 'pinia'
+import { toRaw } from 'vue'
+import { ApiError, api as defaultApi } from '@/lib/api.js'
+import { PROGRAM_LABEL } from '@/lib/gym.js'
+import {
+  OfflineError,
+  addExercise,
+  addRow,
+  checkRow,
+  deleteRow,
+  editRow,
+  flush as flushLive,
+  fromServer,
+  load as loadDraft,
+  makeUid,
+  newLive,
+  save as saveDraft,
+} from '@/lib/gymLive.js'
+
+export { OFFLINE_TEXT, OfflineError } from '@/lib/gymLive.js'
+
+/** Antrian yang belum kekirim dicoba lagi tiap 15 detik. */
+export const FLUSH_EVERY_MS = 15000
+export const DISCARD_OFFLINE_TEXT = 'Belum ada sinyal. Coba buang sesinya lagi bentar.'
+
+const browserStorage = {
+  getItem: (k) => localStorage.getItem(k),
+  setItem: (k, v) => localStorage.setItem(k, v),
+  removeItem: (k) => localStorage.removeItem(k),
+}
+
+let gymApi = defaultApi
+let storage = browserStorage
+let uid = makeUid
+
+/** Buat test: ganti penghubung API dengan yang palsu. */
+export function setGymApi(apiLike) {
+  gymApi = apiLike
+}
+/** Buat test: tempat nyimpen draf sesi (bawaan localStorage). */
+export function setGymStorage(s) {
+  storage = s
+}
+/** Buat test: pembuat `clientId` / kunci baris. */
+export function setGymUid(fn) {
+  uid = fn
+}
+
+// Hal-hal per store yang bukan state (kunci antrian, timer).
+const RUNTIME = new WeakMap()
+function rt(store) {
+  const key = toRaw(store)
+  let r = RUNTIME.get(key)
+  if (!r) {
+    r = { chain: Promise.resolve(), flushing: null, again: false, timer: null }
+    RUNTIME.set(key, r)
+  }
+  return r
+}
+
+/** Satu-satu: muat, kirim antrian, selesai, buang nggak pernah jalan barengan (biar gabung data nggak balapan). */
+function locked(r, fn) {
+  const run = r.chain.then(fn, fn)
+  r.chain = run.catch(() => {})
+  return run
+}
+
+const same = (a, b) => a != null && toRaw(a) === toRaw(b)
+/** Error yang artinya "coba lagi nanti": nggak ada jawaban HTTP (putus / timeout) atau server lagi error. */
+const retryLater = (e) => !e?.status || e.status >= 500
+
+function persist(store) {
+  saveDraft(storage, store.live)
+  store.pending = store.live ? store.live.queue.filter((o) => o.op !== 'start').length : 0
+}
+
+function notify(store, text) {
+  store.notice = { id: (store.notice?.id ?? 0) + 1, text }
+}
+
+/** Timer 15 dtk nyala selama ada antrian, mati kalau kosong. */
+function syncTimer(store) {
+  const r = rt(store)
+  const busy = !!store.live?.queue.length
+  if (busy && !r.timer) r.timer = setInterval(() => kick(store), FLUSH_EVERY_MS)
+  else if (!busy && r.timer) {
+    clearInterval(r.timer)
+    r.timer = null
+  }
+}
+
+// Listener online / app balik keliatan dipasang sekali, ngabarin store yang terakhir dipake.
+let current = null
+let listening = false
+function listen(store) {
+  current = store
+  if (listening || typeof window === 'undefined') return
+  listening = true
+  window.addEventListener('online', () => current && kick(current))
+  document.addEventListener('visibilitychange', () => {
+    if (current && document.visibilityState === 'visible') kick(current)
+  })
+}
+
+/** Kirim antrian di belakang (nggak ditunggu). */
+function kick(store) {
+  listen(store)
+  if (store.live?.queue.length) store.flush().catch(() => {})
+  else syncTimer(store)
+}
+
+/** Satu putaran kirim antrian; dipanggil di dalem kunci. */
+async function flushOnce(store) {
+  const live = store.live
+  if (!live?.queue.length) return null
+  const onChange = () => {
+    if (same(store.live, live)) persist(store)
+  }
+  const res = await flushLive(live, gymApi, { onChange })
+  if (!same(store.live, live)) return res
+  if (res.joined) {
+    fromServer(res.joined, store.data?.exercises ?? [], live, uid)
+    notify(store, `Disambung ke sesi ${PROGRAM_LABEL[res.joined.program] ?? res.joined.program} yang udah jalan`)
+  }
+  if (res.lost) notify(store, `${res.lost} set nggak kesimpen — sesinya udah diselesaiin.`)
+  // Ada yang ditolak server (sesi udah selesai / dihapus di device lain) → muat ulang abis kunci ini lepas biar draf ikut server.
+  if (res.dropped) store.load().catch(() => {})
+  persist(store)
+  return res
+}
+
+/** Cocokin draf HP sama sesi jalan di server (hasil `GET /gym`). */
+function reconcile(store, data) {
+  const active = data?.active ?? null
+  const local = store.live
+  const exercises = data?.exercises ?? []
+  if (active) {
+    if (local && (local.serverId === active.id || local.clientId === active.clientId))
+      fromServer(active, exercises, local, uid)
+    else if (!local?.queue.length) store.live = fromServer(active, exercises, null, uid)
+    // draf lain yang masih punya antrian: dikirim dulu (start 409 → disambung, set telat → aturan sesi selesai)
+  } else if (local && !local.queue.length) {
+    store.live = null
+  }
+  persist(store)
+}
+
+/** Gym: data `GET /gym`, sesi yang lagi jalan di HP ini (`live`), jumlah set yang belum kekirim, kabar buat toast. */
+export const useGymStore = defineStore('gym', {
+  state: () => ({ data: null, live: null, pending: 0, loaded: false, notice: null }),
+
+  actions: {
+    /** Buka draf sesi dari HP (tanpa jaringan) kalau di memori belum ada. */
+    restore() {
+      if (!this.live) {
+        const draft = loadDraft(storage)
+        if (draft) {
+          this.live = draft
+          persist(this)
+        }
+      }
+      kick(this)
+      return this.live
+    },
+
+    async load() {
+      this.restore()
+      const r = rt(this)
+      try {
+        await locked(r, async () => {
+          const data = await gymApi.get('/gym')
+          this.data = data
+          this.loaded = true
+          reconcile(this, data)
+        })
+      } finally {
+        kick(this)
+      }
+    },
+
+    /** Mulai sesi: draf langsung jadi di HP, kirim ke server di belakang. Udah ada draf → balikin yang itu. */
+    start(program) {
+      if (this.live) return this.live
+      this.live = newLive({
+        program,
+        programs: this.data?.programs ?? [],
+        exercises: this.data?.exercises ?? [],
+        now: new Date(),
+        uid,
+      })
+      persist(this)
+      kick(this)
+      return this.live
+    },
+
+    setOpen(i) {
+      if (!this.live) return
+      this.live.open = i
+      persist(this)
+    },
+
+    /** ✓ set (angka boleh dioper sekalian). false = angkanya belum bener. */
+    check(i, j, vals = null) {
+      if (!this.live || !checkRow(this.live, i, j, new Date(), vals)) return false
+      persist(this)
+      kick(this)
+      return true
+    },
+
+    edit(i, j, vals) {
+      if (!this.live || !editRow(this.live, i, j, vals)) return false
+      persist(this)
+      kick(this)
+      return true
+    },
+
+    remove(i, j) {
+      if (!this.live || !deleteRow(this.live, i, j, uid)) return false
+      persist(this)
+      kick(this)
+      return true
+    },
+
+    addSet(i) {
+      if (!this.live) return -1
+      const j = addRow(this.live, i, uid)
+      persist(this)
+      return j
+    },
+
+    addExercise(exercise) {
+      if (!this.live) return -1
+      const i = addExercise(this.live, exercise, uid)
+      persist(this)
+      return i
+    },
+
+    /** Kirim antrian. Cuma satu yang jalan; dipanggil pas lagi jalan → diulang sekali lagi abis itu. */
+    flush() {
+      const r = rt(this)
+      if (r.flushing) {
+        r.again = true
+        return r.flushing
+      }
+      r.flushing = locked(r, async () => {
+        let res = null
+        do {
+          r.again = false
+          res = await flushOnce(this)
+        } while (r.again)
+        return res
+      }).finally(() => {
+        r.flushing = null
+        syncTimer(this)
+      })
+      return r.flushing
+    },
+
+    /**
+     * Selesai sesi: antrian dikirim dulu; masih ada yang nyangkut → OfflineError (data aman di HP).
+     * Error lain (mis. 422 belum ada set) dilempar apa adanya. Sukses → draf dibersihin, balikin `Report`.
+     */
+    async finish(endedAt) {
+      const report = await locked(rt(this), async () => {
+        const live = this.live
+        if (!live) throw new ApiError('Sesinya nggak ketemu.', 404)
+        await flushOnce(this)
+        if (live.queue.length || live.serverId == null) throw new OfflineError()
+        let res
+        try {
+          res = await gymApi.post(`/gym/sessions/${live.serverId}/finish`, endedAt ? { endedAt } : {})
+        } catch (e) {
+          throw retryLater(e) ? new OfflineError() : e
+        }
+        if (same(this.live, live)) {
+          this.live = null
+          persist(this)
+        }
+        return res
+      })
+      syncTimer(this)
+      this.load().catch(() => {})
+      return report
+    },
+
+    /** Buang sesi yang jalan (mis. 0 set). Belum kecatet di server → cukup dibuang di HP. */
+    async discard() {
+      await locked(rt(this), async () => {
+        const live = this.live
+        if (!live) return
+        if (live.serverId == null) {
+          // Start bisa aja udah nyampe server walau jawabannya ilang → coba kirim dulu biar dapet id-nya.
+          const res = await flushOnce(this)
+          if (res?.joined) return // ternyata ada sesi lain yang jalan (dari device lain) → jangan dibuang
+        }
+        if (live.serverId != null) {
+          try {
+            await gymApi.del(`/gym/sessions/${live.serverId}`)
+          } catch (e) {
+            if (retryLater(e)) throw new OfflineError(DISCARD_OFFLINE_TEXT)
+            if (e.status !== 404) throw e
+          }
+        }
+        // id tetep kosong = belum pernah kecatet di server (belum ada set yang kekirim) → cukup dibuang di HP.
+        if (same(this.live, live)) {
+          this.live = null
+          persist(this)
+        }
+      })
+      syncTimer(this)
+      this.load().catch(() => {})
+    },
+
+    /** Bikin (tanpa id) / ubah gerakan. POST 409 dilempar dengan `fields.existing`. */
+    async saveExercise(body, id = null) {
+      const res =
+        id == null ? await gymApi.post('/gym/exercises', body) : await gymApi.patch(`/gym/exercises/${id}`, body)
+      await this.load().catch(() => {})
+      return res
+    },
+
+    async saveProgram(key, exerciseIds) {
+      const res = await gymApi.put(`/gym/programs/${key}`, { exerciseIds })
+      await this.load().catch(() => {})
+      return res
+    },
+  },
+})
