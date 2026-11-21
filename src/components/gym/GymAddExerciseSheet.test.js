@@ -100,7 +100,7 @@ describe('GymAddExerciseSheet', () => {
 
   it('Bikin → POST nama, emit gerakan baru', async () => {
     const w = await mountSheet()
-    api.post.mockResolvedValue(ex(30, 'Dips'))
+    api.post.mockResolvedValue({ exercise: ex(30, 'Dips') })
     await search(w, 'Dips')
     sheet().querySelector('[data-test="new-ex"]').click()
     await flushPromises()
@@ -141,7 +141,7 @@ describe('GymAddExerciseSheet', () => {
     const store = useGymStore()
     store.data = { programs, exercises: [...exercises], active: null }
     api.get.mockImplementation(() => new Promise(() => {}))
-    api.post.mockResolvedValue(ex(30, 'Dips'))
+    api.post.mockResolvedValue({ exercise: ex(30, 'Dips') })
     await search(w, 'Dips')
     sheet().querySelector('[data-test="new-ex"]').click()
     await flushPromises()

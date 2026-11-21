@@ -40,7 +40,7 @@ function okServer() {
     if (url === '/gym/sessions') return session({ clientId: body.clientId })
     if (url.endsWith('/sets')) return { id: nextId++, ...body }
     if (url.endsWith('/finish')) return { session: session({ endedAt: 'x' }), summary: { sets: 1 } }
-    if (url === '/gym/exercises') return ex(30, body.name)
+    if (url === '/gym/exercises') return { exercise: ex(30, body.name) }
     throw new Error(url)
   })
 }
@@ -58,8 +58,9 @@ beforeEach(() => {
       return gymData()
     }),
     post: vi.fn(never),
-    patch: vi.fn(async (url, body) => ({ id: 1, ...body })),
-    put: vi.fn(async () => null),
+    // bentuk jawaban persis BE: set polos, gerakan dibungkus `{ exercise }`, program dibungkus `{ program }`
+    patch: vi.fn(async (url, body) => (url.startsWith('/gym/exercises/') ? { exercise: { ...ex(Number(url.split('/').pop()), 'X'), ...body } } : { id: 1, ...body })),
+    put: vi.fn(async (url, body) => ({ program: { key: url.split('/').pop(), exerciseIds: body.exerciseIds } })),
     del: vi.fn(async () => null),
   }
   setGymApi(api)
@@ -570,10 +571,20 @@ describe('gym store: gerakan & program', () => {
     okServer()
     const made = await store.saveExercise({ name: 'Cable Fly' })
     expect(api.post).toHaveBeenCalledWith('/gym/exercises', { name: 'Cable Fly' })
-    expect(made.id).toBe(30)
-    await store.saveExercise({ restSec: 300 }, 4)
+    expect(made).toMatchObject({ id: 30, name: 'Cable Fly' })
+    const edited = await store.saveExercise({ restSec: 300 }, 4)
     expect(api.patch).toHaveBeenCalledWith('/gym/exercises/4', { restSec: 300 })
+    expect(edited).toMatchObject({ id: 4, restSec: 300 })
     expect(api.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('kontrak POST /gym/exercises `{ exercise }` → gerakan baru masuk daftar store + cache dengan id & nama', async () => {
+    okServer()
+    await store.load()
+    api.get.mockImplementation(never)
+    await store.saveExercise({ name: 'Cable Fly' })
+    expect(store.exercises.find((x) => x.id === 30)?.name).toBe('Cable Fly')
+    expect(JSON.parse(storage.getItem(EXERCISES_KEY)).find((x) => x.id === 30)?.name).toBe('Cable Fly')
   })
 
   it('saveExercise 409 → dilempar dengan existing', async () => {
@@ -587,5 +598,13 @@ describe('gym store: gerakan & program', () => {
     await store.saveProgram('lower', [1, 2])
     expect(api.put).toHaveBeenCalledWith('/gym/programs/lower', { exerciseIds: [1, 2] })
     expect(api.get).toHaveBeenCalledTimes(1)
+  })
+
+  it('kontrak PUT /gym/programs/:key `{ program }` → isi program langsung ikut jawaban (walau muat ulang gagal)', async () => {
+    await store.load()
+    api.get.mockRejectedValue(net())
+    const res = await store.saveProgram('push', [2])
+    expect(res).toEqual({ key: 'push', exerciseIds: [2] })
+    expect(store.data.programs.find((p) => p.key === 'push').exerciseIds).toEqual([2])
   })
 })

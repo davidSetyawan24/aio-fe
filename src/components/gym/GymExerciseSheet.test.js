@@ -12,7 +12,7 @@ const mounted = []
 let api
 function mountSheet(props = {}) {
   setGymStorage({ getItem: () => null, setItem: () => {}, removeItem: () => {} })
-  api = { get: vi.fn(async () => ({ programs: [], exercises: [], active: null, recent: [], week: { days: [], count: 0, minutes: 0 }, totalSessions: 0, firstOn: null, mini: null })), patch: vi.fn(async (u, b) => ({ ...exercise, ...b })), post: vi.fn(), put: vi.fn(), del: vi.fn() }
+  api = { get: vi.fn(async () => ({ programs: [], exercises: [], active: null, recent: [], week: { days: [], count: 0, minutes: 0 }, totalSessions: 0, firstOn: null, mini: null })), patch: vi.fn(async (u, b) => ({ exercise: { ...exercise, ...b } })), post: vi.fn(), put: vi.fn(), del: vi.fn() }
   setGymApi(api)
   const pinia = createPinia()
   setActivePinia(pinia)

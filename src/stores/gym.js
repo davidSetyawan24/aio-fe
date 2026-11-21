@@ -482,15 +482,16 @@ export const useGymStore = defineStore('gym', {
      * Bikin baru: langsung balik abis POST sukses (gerakannya digabung ke daftar), muat ulang di belakang.
      */
     async saveExercise(body, id = null) {
+      // Jawaban server dibungkus: `{ exercise }` (bikin 201 & ubah).
       if (id == null) {
-        const res = await gymApi.post('/gym/exercises', body)
-        mergeExercise(this, res)
+        const { exercise } = (await gymApi.post('/gym/exercises', body)) ?? {}
+        mergeExercise(this, exercise)
         this.load().catch(() => {})
-        return res
+        return exercise ?? null
       }
-      const res = await gymApi.patch(`/gym/exercises/${id}`, body)
+      const { exercise } = (await gymApi.patch(`/gym/exercises/${id}`, body)) ?? {}
       await this.load().catch(() => {})
-      return res
+      return exercise ?? null
     },
 
     /** Report satu sesi selesai: dari simpenan kalau ada (mis. baru Selesai), `force` = ambil dari server. 404 → simpenan dibuang. */
@@ -556,12 +557,13 @@ export const useGymStore = defineStore('gym', {
     },
 
     async saveProgram(key, exerciseIds) {
-      const res = await gymApi.put(`/gym/programs/${key}`, { exerciseIds })
+      // Jawaban server dibungkus: `{ program: { key, exerciseIds } }`.
+      const { program } = (await gymApi.put(`/gym/programs/${key}`, { exerciseIds })) ?? {}
       // Isi program langsung ikut jawaban server (kalau muat ulang di belakang gagal, daftarnya tetep bener).
       const prog = this.data?.programs.find((p) => p.key === key)
-      if (prog && Array.isArray(res?.exerciseIds)) prog.exerciseIds = res.exerciseIds
+      if (prog && Array.isArray(program?.exerciseIds)) prog.exerciseIds = program.exerciseIds
       await this.load().catch(() => {})
-      return res
+      return program ?? null
     },
   },
 })

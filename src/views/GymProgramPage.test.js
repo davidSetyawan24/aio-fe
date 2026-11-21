@@ -39,10 +39,10 @@ async function mountPage({ width = 390, putFail = null } = {}) {
     get: vi.fn(async () => ({ programs: programs(), exercises, active: null, recent: [], week: { days: [], count: 0, minutes: 0 }, totalSessions: 0, firstOn: null, mini: null })),
     put: vi.fn(async (u, b) => {
       if (putFail) throw putFail
-      return { key: u.split('/').pop(), exerciseIds: b.exerciseIds }
+      return { program: { key: u.split('/').pop(), exerciseIds: b.exerciseIds } }
     }),
-    patch: vi.fn(async (u, b) => ({ ...exercises[0], ...b })),
-    post: vi.fn(async (u, b) => ex(9, b.name)),
+    patch: vi.fn(async (u, b) => ({ exercise: { ...exercises[0], ...b } })),
+    post: vi.fn(async (u, b) => ({ exercise: ex(9, b.name) })),
     del: vi.fn(),
   }
   setGymApi(api)
