@@ -7,13 +7,14 @@
         <p class="msg">Nggak bisa nyambung ke server.</p>
         <p class="sub">Cek koneksi lo, atau BE-nya lagi mati.</p>
         <p v-if="gymProgram" class="sub gym">Sesi {{ PROGRAM_LABEL[gymProgram] ?? gymProgram }} lo aman di HP ini.</p>
-        <button class="pill retry" :disabled="retrying" @click="retry">
-          {{ retrying ? 'Nyoba lagi…' : 'Coba lagi' }}
-          <span class="ic"><PhArrowClockwise :size="16" weight="bold" :class="{ spin: retrying }" /></span>
-        </button>
-        <button v-if="gymProgram" type="button" class="pill gymgo" data-test="offline-gym" @click="router.push(GYM_LIVE_PATH)">
+        <!-- Ada sesi Gym jalan: lanjut sesi = tombol utama (paling atas), Coba lagi di bawahnya. -->
+        <button v-if="gymProgram" type="button" class="pill retry" data-test="offline-gym" @click="router.push(GYM_LIVE_PATH)">
           Lanjut sesi {{ PROGRAM_LABEL[gymProgram] ?? gymProgram }}
           <span class="ic"><PhCaretRight :size="16" weight="bold" /></span>
+        </button>
+        <button class="pill" :class="gymProgram ? 'second' : 'retry'" :disabled="retrying" @click="retry">
+          {{ retrying ? 'Nyoba lagi…' : 'Coba lagi' }}
+          <span class="ic"><PhArrowClockwise :size="16" weight="bold" :class="{ spin: retrying }" /></span>
         </button>
       </template>
     </div>
@@ -60,8 +61,9 @@ async function retry() {
 .retry .ic { background: #141410; color: #C8F04A; }
 .retry:disabled { opacity: 0.7; }
 .sub.gym { color: #C8F04A; margin-top: -10px; }
-.gymgo { margin-top: 12px; background: #F3F2EE; color: #141410; }
-.gymgo .ic { background: #141410; color: #F3F2EE; }
+.second { margin-top: 12px; background: #F3F2EE; color: #141410; }
+.second .ic { background: #141410; color: #F3F2EE; }
+.second:disabled { opacity: 0.7; }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
