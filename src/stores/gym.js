@@ -104,6 +104,16 @@ function saveExercises(list) {
   }
 }
 
+/** Gerakan yang baru dibikin masuk daftar (memori + simpenan HP) tanpa nunggu GET /gym. */
+function mergeExercise(store, exercise) {
+  if (!exercise || exercise.id == null) return
+  const list = store.exercises.filter((x) => x.id !== exercise.id)
+  list.push(exercise)
+  if (store.data) store.data.exercises = list
+  else store.exCache = list
+  saveExercises(list)
+}
+
 function notify(store, text) {
   store.notice = { id: (store.notice?.id ?? 0) + 1, text }
 }
@@ -277,6 +287,20 @@ export const useGymStore = defineStore('gym', {
       return j
     },
 
+    /** Timer istirahat (null = matiin). Kesimpen di draf HP. */
+    setTimer(timer) {
+      if (!this.live) return
+      this.live.timer = timer
+      persist(this)
+    },
+
+    /** Tandain timer udah dibunyiin / dilewatin (nggak bunyi lagi). */
+    markBeeped() {
+      if (!this.live?.timer || this.live.timer.beeped) return
+      this.live.timer.beeped = true
+      persist(this)
+    },
+
     addExercise(exercise) {
       if (!this.live || this.finishing) return -1
       const i = addExercise(this.live, exercise, uid)
@@ -375,10 +399,18 @@ export const useGymStore = defineStore('gym', {
       this.load().catch(() => {})
     },
 
-    /** Bikin (tanpa id) / ubah gerakan. POST 409 dilempar dengan `fields.existing`. */
+    /**
+     * Bikin (tanpa id) / ubah gerakan. POST 409 dilempar dengan `fields.existing`.
+     * Bikin baru: langsung balik abis POST sukses (gerakannya digabung ke daftar), muat ulang di belakang.
+     */
     async saveExercise(body, id = null) {
-      const res =
-        id == null ? await gymApi.post('/gym/exercises', body) : await gymApi.patch(`/gym/exercises/${id}`, body)
+      if (id == null) {
+        const res = await gymApi.post('/gym/exercises', body)
+        mergeExercise(this, res)
+        this.load().catch(() => {})
+        return res
+      }
+      const res = await gymApi.patch(`/gym/exercises/${id}`, body)
       await this.load().catch(() => {})
       return res
     },

@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
-import { setGymApi, setGymStorage } from '@/stores/gym.js'
+import { setGymApi, setGymStorage, useGymStore } from '@/stores/gym.js'
 import GymAddExerciseSheet from './GymAddExerciseSheet.vue'
 
 const toastCreate = vi.hoisted(() => vi.fn())
@@ -24,14 +24,15 @@ const programs = [
   { key: 'lower', exerciseIds: [3], lastOn: null },
 ]
 
-let api
+let api, memory
 const mounted = []
 function memStorage() {
   const m = new Map()
   return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }
 }
 async function mountSheet(props = {}) {
-  setGymStorage(memStorage())
+  memory = memStorage()
+  setGymStorage(memory)
   api = { get: vi.fn(async () => ({ programs, exercises, active: null })), post: vi.fn(), patch: vi.fn(), put: vi.fn(), del: vi.fn() }
   setGymApi(api)
   const pinia = createPinia()
@@ -116,14 +117,51 @@ describe('GymAddExerciseSheet', () => {
     expect(w.emitted('add')[0][0]).toMatchObject({ id: 9 })
   })
 
-  it('Bikin gagal (offline / 422) → toast pesannya, nggak emit', async () => {
+  it('Bikin gagal karena nggak ada sinyal → toast khusus, nggak emit', async () => {
     const w = await mountSheet()
     api.post.mockRejectedValue(new ApiError('Nggak bisa nyambung ke server.', 0))
     await search(w, 'Dips')
     sheet().querySelector('[data-test="new-ex"]').click()
     await flushPromises()
     expect(w.emitted('add')).toBeUndefined()
-    expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Nggak bisa nyambung ke server.' }))
+    expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Gerakan baru butuh sinyal. Pilih gerakan yang udah ada dulu ya.' }))
+  })
+
+  it('Bikin ditolak server (422) → toast pesan servernya', async () => {
+    const w = await mountSheet()
+    api.post.mockRejectedValue(new ApiError('Maksimal 60 karakter.', 422))
+    await search(w, 'Dips')
+    sheet().querySelector('[data-test="new-ex"]').click()
+    await flushPromises()
+    expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Maksimal 60 karakter.' }))
+  })
+
+  it('Bikin → emit langsung abis POST (nggak nunggu GET /gym), gerakan baru masuk daftar store + cache', async () => {
+    const w = await mountSheet()
+    const store = useGymStore()
+    store.data = { programs, exercises: [...exercises], active: null }
+    api.get.mockImplementation(() => new Promise(() => {}))
+    api.post.mockResolvedValue(ex(30, 'Dips'))
+    await search(w, 'Dips')
+    sheet().querySelector('[data-test="new-ex"]').click()
+    await flushPromises()
+    expect(w.emitted('add')[0][0]).toMatchObject({ id: 30 })
+    expect(store.exercises.map((x) => x.id)).toContain(30)
+    expect(JSON.parse(memory.getItem('aio-gym-exercises')).map((x) => x.id)).toContain(30)
+    expect(api.get).toHaveBeenCalledWith('/gym')
+  })
+
+  it('nama persis sama dengan gerakan yang udah di sesi → baris "Udah ada di sesi ini", tap = emit add gerakan itu', async () => {
+    const w = await mountSheet()
+    await search(w, 'incline dumbbell press')
+    const row = sheet().querySelector('[data-test="in-session"]')
+    expect(row.textContent).toContain('Udah ada di sesi ini')
+    expect(row.textContent).toContain('Incline Dumbbell Press')
+    expect(sheet().querySelector('[data-test="new-ex"]')).toBeNull()
+    row.click()
+    expect(w.emitted('add')[0][0]).toMatchObject({ id: 1 })
+    await search(w, 'dumbbell')
+    expect(sheet().querySelector('[data-test="in-session"]')).toBeNull()
   })
 
   it('✕ / scrim → close', async () => {

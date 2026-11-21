@@ -138,3 +138,6 @@
   .gl-pane .gl-stp { grid-template-columns: minmax(0, 1fr) 72px minmax(120px, 200px) 72px; }
   .gl-pane .gl-exmeta { margin-left: 56px; }
 }
+
+/* Abis ✓: editor set berikutnya belum nerima tap sebentar (tap kedua yang kebut). */
+.gl-guard .gl-sedit { pointer-events: none; }

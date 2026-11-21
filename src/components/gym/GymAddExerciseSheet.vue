@@ -18,6 +18,12 @@
           <span class="grow"><b>Bikin “{{ name }}”</b><small>gerakan baru, mulai dari nol</small></span>
         </button>
       </div>
+      <div v-if="inSession" class="gl-xlist">
+        <button type="button" class="gl-xrow" data-test="in-session" @click="$emit('add', inSession)">
+          <span class="grow"><b>{{ inSession.name }}</b><small>Udah ada di sesi ini</small></span>
+          <span class="pl"><PhCaretRight :size="16" weight="bold" /></span>
+        </button>
+      </div>
       <template v-for="g in groups" :key="g.label">
         <div class="gy-fgroup">{{ g.label }}</div>
         <div class="gl-xlist">
@@ -33,7 +39,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { PhMagnifyingGlass, PhPlus, PhX } from '@phosphor-icons/vue'
+import { PhCaretRight, PhMagnifyingGlass, PhPlus, PhX } from '@phosphor-icons/vue'
 import { dShort } from '@/lib/badanView.js'
 import { PROGRAM_LABEL, bestSet, setText } from '@/lib/gym.js'
 import { showToast } from '@/lib/personalForm.js'
@@ -77,6 +83,8 @@ const groups = computed(() => {
     { label: 'Dari program lain', items: other },
   ].filter((g) => g.items.length)
 })
+/** Nama yang diketik persis sama dengan gerakan yang udah ada di sesi. */
+const inSession = computed(() => (key.value ? props.exercises.find((x) => props.exclude.includes(x.id) && norm(x.name) === key.value) ?? null : null))
 const canCreate = computed(() => !!key.value && !props.exercises.some((x) => norm(x.name) === key.value))
 
 function subOf(x) {
@@ -93,6 +101,7 @@ async function create() {
   } catch (e) {
     const existing = e?.status === 409 ? e.fields?.existing : null
     if (existing) emit('add', existing)
+    else if (!e?.status) showToast('Gerakan baru butuh sinyal. Pilih gerakan yang udah ada dulu ya.')
     else showToast(e?.message || 'Gerakannya belum kesimpen. Coba lagi.')
   } finally {
     creating.value = false

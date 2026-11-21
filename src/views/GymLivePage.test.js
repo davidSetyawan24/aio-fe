@@ -4,7 +4,10 @@ import { ApiError } from '@/lib/api.js'
 import { wibTime } from '@/lib/gym.js'
 import { LIVE_KEY, OFFLINE_TEXT, newLive } from '@/lib/gymLive.js'
 import { setGymApi, setGymStorage, useGymStore } from '@/stores/gym.js'
+import { beep, unlockAudio } from '@/lib/beep.js'
 import GymLivePage from './GymLivePage.vue'
+
+vi.mock('@/lib/beep.js', () => ({ beep: vi.fn(), unlockAudio: vi.fn() }))
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn(), replace: vi.fn() }))
 const sheet = vi.hoisted(() => ({ present: vi.fn(), onDidDismiss: vi.fn() }))
@@ -362,5 +365,148 @@ describe('GymLivePage: tambah gerakan', () => {
     expect(s.classList.contains('show')).toBe(false)
     expect(card(w, 6).text()).toContain('tambahan')
     expect(w.find('[data-test="lsum"]').text()).toContain('3 dari 7 gerakan')
+  })
+})
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const rest = (w) => w.find('.rest')
+function visibility(state) {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state })
+}
+
+describe('GymLivePage: timer istirahat', () => {
+  beforeEach(() => {
+    beep.mockReset()
+    unlockAudio.mockReset()
+    visibility('visible')
+  })
+  afterEach(() => visibility('visible'))
+
+  it('✓ → timer nyala sesuai istirahat gerakan, kesimpen di draf, audio dibuka', async () => {
+    const w = await mountPage()
+    expect(rest(w).exists()).toBe(false)
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    expect(unlockAudio).toHaveBeenCalledTimes(1)
+    expect(store.live.timer).toMatchObject({ total: 120, name: 'Shoulder Press', beeped: false })
+    expect(rest(w).text()).toContain('Istirahat · Shoulder Press')
+    expect(rest(w).find('[data-test="rest-time"]').text()).toMatch(/^(2:00|1:5\d)$/)
+    expect(JSON.parse(storage.getItem(LIVE_KEY)).timer.name).toBe('Shoulder Press')
+  })
+
+  it('✓ lagi → timer diganti (gerakan lain)', async () => {
+    const w = await mountPage()
+    await editor(w).find('[data-test="check"]').trigger('click')
+    const first = store.live.timer.endAt
+    await card(w, 3).find('[data-test="exhead"]').trigger('click')
+    await sleep(420)
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    expect(store.live.timer.name).toBe('Pec Deck')
+    expect(store.live.timer.endAt).toBeGreaterThan(first)
+  })
+
+  it('+30 dtk nambah sisa & total; Lewati ngilangin bar', async () => {
+    const w = await mountPage()
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await rest(w).find('[data-test="plus30"]').trigger('click')
+    expect(store.live.timer.total).toBe(150)
+    expect(rest(w).find('[data-test="rest-time"]').text()).toMatch(/^2:[23]\d$/)
+    await rest(w).find('[data-test="skip"]').trigger('click')
+    expect(store.live.timer).toBeNull()
+    expect(rest(w).exists()).toBe(false)
+    expect(JSON.parse(storage.getItem(LIVE_KEY)).timer).toBeNull()
+  })
+
+  it('pas habis (halaman keliatan) → bunyi SEKALI, bar jadi beres', async () => {
+    const live = draft()
+    live.timer = { endAt: Date.now() + 600, total: 120, name: 'Shoulder Press', beeped: false }
+    const w = await mountPage({ live })
+    expect(rest(w).classes()).not.toContain('done')
+    await sleep(1400)
+    expect(beep).toHaveBeenCalledTimes(1)
+    expect(rest(w).classes()).toContain('done')
+    expect(store.live.timer.beeped).toBe(true)
+    expect(rest(w).find('[data-test="rest-over"]').text()).toMatch(/^lewat 0:0\d$/)
+    await sleep(600)
+    expect(beep).toHaveBeenCalledTimes(1)
+  })
+
+  it('dibuka lagi setelah lewat → langsung beres, nggak bunyi', async () => {
+    const live = draft()
+    live.timer = { endAt: Date.now() - 23_000, total: 120, name: 'Shoulder Press', beeped: false }
+    const w = await mountPage({ live })
+    await sleep(700)
+    expect(rest(w).classes()).toContain('done')
+    expect(rest(w).find('[data-test="rest-over"]').text()).toMatch(/^lewat 0:2[3-6]$/)
+    expect(beep).not.toHaveBeenCalled()
+    expect(store.live.timer.beeped).toBe(true)
+  })
+
+  it('habis pas app di background → nggak bunyi telat waktu balik keliatan', async () => {
+    const live = draft()
+    live.timer = { endAt: Date.now() + 400, total: 120, name: 'Shoulder Press', beeped: false }
+    visibility('hidden')
+    const w = await mountPage({ live })
+    await sleep(1000)
+    visibility('visible')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await sleep(700)
+    expect(beep).not.toHaveBeenCalled()
+    expect(rest(w).classes()).toContain('done')
+  })
+
+  it('balik keliatan pas timer masih jalan → sisa waktu langsung bener (hitung dari jam selesai)', async () => {
+    const live = draft()
+    live.timer = { endAt: Date.now() + 90_000, total: 120, name: 'Shoulder Press', beeped: false }
+    const w = await mountPage({ live })
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(rest(w).find('[data-test="rest-time"]').text()).toMatch(/^1:(29|30)$/)
+  })
+
+  it('tinggalin halaman → tick berhenti (nggak bunyi dari halaman yang udah ditutup)', async () => {
+    const live = draft()
+    live.timer = { endAt: Date.now() + 500, total: 120, name: 'Shoulder Press', beeped: false }
+    const w = await mountPage({ live })
+    w.unmount()
+    mounted.splice(mounted.indexOf(w), 1)
+    await sleep(900)
+    expect(beep).not.toHaveBeenCalled()
+  })
+})
+
+describe('GymLivePage: tap kedua abis ✓ (R12a)', () => {
+  it('tap di editor set berikutnya ±350 ms abis ✓ diabaikan, abis itu jalan', async () => {
+    const w = await mountPage()
+    await editor(w).find('[data-test="check"]').trigger('click')
+    await flushPromises()
+    expect(editor(w).exists()).toBe(true)
+    const before = editor(w).find('[data-test="weight"]').element.value
+    await editor(w).find('[data-test="weight-plus"]').trigger('click')
+    await editor(w).find('[data-test="check"]').trigger('click')
+    expect(editor(w).find('[data-test="weight"]').element.value).toBe(before)
+    expect(store.live.items[2].rows[2].done).toBe(false)
+    await sleep(420)
+    await editor(w).find('[data-test="weight-plus"]').trigger('click')
+    expect(editor(w).find('[data-test="weight"]').element.value).not.toBe(before)
+  })
+})
+
+describe('GymLivePage: gerakan yang udah ada di sesi (R12c)', () => {
+  it('pilih/409 gerakan yang udah ada → kartunya kebuka, tanpa toast "ditambahin"', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="addex"]').trigger('click')
+    const s = document.querySelector('[data-test="add-sheet"]')
+    const input = s.querySelector('[data-test="add-q"]')
+    input.value = 'pec deck'
+    input.dispatchEvent(new Event('input'))
+    await flushPromises()
+    s.querySelector('[data-test="in-session"]').click()
+    await flushPromises()
+    expect(store.live.open).toBe(3)
+    expect(store.live.items).toHaveLength(6)
+    expect(toasts().some((t) => t.includes('ditambahin'))).toBe(false)
+    expect(s.classList.contains('show')).toBe(false)
   })
 })

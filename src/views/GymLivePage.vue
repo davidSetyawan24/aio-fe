@@ -17,7 +17,7 @@
         <p v-if="!live" class="gl-wait">Bentar ya…</p>
         <template v-else>
           <div class="gl-sum" data-test="lsum">mulai {{ wibTime(live.startedAt) }} · <b>{{ totalSets }} set</b> · {{ touched }} dari {{ items.length }} gerakan</div>
-          <div class="gl-grid">
+          <div class="gl-grid" :class="{ 'gl-guard': guard }" @click.capture="onGuardClick">
             <div>
               <div class="gl-list" data-test="list">
                 <GymExerciseCard
@@ -70,6 +70,7 @@
         @add="onAddExercise"
       />
     </ion-content>
+    <GymRestBar v-if="timer" :timer="timer" :now="now" @plus30="onPlus30" @skip="onSkip" />
   </ion-page>
 </template>
 
@@ -79,8 +80,11 @@ import { IonContent, IonPage, actionSheetController, onIonViewWillEnter, onIonVi
 import { PhCaretLeft, PhFlag, PhPlus } from '@phosphor-icons/vue'
 import GymAddExerciseSheet from '@/components/gym/GymAddExerciseSheet.vue'
 import GymExerciseCard from '@/components/gym/GymExerciseCard.vue'
+import GymRestBar from '@/components/gym/GymRestBar.vue'
 import '@/components/gym/gym.css'
 import '@/components/gym/gymLive.css'
+import { beep, unlockAudio } from '@/lib/beep.js'
+import { plus30, startTimer, validTimer } from '@/lib/gymTimer.js'
 import { PROGRAM_EMOJI, PROGRAM_LABEL, bestSet, clockText, livePr, setText, wibTime } from '@/lib/gym.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
@@ -112,6 +116,7 @@ const doneOf = (item) => item.rows.filter((r) => r.done)
 const totalSets = computed(() => items.value.reduce((n, it) => n + doneOf(it).length, 0))
 const touched = computed(() => items.value.filter((it) => doneOf(it).length).length)
 const clock = computed(() => (live.value ? clockText((now.value - Date.parse(live.value.startedAt)) / 1000) : '00:00:00'))
+const timer = computed(() => (validTimer(live.value?.timer) ? live.value.timer : null))
 const nameOf = (item) => exById.value.get(item.exerciseId)?.name ?? 'Gerakan'
 
 function curOf(item) {
@@ -166,15 +171,55 @@ function onChange(i, j, vals) {
   if (!items.value[i]?.rows[j]?.done) store.edit(i, j, vals)
 }
 
+/** Tap kedua yang kebut abis ✓ jangan kena editor set berikutnya yang baru muncul (±350 ms). */
+const GUARD_MS = 350
+const guard = ref(false)
+let guardUntil = 0
+let guardTimer = null
+function startGuard() {
+  guardUntil = Date.now() + GUARD_MS
+  guard.value = true
+  clearTimeout(guardTimer)
+  guardTimer = setTimeout(() => (guard.value = false), GUARD_MS)
+}
+function onGuardClick(e) {
+  if (Date.now() >= guardUntil || !e.target?.closest?.('[data-test="editor"]')) return
+  e.stopPropagation()
+  e.preventDefault()
+}
+
 function onCheck(i, j, vals) {
   const item = items.value[i]
   if (!item) return
+  unlockAudio()
   const set = [Math.round(vals.weight * 100) / 100, vals.reps]
   const pr = livePr(set, exById.value.get(item.exerciseId)?.record ?? null, bestSet(doneOf(item).map((r) => [r.weight, r.reps])))
   if (!store.check(i, j, vals)) return
   delete cursors[item.exerciseId]
+  startGuard()
   if (pr) showToast(`🏆 PR baru: ${setText(set)}`)
-  // Abis ✓: timer istirahat gerakan ini nyala di sini.
+  // Abis ✓: timer istirahat gerakan ini nyala (✓ baru = timer diganti).
+  const t = Date.now()
+  store.setTimer(startTimer(exById.value.get(item.exerciseId)?.restSec ?? 120, nameOf(item), t))
+  now.value = t
+}
+
+function onPlus30() {
+  if (timer.value) store.setTimer(plus30(timer.value))
+}
+const onSkip = () => store.setTimer(null)
+
+/**
+ * Timer udah lewat? Tandain & bunyiin SEKALI. Bunyi cuma kalau halaman keliatan dan lewatnya baru aja
+ * (bukan pas balik dari background / buka ulang app) → nggak pernah bunyi telat.
+ */
+const BEEP_FRESH_MS = 1500
+function checkTimer(canBeep = true) {
+  const t = timer.value
+  if (!t || t.beeped || Date.now() < t.endAt) return
+  const fresh = Date.now() - t.endAt <= BEEP_FRESH_MS
+  store.markBeeped()
+  if (canBeep && fresh && document.visibilityState === 'visible') beep()
 }
 
 function onSave(i, j, vals) {
@@ -199,6 +244,12 @@ function onAddSet(i) {
 
 function onAddExercise(x) {
   addOpen.value = false
+  // Udah ada di sesi → cukup buka kartunya.
+  const have = items.value.findIndex((it) => it.exerciseId === x.id)
+  if (have >= 0) {
+    openAt(have)
+    return
+  }
   if (store.addExercise(x) < 0) return
   delete cursors[x.id]
   showToast(`${x.name} ditambahin`)
@@ -291,13 +342,27 @@ watch(
   () => store.notice && showToast(store.notice.text),
 )
 
+const TICK_MS = 300
 function startTick() {
   now.value = Date.now()
-  if (!tick) tick = setInterval(() => (now.value = Date.now()), 1000)
+  checkTimer(false)
+  if (!tick)
+    tick = setInterval(() => {
+      now.value = Date.now()
+      checkTimer()
+    }, TICK_MS)
+  document.addEventListener('visibilitychange', onVisible)
 }
 function stopTick() {
   clearInterval(tick)
   tick = null
+  clearTimeout(guardTimer)
+  document.removeEventListener('visibilitychange', onVisible)
+}
+/** Balik keliatan (mis. dari Spotify): sisa waktu dihitung ulang dari jam selesai, kalau udah lewat → tanpa bunyi. */
+function onVisible() {
+  now.value = Date.now()
+  checkTimer(false)
 }
 
 let entered = false
