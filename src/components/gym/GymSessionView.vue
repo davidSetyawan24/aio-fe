@@ -5,7 +5,7 @@
     <template v-else>
       <GymSessionEdit v-if="editing" ref="edit" :key="id" :report="report" @saved="$emit('stop-edit')" />
       <template v-else>
-        <GymReport mode="detail" :report="report" />
+        <GymReport mode="detail" :report="report" @talk="$emit('talk')" />
         <div class="gy-btn2">
           <button type="button" class="gy-ghost" data-test="edit" :disabled="deleting" @click="$emit('edit')"><PhPencilSimple :size="17" weight="bold" />Ubah</button>
           <button type="button" class="gy-ghost red" data-test="delete" :disabled="deleting" @click="askDelete"><PhTrash :size="17" weight="bold" />Hapus sesi</button>
@@ -27,13 +27,13 @@ import { useGymStore } from '@/stores/gym.js'
 
 /**
  * Detail sesi selesai + form ubah + hapus (dipakai halaman HP & panel PC).
- * Emit: `edit` (mau ubah), `stop-edit` (ubah selesai / dibatalin), `deleted` (sesi kehapus).
+ * Emit: `edit` (mau ubah), `stop-edit` (ubah selesai / dibatalin), `deleted` (sesi kehapus), `talk` (bahas evaluasi di chat).
  */
 const props = defineProps({
   id: { type: Number, required: true },
   editing: { type: Boolean, default: false },
 })
-const emit = defineEmits(['edit', 'stop-edit', 'deleted'])
+const emit = defineEmits(['edit', 'stop-edit', 'deleted', 'talk'])
 const store = useGymStore()
 const failed = ref('')
 const deleting = ref(false)

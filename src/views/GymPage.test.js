@@ -4,6 +4,7 @@ import { wibNow } from '@/lib/home.js'
 import { addDays } from '@/lib/agenda.js'
 import { setGymApi, setGymStorage, useGymStore } from '@/stores/gym.js'
 import GymPage from './GymPage.vue'
+import { setAiApi, setAiToast } from '@/stores/ai.js'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
 vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), useIonRouter: () => ionRouter }))
@@ -37,6 +38,12 @@ const full = (over = {}) => ({ programs, exercises, active: null, recent, week, 
 const emptyData = () => full({ recent: [], totalSessions: 0, firstOn: null, mini: null, week: { days: week.days.map((d) => ({ ...d, program: null })), count: 0, minutes: 0 }, programs: programs.map((p) => ({ ...p, lastOn: null })) })
 
 const mounted = []
+const fakeAi = () => {
+  const ai = { get: vi.fn(async () => ({ id: 1, context: 'gym', kind: 'chat', messages: [], quote: null })), post: vi.fn(async () => ({ id: 1, context: 'gym', kind: 'chat', messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
+  setAiApi(ai)
+  setAiToast(vi.fn())
+  return ai
+}
 function memStorage() {
   const m = new Map()
   return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }
@@ -213,5 +220,25 @@ describe('GymPage', () => {
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/program')
     await w.find('[data-test="go-history"]').trigger('click')
     expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/riwayat')
+  })
+
+  it('tombol Tanya AI: HP pindah ke halaman chat', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="ask-ai"]').trigger('click')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/tanya')
+  })
+
+  it('tombol Tanya AI: layar lebar buka panel chat (nggak pindah halaman)', async () => {
+    const ai = fakeAi()
+    document.body.appendChild(document.createElement('ion-app'))
+    const w = await mountPage({ width: 1440 })
+    await w.find('[data-test="ask-ai"]').trigger('click')
+    await flushPromises()
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-test="panel"].show')).not.toBeNull()
+    expect(ai.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym' })
+    w.unmount()
+    mounted.pop()
+    document.querySelectorAll('ion-app').forEach((e) => e.remove())
   })
 })

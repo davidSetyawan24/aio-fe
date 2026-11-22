@@ -19,6 +19,7 @@ import GymHistoryPage from '@/views/GymHistoryPage.vue'
 import GymSessionPage from '@/views/GymSessionPage.vue'
 import GymChartPage from '@/views/GymChartPage.vue'
 import GymProgramPage from '@/views/GymProgramPage.vue'
+import AiChatPage from '@/views/AiChatPage.vue'
 import PersonalPage from '@/views/PersonalPage.vue'
 import PersonalSubPage from '@/views/PersonalSubPage.vue'
 import InvoicePage from '@/views/InvoicePage.vue'
@@ -54,7 +55,7 @@ const routes = [
     children: buildTabRoutes({
       ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage,
       CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage, BadanSubPage,
-      GymPage, GymLivePage, GymSummaryPage, GymHistoryPage, GymSessionPage, GymChartPage, GymProgramPage,
+      GymPage, GymLivePage, GymSummaryPage, GymHistoryPage, GymSessionPage, GymChartPage, GymProgramPage, AiChatPage,
     }),
   },
   { path: '/:pathMatch(.*)*', redirect: '/tabs/home' },

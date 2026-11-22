@@ -30,7 +30,7 @@ const personalStub = { render: () => null }
 const personalSubStub = { render: () => null }
 const cctvStub = { render: () => null }
 const badanSubStub = { render: () => null }
-const gymStubs = Object.fromEntries(['GymPage', 'GymLivePage', 'GymSummaryPage', 'GymHistoryPage', 'GymSessionPage', 'GymChartPage', 'GymProgramPage'].map((k) => [k, { render: () => null }]))
+const gymStubs = Object.fromEntries(['GymPage', 'GymLivePage', 'GymSummaryPage', 'GymHistoryPage', 'GymSessionPage', 'GymChartPage', 'GymProgramPage', 'AiChatPage'].map((k) => [k, { render: () => null }]))
 const routes = buildTabRoutes({
   ComingSoon: stub, MenuPage: stub, ProfilePage: stub, ChangePasswordPage: passwordStub, DevicePage: deviceStub,
   NotificationsPage: notifStub, NotificationSettingsPage: notifSettingsStub, WalletPage: walletStub, WalletFormPage: walletFormStub,
@@ -214,5 +214,14 @@ describe('buildTabRoutes', () => {
     expect(find('menu/gym/sesi').meta.hideTabs).toBe(true)
     for (const path of Object.keys(expected).filter((p) => p !== 'menu/gym/sesi')) expect(find(path).meta?.hideTabs, path).toBeFalsy()
     expect(find('menu/gym').meta?.hideTabs).toBeFalsy()
+  })
+
+  it('Chat AI: rute tanya Gym & Badan, tab bar disembunyiin, Badan sebelum :id', () => {
+    for (const path of ['menu/gym/tanya', 'menu/badan/tanya']) {
+      expect(find(path).component, path).toBe(gymStubs.AiChatPage)
+      expect(find(path).meta.hideTabs, path).toBe(true)
+    }
+    const paths = routes.map((r) => r.path)
+    expect(paths.indexOf('menu/badan/tanya')).toBeLessThan(paths.indexOf('menu/badan/:id'))
   })
 })

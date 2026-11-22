@@ -5,7 +5,7 @@ const OLD_LINKS = { tagihan: '/tabs/menu/bayar-rutin', duit: '/tabs/uang', todo:
 
 /** Rute anak /tabs/ dari daftar modul. Komponen dioper biar file ini gampang dites. */
 export function buildTabRoutes(pages) {
-  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage, BadanSubPage, GymPage, GymLivePage, GymSummaryPage, GymHistoryPage, GymSessionPage, GymChartPage, GymProgramPage } = pages
+  const { ComingSoon, MenuPage, ProfilePage, ChangePasswordPage, DevicePage, NotificationsPage, NotificationSettingsPage, WalletPage, WalletFormPage, CategoryPage, CategoryFormPage, DuitPage, ExpenseFormPage, BudgetPage, SplitBillPage, SplitBillDetailPage, SplitBillFormPage, AgendaPage, AgendaFormPage, BayarRutinPage, BayarRutinFormPage, UangPage, InvoicePage, InvoiceDetailPage, InvoiceSettingsPage, InvoiceFormPage, HomePage, PersonalPage, PersonalSubPage, CctvPage, BadanPage, BadanSubPage, GymPage, GymLivePage, GymSummaryPage, GymHistoryPage, GymSessionPage, GymChartPage, GymProgramPage, AiChatPage } = pages
   // Modul yang udah jadi pakai halamannya sendiri; sisanya halaman "Segera".
   const ready = { uang: UangPage, duit: DuitPage, budget: BudgetPage, kartu: WalletPage, kategori: CategoryPage, 'split-bill': SplitBillPage, agenda: AgendaPage, 'bayar-rutin': BayarRutinPage, invoice: InvoicePage, 'data-pribadi': PersonalPage, cctv: CctvPage, badan: BadanPage, gym: GymPage }
   const moduleRoutes = modules.map((m) => {
@@ -52,6 +52,8 @@ export function buildTabRoutes(pages) {
     { path: 'menu/badan/tidur/upload', component: BadanSubPage, meta: { view: 'sleepUpload' } },
     { path: 'menu/badan/tidur/:id', component: BadanSubPage, meta: { view: 'sleepDetail' } },
     { path: 'menu/badan/tidur/:id/ubah', component: BadanSubPage, meta: { view: 'sleepEdit' } },
+    // Chat AI (HP): sebelum :id biar `tanya` nggak dikira id timbangan.
+    { path: 'menu/badan/tanya', component: AiChatPage, meta: { hideTabs: true } },
     { path: 'menu/badan/:id', component: BadanSubPage, meta: { view: 'detail' } },
     { path: 'menu/badan/:id/ubah', component: BadanSubPage, meta: { view: 'edit' } },
     // Rute anak Gym. Layar sesi nyembunyiin tab bar (HP) biar layarnya lega.
@@ -62,6 +64,7 @@ export function buildTabRoutes(pages) {
     { path: 'menu/gym/riwayat/:id/ubah', component: GymSessionPage },
     { path: 'menu/gym/grafik', component: GymChartPage },
     { path: 'menu/gym/program', component: GymProgramPage },
+    { path: 'menu/gym/tanya', component: AiChatPage, meta: { hideTabs: true } },
     { path: 'agenda/baru', component: AgendaFormPage },
     { path: 'agenda/acara/:id/ubah', component: AgendaFormPage },
     { path: 'agenda/todo/:id/ubah', component: AgendaFormPage },

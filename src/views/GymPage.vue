@@ -4,6 +4,7 @@
       <div class="page gy-page">
         <div class="gy-toprow">
           <button type="button" class="gy-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
+          <AiAskButton @ask="talk('gym')" />
         </div>
         <span class="eyebrow rise"><span class="dot" />Kesehatan</span>
         <h1 class="h1 rise" style="--i: 1">Gym.<span data-test="sub">{{ sub }}</span></h1>
@@ -55,6 +56,7 @@
         </template>
       </div>
 
+      <AiChatPanel v-if="aiWide" v-bind="aiPanel" @close="closeAi" />
       <GymPickSheet v-if="data" :open="pick.open" :program="pick.key" :programs="data.programs" :exercises="data.exercises" :wide="wide" @close="pick.open = false" @start="startSession" />
     </ion-content>
   </ion-page>
@@ -64,6 +66,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue'
+import AiAskButton from '@/components/ai/AiAskButton.vue'
+import AiChatPanel from '@/components/ai/AiChatPanel.vue'
 import GymLiveCard from '@/components/gym/GymLiveCard.vue'
 import GymHistoryRows from '@/components/gym/GymHistoryRows.vue'
 import GymChart from '@/components/gym/GymChart.vue'
@@ -75,6 +79,7 @@ import { HARI, weekdayOf } from '@/lib/agenda.js'
 import { dShort } from '@/lib/badanView.js'
 import { bestSet, setText } from '@/lib/gym.js'
 import { wibNow } from '@/lib/home.js'
+import { useAiTalk } from '@/lib/aiTalk.js'
 import { useMedia } from '@/lib/media.js'
 import { useGymStore } from '@/stores/gym.js'
 
@@ -82,6 +87,7 @@ const BASE = '/tabs/menu/gym'
 const store = useGymStore()
 const ionRouter = useIonRouter()
 const wide = useMedia('(min-width: 768px)')
+const { wide: aiWide, panel: aiPanel, talk, close: closeAi } = useAiTalk()
 const failed = ref(false)
 const today = ref(wibNow().date)
 const pick = reactive({ open: false, key: 'push' })

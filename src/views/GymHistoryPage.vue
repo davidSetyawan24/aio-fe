@@ -24,7 +24,8 @@
         </template>
       </div>
 
-      <GymSessionPanel v-if="wide" :open="!!sesiId" :id="shownId" :editing="editing" @close="closePanel" @edit="setQuery(shownId, true)" @stop-edit="setQuery(shownId, false)" @deleted="closePanel" />
+      <GymSessionPanel v-if="wide" :open="!!sesiId" :id="shownId" :editing="editing" @close="closePanel" @edit="setQuery(shownId, true)" @stop-edit="setQuery(shownId, false)" @deleted="closePanel" @talk="talk('gym', shownId)" />
+      <AiChatPanel v-if="wide" v-bind="aiPanel" @close="closeAi" />
     </ion-content>
   </ion-page>
 </template>
@@ -35,6 +36,7 @@ import { IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonPage, onIon
 import { PhCaretLeft } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
 import GymHistoryRows from '@/components/gym/GymHistoryRows.vue'
+import AiChatPanel from '@/components/ai/AiChatPanel.vue'
 import GymSessionPanel from '@/components/gym/GymSessionPanel.vue'
 import '@/components/gym/gym.css'
 import '@/components/gym/gymReport.css'
@@ -42,6 +44,7 @@ import { dShort } from '@/lib/badanView.js'
 import { volText } from '@/lib/gym.js'
 import { weekTitle } from '@/lib/gymReport.js'
 import { wibNow } from '@/lib/home.js'
+import { useAiTalk } from '@/lib/aiTalk.js'
 import { useMedia } from '@/lib/media.js'
 import { useGymStore } from '@/stores/gym.js'
 
@@ -52,6 +55,7 @@ const ionRouter = useIonRouter()
 const route = useRoute()
 const router = useRouter()
 const wide = useMedia('(min-width: 1100px)')
+const { panel: aiPanel, talk, close: closeAi } = useAiTalk()
 const failed = ref(false)
 const today = ref(wibNow().date)
 

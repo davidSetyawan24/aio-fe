@@ -5,6 +5,7 @@ import { dDay, dShort } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
 import { setBadanApi } from '@/stores/badan.js'
 import BadanPage from './BadanPage.vue'
+import { setAiApi, setAiToast } from '@/stores/ai.js'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn() }))
 /** Action sheet palsu: `sheetPick` = data tombol yang "dipencet" (undefined = Batal). */
@@ -490,3 +491,24 @@ describe('BadanPage', () => {
     })
   })
 })
+
+describe('BadanPage: Tanya AI', () => {
+  it('HP pindah ke halaman chat Badan', async () => {
+    const w = await mountPage()
+    await w.find('[data-test="ask-ai"]').trigger('click')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/badan/tanya')
+  })
+
+  it('layar lebar buka panel chat Badan', async () => {
+    const ai = { get: vi.fn(), post: vi.fn(async () => ({ id: 1, context: 'badan', kind: 'chat', messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
+    setAiApi(ai)
+    setAiToast(vi.fn())
+    const w = await mountPage({ width: 1440 })
+    await w.find('[data-test="ask-ai"]').trigger('click')
+    await flushPromises()
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    expect(document.querySelector('[data-test="panel"].show')).not.toBeNull()
+    expect(ai.post).toHaveBeenCalledWith('/ai/conversations', { context: 'badan' })
+  })
+})
+

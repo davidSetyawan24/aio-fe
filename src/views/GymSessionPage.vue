@@ -11,8 +11,9 @@
           <template v-else-if="session">{{ PROGRAM_EMOJI[session.program] }} {{ PROGRAM_LABEL[session.program] }}.</template>
           <span v-if="session">{{ dateLine }}</span>
         </h1>
-        <GymSessionView :id="id" :editing="editing" @edit="ionRouter.push(`${RIWAYAT}/${id}/ubah`)" @stop-edit="stopEdit" @deleted="ionRouter.navigate(RIWAYAT, 'back', 'replace')" />
+        <GymSessionView :id="id" :editing="editing" @edit="ionRouter.push(`${RIWAYAT}/${id}/ubah`)" @stop-edit="stopEdit" @deleted="ionRouter.navigate(RIWAYAT, 'back', 'replace')" @talk="talk('gym', id)" />
       </div>
+      <AiChatPanel v-if="!wide && aiWide" v-bind="aiPanel" @close="closeAi" />
     </ion-content>
   </ion-page>
 </template>
@@ -22,11 +23,13 @@ import { computed, watch } from 'vue'
 import { IonContent, IonPage, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
+import AiChatPanel from '@/components/ai/AiChatPanel.vue'
 import GymSessionView from '@/components/gym/GymSessionView.vue'
 import '@/components/gym/gym.css'
 import '@/components/gym/gymReport.css'
 import { PROGRAM_EMOJI, PROGRAM_LABEL } from '@/lib/gym.js'
 import { sessionDateLine } from '@/lib/gymReport.js'
+import { useAiTalk } from '@/lib/aiTalk.js'
 import { useMedia } from '@/lib/media.js'
 import { useGymStore } from '@/stores/gym.js'
 
@@ -36,6 +39,7 @@ const ionRouter = useIonRouter()
 const route = useRoute()
 const router = useRouter()
 const wide = useMedia('(min-width: 1100px)')
+const { wide: aiWide, panel: aiPanel, talk, close: closeAi } = useAiTalk()
 
 const id = Number(route.params.id)
 const editing = route.path.endsWith('/ubah')

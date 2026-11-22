@@ -5,6 +5,8 @@ import { addDays, weekStart } from '@/lib/agenda.js'
 import { wibNow } from '@/lib/home.js'
 import { makeReport, makeWeek } from '@/test/gymReportFixture.js'
 import { setGymApi, setGymStorage, useGymStore } from '@/stores/gym.js'
+import GymReport from '@/components/gym/GymReport.vue'
+import { setAiApi, setAiToast } from '@/stores/ai.js'
 import GymHistoryPage from './GymHistoryPage.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn(), replace: vi.fn() }))
@@ -170,5 +172,16 @@ describe('GymHistoryPage (PC)', () => {
     expect(api.put).toHaveBeenCalled()
     expect(router.currentRoute.value.query.ubah).toBeUndefined()
     expect(router.currentRoute.value.query.sesi).toBe('30')
+  })
+
+  it('panel sesi: Bahas di chat buka panel chat evaluasi sesi itu', async () => {
+    const ai = { get: vi.fn(async (url) => (url === '/ai/settings' ? { autoEval: false, enabled: true } : { sessionId: 30, status: 'none', content: null, error: null, stale: false })), post: vi.fn(async () => ({ id: 1, context: 'gym', kind: 'eval', messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
+    setAiApi(ai)
+    setAiToast(vi.fn())
+    const w = await mountPage({ width: 1440, url: '/tabs/menu/gym/riwayat?sesi=30' })
+    w.findComponent(GymReport).vm.$emit('talk')
+    await flushPromises()
+    expect(ai.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym', sessionId: 30 })
+    expect(document.querySelectorAll('[data-test="panel"].show').length).toBe(2)
   })
 })

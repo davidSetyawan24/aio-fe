@@ -4,7 +4,10 @@
       <div class="page b-page">
         <div class="b-toprow">
           <button type="button" class="b-back" data-test="back" @click="goBack"><PhCaretLeft :size="18" weight="bold" />Semua menu</button>
-          <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="choose(MANUAL_CHOICE)"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
+          <span class="b-tr">
+            <AiAskButton @ask="talk('badan')" />
+            <button v-if="!wide" type="button" class="pill ghost small b-hpman" data-test="manual-small" @click="choose(MANUAL_CHOICE)"><PhPencilSimple :size="16" />&nbsp;Isi manual</button>
+          </span>
         </div>
         <span class="eyebrow rise"><span class="dot" />Badan</span>
         <div class="b-headrow">
@@ -44,6 +47,8 @@
 
       <BadanPanel v-if="wide" :open="panel.open" :view="panel.view" :id="panel.id" :form-key="panel.key" @close="closePanel" @edit="(i) => openPanel('edit', i)" @detail="(i) => openPanel('detail', i)" @manual="openPanel('manual')" @sleep-detail="(i) => openPanel('sleepDetail', i)" @sleep-edit="(i) => openPanel('sleepEdit', i)" @sleep-manual="openPanel('sleepManual')" @done="onPanelDone" />
 
+      <AiChatPanel v-if="wide" v-bind="aiPanel" @close="closeAi" />
+
       <BadanTargetSheet :open="targetOpen" :target="store.target" :summary="store.summary" :wide="wide" :focus="targetFocus" @close="targetOpen = false" />
 
       <button v-if="!wide && !isEmpty && store.loaded" slot="fixed" type="button" class="b-fab" data-test="fab" @click="choose(UPLOAD_CHOICE)">
@@ -58,6 +63,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { IonContent, IonPage, actionSheetController, onIonViewWillEnter, onIonViewWillLeave, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhMoon, PhPencilSimple, PhUploadSimple } from '@phosphor-icons/vue'
 import { useRoute, useRouter } from 'vue-router'
+import AiAskButton from '@/components/ai/AiAskButton.vue'
+import AiChatPanel from '@/components/ai/AiChatPanel.vue'
 import BadanChart from '@/components/badan/BadanChart.vue'
 import BadanEmpty from '@/components/badan/BadanEmpty.vue'
 import BadanFood from '@/components/badan/BadanFood.vue'
@@ -73,6 +80,7 @@ import '@/components/badan/badan.css'
 import { ARAH_INFO } from '@/lib/badan.js'
 import { headerSub, isBadanChild } from '@/lib/badanView.js'
 import { wibNow } from '@/lib/home.js'
+import { useAiTalk } from '@/lib/aiTalk.js'
 import { useMedia } from '@/lib/media.js'
 import { showToast } from '@/lib/personalForm.js'
 import { useBadanStore } from '@/stores/badan.js'
@@ -83,6 +91,7 @@ const ionRouter = useIonRouter()
 const route = useRoute()
 const router = useRouter()
 const wide = useMedia('(min-width: 768px)')
+const { panel: aiPanel, talk, close: closeAi } = useAiTalk()
 const pc = useMedia('(min-width: 1100px)')
 const failed = ref(false)
 const today = ref(wibNow().date)
@@ -195,6 +204,7 @@ onIonViewWillEnter(() => {
 
 <style scoped>
 .b-toprow { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.b-tr { display: flex; align-items: center; gap: 8px; }
 .b-back { display: inline-flex; align-items: center; gap: 2px; height: 44px; margin-left: -6px; padding: 0 8px 0 6px; border: 0; background: none; color: var(--muted); font: 700 14.5px var(--ion-font-family); cursor: pointer; }
 .b-headrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 /* iPad (768–1099): sub-judul dapet lebar penuh, tombol turun ke baris sendiri. */

@@ -13,7 +13,7 @@
         <button type="button" class="gy-xbtn" aria-label="Tutup" data-test="panel-x" @click="requestClose"><PhX :size="18" weight="bold" /></button>
       </div>
       <div class="gy-pbody">
-        <GymSessionView v-if="open && id != null" ref="view" :key="id" :id="id" :editing="editing" @edit="$emit('edit')" @stop-edit="$emit('stop-edit')" @deleted="$emit('deleted')" />
+        <GymSessionView v-if="open && id != null" ref="view" :key="id" :id="id" :editing="editing" @edit="$emit('edit')" @stop-edit="$emit('stop-edit')" @deleted="$emit('deleted')" @talk="$emit('talk')" />
       </div>
     </aside>
   </Teleport>
@@ -35,7 +35,7 @@ const props = defineProps({
   id: { type: Number, default: null },
   editing: { type: Boolean, default: false },
 })
-const emit = defineEmits(['close', 'edit', 'stop-edit', 'deleted'])
+const emit = defineEmits(['close', 'edit', 'stop-edit', 'deleted', 'talk'])
 const store = useGymStore()
 const view = ref(null)
 

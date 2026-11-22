@@ -4,6 +4,8 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { makeReport } from '@/test/gymReportFixture.js'
 import { setGymApi, setGymStorage, useGymStore } from '@/stores/gym.js'
 import GymSessionPage from './GymSessionPage.vue'
+import { setAiApi, setAiToast } from '@/stores/ai.js'
+import GymReport from '@/components/gym/GymReport.vue'
 
 const ionRouter = vi.hoisted(() => ({ canGoBack: () => true, back: vi.fn(), navigate: vi.fn(), push: vi.fn(), replace: vi.fn() }))
 const sheet = vi.hoisted(() => ({ create: vi.fn(), pick: undefined }))
@@ -16,6 +18,12 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
 }))
 
 const mounted = []
+const fakeAi = () => {
+  const ai = { get: vi.fn(async () => ({ id: 1, context: 'gym', kind: 'chat', messages: [], quote: null })), post: vi.fn(async () => ({ id: 1, context: 'gym', kind: 'chat', messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
+  setAiApi(ai)
+  setAiToast(vi.fn())
+  return ai
+}
 let api
 let router
 function stubMedia(width) {
@@ -149,5 +157,20 @@ describe('GymSessionPage (PC)', () => {
   it('≥1100 di /ubah: ?sesi=:id&ubah=1', async () => {
     await mountPage({ width: 1440, path: '/tabs/menu/gym/riwayat/20/ubah' })
     expect(router.currentRoute.value.query).toMatchObject({ sesi: '20', ubah: '1' })
+  })
+
+  it('Bahas di chat: HP pindah ke halaman chat sesi ini', async () => {
+    const w = await mountPage({ cached: true })
+    w.findComponent(GymReport).vm.$emit('talk')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/tanya?sesi=20')
+  })
+
+  it('Bahas di chat: layar sedang (768–1099) buka panel chat', async () => {
+    const ai = fakeAi()
+    const w = await mountPage({ cached: true, width: 900 })
+    w.findComponent(GymReport).vm.$emit('talk')
+    await flushPromises()
+    expect(ionRouter.push).not.toHaveBeenCalled()
+    expect(ai.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym', sessionId: 20 })
   })
 })
