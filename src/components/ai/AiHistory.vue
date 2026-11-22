@@ -121,7 +121,7 @@ async function confirmDelete(c) {
 .cvnote { margin: 10px 6px 0; font-size: 12px; font-weight: 600; color: var(--muted); line-height: 1.5; }
 .lnk { border: 0; background: none; padding: 0; font: 800 12.5px var(--ion-font-family); color: var(--text); text-decoration: underline; cursor: pointer; }
 @media (hover: hover) {
-  .del { left: auto; right: 10px; top: 50%; bottom: auto; width: 34px; height: 34px; margin-top: -17px; border-radius: 99px; opacity: 0; background: var(--soft); color: var(--red); transition: opacity .15s; }
+  .del { z-index: 2; left: auto; right: 10px; top: 50%; bottom: auto; width: 34px; height: 34px; margin-top: -17px; border-radius: 99px; opacity: 0; background: var(--soft); color: var(--red); transition: opacity .15s; }
   .del span { display: none; }
   .swipe:hover .del, .del:focus-visible { opacity: 1; }
   .swipe:hover .tm { visibility: hidden; }
