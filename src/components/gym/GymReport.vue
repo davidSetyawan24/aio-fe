@@ -53,6 +53,10 @@
             </div>
           </div>
         </section>
+        <section>
+          <div class="gy-label rise" style="--i: 4"><span>Evaluasi</span></div>
+          <AiEvalBox :session-id="session.id" :program="session.program" mode="summary" @talk="$emit('talk')" />
+        </section>
       </div>
     </template>
 
@@ -82,6 +86,8 @@
           </div>
         </div>
       </div>
+      <div class="gy-label"><span>Evaluasi AI</span><small>ikut kesimpen</small></div>
+      <AiEvalBox :session-id="session.id" :program="session.program" mode="detail" @talk="$emit('talk')" />
     </template>
 
     <GymInfoSheet :term="term" :wide="wide" @close="term = null" />
@@ -90,6 +96,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import AiEvalBox from '@/components/ai/AiEvalBox.vue'
 import GymInfoSheet from '@/components/gym/GymInfoSheet.vue'
 import { PROGRAM_EMOJI, PROGRAM_LABEL, durText, kgText, setText, volText } from '@/lib/gym.js'
 import { prText, sessionDateLine, volChip } from '@/lib/gymReport.js'
@@ -102,6 +109,8 @@ const props = defineProps({
   report: { type: Object, required: true },
   mode: { type: String, default: 'summary' },
 })
+// Pindah ke chat evaluasi diurus yang makai komponen ini.
+defineEmits(['talk'])
 
 const ARROW = { up: ['up', '↑'], same: ['eq', '='], down: ['dn', '↓'] }
 const term = ref(null)

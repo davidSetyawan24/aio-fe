@@ -11,7 +11,7 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   toastController: { create: toastCreate },
 }))
 
-const ALL_ON = { tagihan: true, dokumen: true, todo: true, agenda: true, keamanan: true }
+const ALL_ON = { tagihan: true, dokumen: true, todo: true, agenda: true, evaluasi: true, keamanan: true }
 let api
 async function mountList({ get, patch } = {}) {
   api = {
@@ -37,6 +37,15 @@ describe('NotificationSettingsList', () => {
     expect(w.text()).toContain('Bayar Rutin')
     expect(w.text()).toContain('Sesuai pengingat tiap bayar rutin')
     expect(w.text()).not.toContain('Tagihan')
+  })
+
+  it('shows the Evaluasi AI switch and saves it', async () => {
+    const w = await mountList()
+    expect(w.text()).toContain('Evaluasi AI')
+    expect(w.text()).toContain('Pas evaluasi sesi gym udah jadi')
+    await toggle(w, 'evaluasi').trigger('click')
+    await flushPromises()
+    expect(api.patch).toHaveBeenCalledWith('/notifications/settings', { evaluasi: false })
   })
 
   it('shows the Dokumen switch and saves it', async () => {
