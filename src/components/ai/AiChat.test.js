@@ -221,6 +221,47 @@ describe('AiChat', () => {
     expect(w.find('[data-test="input"]').exists()).toBe(true)
   })
 
+  it('riwayat: tap obrolan buka obrolan itu & balik ke chat (chip ikut)', async () => {
+    const w = await mountChat()
+    const other = conv({ id: 12, context: 'badan', title: 'Soal berat', messages: [msg(1, 'user', 'halo'), msg(2, 'assistant', 'hai')] })
+    api.get.mockImplementation(async (url) => (url === '/ai/conversations' ? { items: [{ id: 12, context: 'badan', kind: 'chat', title: 'Soal berat', messages: 2, updatedAt: new Date().toISOString() }] } : other))
+    await w.find('[data-test="hist"]').trigger('click')
+    await flushPromises()
+    await w.find('[data-test="row"]').trigger('click')
+    await flushPromises()
+    expect(api.get).toHaveBeenCalledWith('/ai/conversations/12')
+    expect(w.find('[data-test="input"]').exists()).toBe(true)
+    expect(w.find('[data-test="chip"]').text()).toBe('⚖️ Badan')
+    expect(w.find('[data-test="msg-me"]').text()).toBe('halo')
+  })
+
+  it('riwayat: "＋ Obrolan baru" bikin obrolan baru di konteks yang sama', async () => {
+    const w = await mountChat({ props: { panel: true } })
+    api.get.mockImplementation(async (url) => (url === '/ai/conversations' ? { items: [] } : conv()))
+    await w.find('[data-test="hist"]').trigger('click')
+    await flushPromises()
+    api.post.mockClear()
+    await w.find('[data-test="new"]').trigger('click')
+    await flushPromises()
+    expect(api.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym' })
+    expect(w.find('[data-test="input"]').exists()).toBe(true)
+  })
+
+  it('hapus obrolan yang lagi kebuka dari riwayat: balik ke chat → obrolan baru kebuka', async () => {
+    const w = await mountChat({ props: { convId: 7 }, opened: conv({ id: 7 }) })
+    const store = useAiStore()
+    api.get.mockImplementation(async (url) => (url === '/ai/conversations' ? { items: [{ id: 7, context: 'gym', kind: 'chat', title: 't', messages: 0, updatedAt: new Date().toISOString() }] } : conv({ id: 7 })))
+    await w.find('[data-test="hist"]').trigger('click')
+    await flushPromises()
+    await store.removeConv(7)
+    api.get.mockClear()
+    await w.find('[data-test="hist"]').trigger('click')
+    await flushPromises()
+    expect(api.get).not.toHaveBeenCalledWith('/ai/conversations/7')
+    expect(api.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym' })
+    expect(w.find('[data-test="input"]').exists()).toBe(true)
+  })
+
   it('obrolan nggak kebuka: pesan + Coba lagi', async () => {
     const w = await mountChat()
     api.post.mockRejectedValueOnce(new Error('x'))

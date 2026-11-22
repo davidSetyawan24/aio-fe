@@ -14,7 +14,8 @@
       <span v-else class="spacer" />
     </div>
 
-    <div v-if="cv !== 'chat'" class="cview" data-test="cview"><p class="cvnote">Bentar lagi ya.</p></div>
+    <AiHistory v-if="cv === 'hist'" @open="openFromHistory" @new="startNew" />
+    <AiMemory v-else-if="cv === 'mem'" />
     <div v-else ref="bodyEl" class="cbody" data-test="body">
       <p v-if="!conv && !failedOpen" class="sysnote" data-test="loading">Bentar ya…</p>
       <p v-else-if="!conv" class="sysnote" data-test="open-failed">Obrolannya nggak kebuka. <button type="button" class="lnk" data-test="retry-open" @click="open">Coba lagi</button></p>
@@ -76,6 +77,8 @@ import { BLN } from '@/lib/agenda.js'
 import { SUGG, chipFor, renderAiText } from '@/lib/ai.js'
 import { useMedia } from '@/lib/media.js'
 import { useAiStore } from '@/stores/ai.js'
+import AiHistory from './AiHistory.vue'
+import AiMemory from './AiMemory.vue'
 
 /**
  * Isi chat AI (dipakai halaman HP & panel PC). Buka obrolan sendiri dari props:
@@ -123,15 +126,43 @@ const quoteLabel = computed(() => {
 })
 const quoteText = computed(() => (conv.value?.quote?.content?.poin ?? []).map((p) => p.isi.replace(/\*\*/g, '')).join(' '))
 
+// `convId` cuma buat buka pertama; abis itu (mis. obrolannya dihapus dari riwayat) buka obrolan baru.
+let firstOpen = true
 async function open() {
   failedOpen.value = false
   quoteOpen.value = false
   ai.current = null
-  const res = await ai.openConv(props.convId != null ? { id: props.convId } : { context: props.context, sessionId: props.sessionId ?? undefined })
-  if (!res) failedOpen.value = true
+  const byId = firstOpen && props.convId != null
+  const first = firstOpen
+  const res = await ai.openConv(byId ? { id: props.convId } : { context: first ? props.context : lastContext, sessionId: first ? props.sessionId ?? undefined : undefined })
+  if (res) firstOpen = false
+  else failedOpen.value = true
+}
+let lastContext = props.context
+
+const toggle = (view) => {
+  cv.value = cv.value === view ? 'chat' : view
+  // Obrolan yang lagi kebuka kehapus lewat riwayat → buka yang baru.
+  if (cv.value === 'chat' && !ai.current && !failedOpen.value) open()
 }
 
-const toggle = (view) => (cv.value = cv.value === view ? 'chat' : view)
+async function openFromHistory(id) {
+  const res = await ai.openConv({ id })
+  if (!res) return
+  quoteOpen.value = false
+  failedOpen.value = false
+  lastContext = res.context
+  cv.value = 'chat'
+}
+
+async function startNew() {
+  const res = await ai.openConv({ context: ai.current?.context ?? lastContext })
+  if (!res) return
+  quoteOpen.value = false
+  failedOpen.value = false
+  lastContext = res.context
+  cv.value = 'chat'
+}
 
 async function send(text) {
   const value = String(text ?? draft.value).trim()
@@ -183,8 +214,6 @@ onBeforeUnmount(() => ai.stopWatching())
 .hacts { display: flex; gap: 6px; flex-shrink: 0; }
 .hbtn { width: 40px; height: 40px; border: 0; border-radius: 99px; background: var(--soft); display: grid; place-items: center; cursor: pointer; font-size: 17px; }
 .hbtn.on { background: var(--ink); color: var(--on-ink); }
-.cview { flex: 1; overflow-y: auto; padding: 6px 14px 24px; }
-.cvnote { margin: 10px 6px 0; font-size: 12px; font-weight: 600; color: var(--muted); line-height: 1.5; }
 .cbody { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 14px 12px; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .msg { max-width: 86%; font-size: 14.5px; font-weight: 600; line-height: 1.55; }
 .msg.me { align-self: flex-end; background: var(--ink); color: var(--on-ink); padding: 10px 14px; border-radius: 20px 20px 6px 20px; white-space: pre-wrap; overflow-wrap: anywhere; }

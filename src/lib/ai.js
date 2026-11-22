@@ -105,3 +105,9 @@ export function evalState(ev) {
   if (status === 'gagal') return has ? 'rerunFailed' : 'failed'
   return 'none'
 }
+
+/** '2026-11-23T…Z' → '23 Nov' (tanggal WIB). */
+export const shortDate = (iso) => {
+  const d = wibDate(iso)
+  return `${Number(d.slice(8))} ${BLN[Number(d.slice(5, 7)) - 1]}`
+}
