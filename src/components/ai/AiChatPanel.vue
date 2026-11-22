@@ -35,8 +35,14 @@ watch(() => [props.open, props.formKey], async ([open]) => {
   await nextTick()
   void panelEl.value?.offsetWidth
   show.value = true
-  chat.value?.focus()
+  // iPad: fokus otomatis bakal ngebuka keyboard & nutupin separuh layar → cuma buat mouse/laptop.
+  if (!window.matchMedia?.('(pointer: coarse)').matches) chat.value?.focus()
 }, { immediate: true })
+
+// ≥1400px: halaman di belakang nyusut 460px selama panel kebuka (kelasnya dibaca theme/base.css); 768–1399px panel numpuk di atas halaman.
+const PAGE_CLASS = 'ai-panel-open'
+const setPageClass = (on) => document.documentElement.classList.toggle(PAGE_CLASS, on)
+watch(() => props.open, setPageClass, { immediate: true })
 
 // Esc nutup panel — kecuali ada konfirmasi Ionic di atasnya: Esc-nya buat batalin itu aja.
 const onKey = (e) => {
@@ -45,7 +51,10 @@ const onKey = (e) => {
   emit('close')
 }
 document.addEventListener('keydown', onKey)
-onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKey)
+  setPageClass(false)
+})
 </script>
 
 <style scoped>

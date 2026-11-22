@@ -69,4 +69,29 @@ describe('AiChatPanel (PC)', () => {
     await flushPromises()
     expect(panel().classList.contains('show')).toBe(false)
   })
+
+  it('fokus kolom ketik otomatis cuma di mouse; iPad (pointer coarse) nggak', async () => {
+    const real = window.matchMedia
+    window.matchMedia = (q) => ({ matches: q.includes('coarse'), addEventListener() {}, removeEventListener() {} })
+    const spy = vi.spyOn(HTMLTextAreaElement.prototype, 'focus')
+    await mountPanel()
+    expect(spy).not.toHaveBeenCalled()
+    window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+    await mountPanel({ formKey: 2 })
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+    window.matchMedia = real
+  })
+
+  it('kelas ai-panel-open di <html> nyala selama kebuka, copot pas ditutup / dicopot', async () => {
+    const w = await mountPanel()
+    expect(document.documentElement.classList.contains('ai-panel-open')).toBe(true)
+    await w.setProps({ open: false })
+    expect(document.documentElement.classList.contains('ai-panel-open')).toBe(false)
+    await w.setProps({ open: true, formKey: 2 })
+    expect(document.documentElement.classList.contains('ai-panel-open')).toBe(true)
+    w.unmount()
+    mounted.pop()
+    expect(document.documentElement.classList.contains('ai-panel-open')).toBe(false)
+  })
 })

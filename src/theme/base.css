@@ -75,6 +75,12 @@ ion-tab-button.tab-selected .tb { background: var(--lime); color: var(--lime-ink
 
 /* sidebar (tablet/pc) */
 ion-split-pane { --side-width: 260px; --side-max-width: 260px; --border: 0; }
+/* Panel chat AI: di layar ≥1400px halaman nyusut 460px selama panel kebuka (isinya tetep keliatan & bisa discroll).
+   Di bawah itu sisa halamannya <670px (layout PC jadi kepotong), jadi panel numpuk di atas halaman. */
+@media (min-width: 1400px) {
+  ion-split-pane { transition: padding-right .5s var(--spring); }
+  html.ai-panel-open ion-split-pane { padding-right: 460px; }
+}
 ion-menu { --background: var(--app-bg); }
 ion-menu::part(container) { border-right: 1px solid var(--hair); }
 .side { padding: 32px 18px; display: flex; flex-direction: column; gap: 4px; height: 100%; }
