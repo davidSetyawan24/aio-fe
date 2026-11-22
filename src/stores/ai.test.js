@@ -108,12 +108,54 @@ describe('ai store: chat', () => {
     expect(api.get).toHaveBeenCalledTimes(2)
   })
 
-  it('send 409: toast & pesan sementara dibuang', async () => {
+  it('send 409: toast, ambil ulang obrolan, terus cek jawaban yang masih jalan', async () => {
     store.current = conv([])
     api.post.mockRejectedValue(new ApiError('Tunggu jawaban sebelumnya dulu.', 409))
+    api.get
+      .mockResolvedValueOnce(conv([msg(1, 'user', 'jadi'), msg(2, 'assistant', 'jalan')]))
+      .mockResolvedValue(conv([msg(1, 'user', 'jadi'), msg(2, 'assistant', 'jadi')]))
     await store.send('halo')
     expect(toast).toHaveBeenCalledWith('Tunggu jawaban sebelumnya dulu.')
-    expect(store.current.messages).toEqual([])
+    expect(store.current.messages.map((m) => m.id)).toEqual([1, 2])
+    expect(store.current.messages[1].status).toBe('jalan')
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(store.current.messages[1].status).toBe('jadi')
+  })
+
+  it('send 409 tanpa pesan dari BE: pakai teks cadangan', async () => {
+    store.current = conv([])
+    api.post.mockRejectedValue(new ApiError('', 409))
+    api.get.mockResolvedValue(conv([msg(1, 'user', 'jadi'), msg(2, 'assistant', 'jadi')]))
+    await store.send('halo')
+    expect(toast).toHaveBeenCalledWith('Tunggu jawaban sebelumnya dulu.')
+  })
+
+  it('send gagal nyampe BE (jaringan putus): pesan tetep keliatan + jawaban gagal + toast', async () => {
+    store.current = conv([])
+    api.post.mockRejectedValue(new TypeError('network'))
+    api.get.mockRejectedValueOnce(new Error('offline')).mockResolvedValue(conv([]))
+    await store.send('halo')
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(store.current.messages[1].status).toBe('jalan')
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(store.current.messages.map((m) => [m.role, m.text, m.status])).toEqual([
+      ['user', 'halo', 'jadi'],
+      ['assistant', 'Pesannya gagal kekirim. Kirim ulang?', 'gagal'],
+    ])
+    expect(toast).toHaveBeenCalledWith('Pesannya gagal kekirim. Kirim ulang?')
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(api.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('kirim ulang abis gagal kekirim: pasangan lokal diganti, nggak dobel', async () => {
+    store.current = conv([])
+    api.post.mockRejectedValueOnce(new TypeError('network'))
+    api.get.mockResolvedValue(conv([]))
+    await store.send('halo')
+    await vi.advanceTimersByTimeAsync(3000)
+    api.post.mockResolvedValue({ user: msg(1, 'user', 'jadi', { text: 'halo' }), assistant: msg(2, 'assistant', 'jadi') })
+    await store.send('halo')
+    expect(store.current.messages.map((m) => m.id)).toEqual([1, 2])
   })
 
   it('send diabaikan kalau jawaban terakhir masih jalan', async () => {

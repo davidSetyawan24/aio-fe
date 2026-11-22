@@ -21,6 +21,9 @@ export function setAiToast(fn) {
   toast = fn
 }
 
+const LOST_TEXT = 'Pesannya gagal kekirim. Kirim ulang?'
+const isLocalFail = (m) => String(m?.id).startsWith('tmp-') && m.role === 'assistant' && m.status === 'gagal'
+
 const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 const listOf = (res) => res?.items ?? []
 const messageOf = (e, fallback) => (e instanceof ApiError && e.message ? e.message : fallback)
@@ -137,14 +140,14 @@ export const useAiStore = defineStore('ai', {
       if (id == null) return null
       try {
         const conv = await aiApi.get(`/ai/conversations/${id}`)
-        if (this.current?.id === id) this.current = conv
+        if (conv && this.current?.id === id) this.current = conv
         return conv
       } catch {
         return null
       }
     },
     /** Cek tiap 3 dtk sampe jawaban terakhir bukan `jalan` (atau obrolannya ditinggal / kelamaan). */
-    watchCurrent() {
+    watchCurrent(sent = null) {
       stopWatch()
       const token = watch.token
       const id = this.current?.id
@@ -153,12 +156,29 @@ export const useAiStore = defineStore('ai', {
         if (token !== watch.token || this.current?.id !== id) return
         const conv = await this.refreshCurrent()
         if (token !== watch.token) return
-        if ((conv && !pending(conv)) || Date.now() - started > CHAT_WATCH_MAX_MS) return
+        // Pesan yang request-nya putus ternyata nggak pernah nyampe → tampilin sebagai gagal biar bisa dikirim ulang.
+        if (conv && sent && conv.messages.length <= sent.baseLen) {
+          await this.failSent(conv, sent.user)
+          return
+        }
+        if (conv && !pending(conv)) return
+        if (Date.now() - started > CHAT_WATCH_MAX_MS) {
+          if (sent) await this.failSent(conv ?? this.current, sent.user)
+          return
+        }
         watch.timer = setTimeout(step, CHAT_POLL_MS)
       }
       watch.timer = setTimeout(step, CHAT_POLL_MS)
     },
     stopWatching: stopWatch,
+    /** Pesan lokal yang nggak nyampe BE: tetep keliatan + jawaban `gagal` ber-tombol Kirim ulang. */
+    async failSent(conv, user) {
+      if (!conv || this.current?.id !== conv.id) return
+      const failed = { id: `tmp-${--tempId}`, role: 'assistant', text: LOST_TEXT, status: 'gagal', tools: [], memory: null, createdAt: user.createdAt }
+      const base = conv.messages.filter((m) => !String(m.id).startsWith('tmp-'))
+      this.current = { ...conv, messages: [...base, user, failed] }
+      await toast(LOST_TEXT)
+    },
 
     async send(text) {
       const conv = this.current
@@ -167,7 +187,9 @@ export const useAiStore = defineStore('ai', {
       const now = new Date().toISOString()
       const user = { id: `tmp-${--tempId}`, role: 'user', text: clean, status: 'jadi', tools: [], memory: null, createdAt: now }
       const assistant = { id: `tmp-${--tempId}`, role: 'assistant', text: '', status: 'jalan', tools: [], memory: null, createdAt: now }
-      const base = conv.messages
+      // Kirim ulang pesan yang gagal kekirim: pasangan lokal sebelumnya dibuang dulu.
+      const msgs = conv.messages
+      const base = isLocalFail(lastOf(conv)) ? msgs.slice(0, -2) : msgs
       this.current = { ...conv, messages: [...base, user, assistant] }
       try {
         const res = await aiApi.post(`/ai/conversations/${conv.id}/messages`, { text: clean })
@@ -175,7 +197,15 @@ export const useAiStore = defineStore('ai', {
         return res
       } catch (e) {
         if (dropped(e)) {
-          this.watchCurrent()
+          this.watchCurrent({ baseLen: base.length, user })
+          return null
+        }
+        if (e instanceof ApiError && e.status === 409) {
+          await toast(messageOf(e, 'Tunggu jawaban sebelumnya dulu.'))
+          const fresh = await this.refreshCurrent()
+          if (fresh) {
+            if (pending(fresh)) this.watchCurrent()
+          } else if (this.current?.id === conv.id) this.current = { ...this.current, messages: base }
           return null
         }
         if (this.current?.id === conv.id) this.current = { ...this.current, messages: base }
