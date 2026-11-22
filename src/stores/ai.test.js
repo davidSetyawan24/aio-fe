@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { ApiError } from '@/lib/api.js'
-import { setAiApi, setAiToast, useAiStore } from './ai.js'
+import { CHAT_SEND_TIMEOUT_MS, setAiApi, setAiToast, useAiStore } from './ai.js'
 
 const msg = (id, role, status, over = {}) => ({ id, role, text: 't', status, tools: [], memory: null, createdAt: '2026-11-26T00:00:00Z', ...over })
 const conv = (messages) => ({ id: 7, context: 'gym', kind: 'chat', sessionId: null, title: 't', updatedAt: '2026-11-26T00:00:00Z', quote: null, messages })
@@ -79,8 +79,31 @@ describe('ai store: chat', () => {
     store.current = conv([])
     api.post.mockResolvedValue({ user: msg(1, 'user', 'jadi'), assistant: msg(2, 'assistant', 'jadi') })
     await store.send('halo')
-    expect(api.post).toHaveBeenCalledWith('/ai/conversations/7/messages', { text: 'halo' })
+    expect(api.post).toHaveBeenCalledWith('/ai/conversations/7/messages', { text: 'halo' }, { timeout: CHAT_SEND_TIMEOUT_MS })
+    expect(CHAT_SEND_TIMEOUT_MS).toBe(330000)
     expect(store.current.messages.map((m) => m.id)).toEqual([1, 2])
+  })
+
+  it('send putus abis obrolan ditutup: pengamat jawaban nggak nyala', async () => {
+    store.current = conv([])
+    let reject
+    api.post.mockReturnValue(new Promise((_, r) => (reject = r)))
+    const p = store.send('halo')
+    store.stopWatching()
+    reject(new ApiError('putus', 0))
+    await p
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(api.get).not.toHaveBeenCalled()
+    expect(toast).not.toHaveBeenCalled()
+  })
+
+  it('send gagal 422/503: pesan sementara dibuang, toast, dan teks dibalikin ke pemanggil', async () => {
+    store.current = conv([])
+    api.post.mockRejectedValue(new ApiError('AI lagi nggak bisa.', 503))
+    const res = await store.send('halo')
+    expect(res).toEqual({ failed: true, text: 'halo' })
+    expect(store.current.messages).toEqual([])
+    expect(toast).toHaveBeenCalledWith('AI lagi nggak bisa.')
   })
 
   it('send optimistis: user + assistant jalan langsung nongol', async () => {

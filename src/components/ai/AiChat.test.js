@@ -1,12 +1,13 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { ApiError } from '@/lib/api.js'
 import { SUGG } from '@/lib/ai.js'
 import { setAiApi, setAiToast, useAiStore } from '@/stores/ai.js'
 import AiChat from './AiChat.vue'
 
 const msg = (id, role, text, over = {}) => ({ id, role, text, status: 'jadi', tools: [], memory: null, createdAt: '2026-11-26T00:00:00Z', ...over })
 const conv = (over = {}) => ({ id: 7, context: 'gym', kind: 'chat', sessionId: null, program: null, on: null, title: '', messages: [], quote: null, updatedAt: '2026-11-26T00:00:00Z', ...over })
-const quote = { label: 'Push 23 Nov', content: { ringkas: 'r', poin: [{ ikon: '📈', judul: 'Progres', isi: 'Naik **2 kg** dari minggu lalu.' }, { ikon: '🎯', judul: 'Fokus', isi: 'Pelan-pelan aja.' }] } }
+const quote = { label: 'Push 23 Nov', content: { ringkas: 'Dorong **naik** tipis, volume aman.', poin: [{ ikon: '📈', judul: 'Progres', isi: 'Naik **2 kg** dari minggu lalu.' }, { ikon: '🎯', judul: 'Fokus', isi: 'Pelan-pelan aja.' }] } }
 
 let api
 let toast
@@ -55,7 +56,7 @@ describe('AiChat', () => {
     expect(sugg.map((s) => s.text())).toEqual(SUGG.gym)
     await sugg[0].trigger('click')
     await flushPromises()
-    expect(api.post).toHaveBeenCalledWith('/ai/conversations/7/messages', { text: SUGG.gym[0] })
+    expect(api.post).toHaveBeenCalledWith('/ai/conversations/7/messages', { text: SUGG.gym[0] }, { timeout: 330000 })
   })
 
   it('Badan: balik "Badan", chip ⚖️, kosong versi badan', async () => {
@@ -73,11 +74,35 @@ describe('AiChat', () => {
     expect(w.find('[data-test="back"]').text()).toBe('Ringkasan')
     expect(w.find('[data-test="chip"]').text()).toBe('🏋️ Gym · Push 23 Nov')
     expect(w.find('[data-test="quote"]').text()).toContain('Evaluasi AI · Push 23 Nov')
-    expect(w.find('[data-test="quote-text"]').text()).toBe('Naik 2 kg dari minggu lalu. Pelan-pelan aja.')
+    expect(w.find('[data-test="quote-text"]').text()).toBe('Dorong naik tipis, volume aman.')
     expect(w.find('[data-test="empty"]').exists()).toBe(false)
     await w.find('[data-test="quote-toggle"]').trigger('click')
     expect(w.find('[data-test="quote-full"]').text()).toContain('Progres')
     expect(w.find('[data-test="quote-full"]').html()).toContain('<b>2 kg</b>')
+  })
+
+  it('kutipan tanpa ringkas (data lama): cadangan isi poin', async () => {
+    const old = { label: 'Push', content: { poin: quote.content.poin } }
+    const w = await mountChat({ props: { sessionId: 5 }, opened: conv({ kind: 'eval', sessionId: 5, program: 'push', on: '2026-11-23', quote: old }) })
+    expect(w.find('[data-test="quote-text"]').text()).toBe('Naik 2 kg dari minggu lalu. Pelan-pelan aja.')
+  })
+
+  it('obrolan evaluasi dibuka dari Riwayat (backFrom): balik "Riwayat"', async () => {
+    const w = await mountChat({ props: { sessionId: 5, backFrom: 'riwayat' }, opened: conv({ kind: 'eval', sessionId: 5, program: 'push', on: '2026-11-23', quote }) })
+    expect(w.find('[data-test="back"]').text()).toBe('Riwayat')
+  })
+
+  it('gagal bukan jaringan (422): teks balik ke kolom ketik + toast', async () => {
+    const w = await mountChat()
+    api.post.mockImplementation(async (url) => {
+      if (url === '/ai/conversations') return conv()
+      throw new ApiError('AI lagi nggak bisa.', 503)
+    })
+    await w.find('[data-test="input"]').setValue('halo coba')
+    await w.find('[data-test="send"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-test="input"]').element.value).toBe('halo coba')
+    expect(toast).toHaveBeenCalledWith('AI lagi nggak bisa.')
   })
 
   it('buka dari riwayat (convId) → GET obrolan itu', async () => {
@@ -127,7 +152,7 @@ describe('AiChat', () => {
     expect(api.post).toHaveBeenCalledTimes(1)
     await input.trigger('keydown', { key: 'Enter' })
     await flushPromises()
-    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' })
+    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' }, { timeout: 330000 })
     expect(input.element.value).toBe('')
   })
 
@@ -152,7 +177,7 @@ describe('AiChat', () => {
     expect(api.post).toHaveBeenCalledTimes(1)
     await input.trigger('keydown', { key: 'Enter' })
     await flushPromises()
-    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' })
+    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' }, { timeout: 330000 })
   })
 
   it('jawaban punya ingatan: chip lime "Gue catet" di atas jawaban, Batal → hapus & chip ilang', async () => {
@@ -172,7 +197,7 @@ describe('AiChat', () => {
     expect(w.find('[data-test="failed"]').text()).toContain('Jawabannya gagal. Kirim ulang?')
     await w.find('[data-test="resend"]').trigger('click')
     await flushPromises()
-    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'progres gue?' })
+    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'progres gue?' }, { timeout: 330000 })
   })
 
   it('pesan gagal kekirim (jaringan putus) tetep keliatan + Kirim ulang', async () => {

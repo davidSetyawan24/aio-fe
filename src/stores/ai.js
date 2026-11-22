@@ -8,6 +8,8 @@ export const EVAL_POLL_MS = 5000
 export const CHAT_POLL_MS = 3000
 /** Berhenti nunggu jawaban yang putus setelah ±6 menit (BE sendiri udah nyerah di 5 menit). */
 export const CHAT_WATCH_MAX_MS = 360000
+/** Kirim pesan chat nunggu BE sampe AI jawab (BE nyerah di 5 menit) — jangan pakai batas 15 dtk bawaan. */
+export const CHAT_SEND_TIMEOUT_MS = 330000
 
 let aiApi = defaultApi
 let toast = defaultToast
@@ -36,6 +38,8 @@ const pending = (conv) => lastOf(conv)?.role === 'assistant' && lastOf(conv)?.st
 
 // Pengamat jawaban yang putus (satu aja, ikut obrolan yang kebuka).
 const watch = { timer: null, token: 0 }
+// Naik tiap obrolan ditinggal / dibuka ulang: kirim yang masih nunggu jawaban nggak boleh nyalain pengamat sesudahnya.
+let attach = 0
 function stopWatch() {
   watch.token++
   clearTimeout(watch.timer)
@@ -126,6 +130,7 @@ export const useAiStore = defineStore('ai', {
 
     async openConv({ context, sessionId, id }) {
       stopWatch()
+      attach++
       try {
         const conv = id != null ? await aiApi.get(`/ai/conversations/${id}`) : await aiApi.post('/ai/conversations', { context, ...(sessionId != null ? { sessionId } : {}) })
         this.current = conv
@@ -171,7 +176,10 @@ export const useAiStore = defineStore('ai', {
       }
       watch.timer = setTimeout(step, CHAT_POLL_MS)
     },
-    stopWatching: stopWatch,
+    stopWatching() {
+      attach++
+      stopWatch()
+    },
     /** Pesan lokal yang nggak nyampe BE: tetep keliatan + jawaban `gagal` ber-tombol Kirim ulang. */
     async failSent(conv, user) {
       if (!conv || this.current?.id !== conv.id) return
@@ -192,11 +200,13 @@ export const useAiStore = defineStore('ai', {
       const msgs = conv.messages
       const base = isLocalFail(lastOf(conv)) ? msgs.slice(0, -2) : msgs
       this.current = { ...conv, messages: [...base, user, assistant] }
+      const mine = attach
       try {
-        const res = await aiApi.post(`/ai/conversations/${conv.id}/messages`, { text: clean })
+        const res = await aiApi.post(`/ai/conversations/${conv.id}/messages`, { text: clean }, { timeout: CHAT_SEND_TIMEOUT_MS })
         if (this.current?.id === conv.id) this.current = { ...this.current, messages: [...base, res.user, res.assistant] }
         return res
       } catch (e) {
+        if (mine !== attach) return null
         if (dropped(e)) {
           this.watchCurrent({ baseLen: base.length, user })
           return null
@@ -211,7 +221,7 @@ export const useAiStore = defineStore('ai', {
         }
         if (this.current?.id === conv.id) this.current = { ...this.current, messages: base }
         await toast(messageOf(e, 'Pesannya gagal kekirim. Coba lagi ya.'))
-        return null
+        return { failed: true, text: clean }
       }
     },
     /** Batalin catatan ingatan yang barusan dicatet AI di satu jawaban. */

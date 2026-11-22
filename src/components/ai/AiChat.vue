@@ -91,6 +91,8 @@ const props = defineProps({
   convId: { type: Number, default: null },
   /** true = tampilan panel PC (tombol ✕, tanpa tombol balik). */
   panel: { type: Boolean, default: false },
+  /** Obrolan evaluasi dibuka dari mana (HP): 'riwayat' = detail sesi di Riwayat, selain itu ringkasan Selesai. */
+  backFrom: { type: String, default: '' },
 })
 defineEmits(['close'])
 
@@ -115,7 +117,7 @@ const canSend = computed(() => !!conv.value && !busy.value && draft.value.trim()
 const chip = computed(() => chipFor(conv.value ?? { context: props.context, kind: props.sessionId != null ? 'eval' : 'chat' }))
 const ctxWord = computed(() => ((conv.value?.context ?? props.context) === 'badan' ? 'badan' : 'gym'))
 const backLabel = computed(() => {
-  if ((conv.value?.kind ?? (props.sessionId != null ? 'eval' : 'chat')) === 'eval') return 'Ringkasan'
+  if ((conv.value?.kind ?? (props.sessionId != null ? 'eval' : 'chat')) === 'eval') return props.backFrom === 'riwayat' ? 'Riwayat' : 'Ringkasan'
   return ctxWord.value === 'badan' ? 'Badan' : 'Gym'
 })
 
@@ -124,7 +126,12 @@ const quoteLabel = computed(() => {
   if (c?.program && c.on) return `Evaluasi AI · ${PROGRAM_LABEL[c.program] ?? c.program} ${Number(c.on.slice(8))} ${BLN[Number(c.on.slice(5, 7)) - 1]}`
   return c?.quote?.label ?? 'Evaluasi AI'
 })
-const quoteText = computed(() => (conv.value?.quote?.content?.poin ?? []).map((p) => p.isi.replace(/\*\*/g, '')).join(' '))
+// Kutipan = ringkasan evaluasi (`ringkas`); cadangan (data lama tanpa ringkas) = isi poin disambung.
+const quoteText = computed(() => {
+  const c = conv.value?.quote?.content
+  const ringkas = String(c?.ringkas ?? '').replace(/\*\*/g, '').trim()
+  return ringkas || (c?.poin ?? []).map((p) => p.isi.replace(/\*\*/g, '')).join(' ')
+})
 
 // `convId` cuma buat buka pertama; abis itu (mis. obrolannya dihapus dari riwayat) buka obrolan baru.
 let firstOpen = true
@@ -168,7 +175,9 @@ async function send(text) {
   const value = String(text ?? draft.value).trim()
   if (!value || !conv.value || busy.value) return
   if (text === undefined) draft.value = ''
-  await ai.send(value)
+  const res = await ai.send(value)
+  // Gagal bukan karena jaringan (422/500/503): teksnya balik ke kolom ketik biar nggak hilang.
+  if (res?.failed && text === undefined && !draft.value) draft.value = res.text
 }
 
 function resend(index) {
