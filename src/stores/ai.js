@@ -51,6 +51,7 @@ export const useAiStore = defineStore('ai', {
     current: null,
     memories: [],
     usage: null,
+    memoryError: '',
   }),
   actions: {
     async loadSettings() {
@@ -230,40 +231,70 @@ export const useAiStore = defineStore('ai', {
       this.memories = this.memories.filter((m) => m.id !== memId)
     },
 
+    /** Daftar riwayat. Gagal → null (daftar lama tetep), layar yang nampilin error. */
     async loadConvs() {
-      this.convs = listOf(await aiApi.get('/ai/conversations'))
-      return this.convs
+      try {
+        this.convs = listOf(await aiApi.get('/ai/conversations'))
+        return this.convs
+      } catch {
+        return null
+      }
     },
     async removeConv(id) {
-      await aiApi.del(`/ai/conversations/${id}`)
+      try {
+        await aiApi.del(`/ai/conversations/${id}`)
+      } catch (e) {
+        await toast(messageOf(e, 'Gagal ngehapus. Coba lagi ya.'))
+        return false
+      }
       this.convs = this.convs.filter((c) => c.id !== id)
       if (this.current?.id === id) {
         stopWatch()
         this.current = null
       }
+      return true
     },
 
     async loadMemories() {
-      this.memories = listOf(await aiApi.get('/ai/memories'))
-      return this.memories
+      try {
+        this.memories = listOf(await aiApi.get('/ai/memories'))
+        return this.memories
+      } catch {
+        return null
+      }
     },
+    /** 422 (kosong / kepanjangan / penuh) nggak di-toast: pesannya masuk `memoryError`, ditampilin di bawah kolom. */
     async addMemory(text) {
+      this.memoryError = ''
       try {
         const mem = await aiApi.post('/ai/memories', { text })
         this.memories = [mem, ...this.memories]
         return mem
       } catch (e) {
-        await toast(messageOf(e, 'Gagal nyatet. Coba lagi ya.'))
+        if (e instanceof ApiError && e.status === 422) this.memoryError = e.message
+        else await toast(messageOf(e, 'Gagal nyatet. Coba lagi ya.'))
         return null
       }
     },
     async removeMemory(id) {
-      await aiApi.del(`/ai/memories/${id}`)
+      try {
+        await aiApi.del(`/ai/memories/${id}`)
+      } catch (e) {
+        if (!(e instanceof ApiError && e.status === 404)) {
+          await toast(messageOf(e, 'Gagal ngehapus. Coba lagi ya.'))
+          return false
+        }
+      }
       this.memories = this.memories.filter((m) => m.id !== id)
+      return true
     },
     async loadUsage() {
-      this.usage = await aiApi.get('/ai/usage')
-      return this.usage
+      try {
+        this.usage = await aiApi.get('/ai/usage')
+        return this.usage
+      } catch {
+        return null
+      }
     },
   },
 })

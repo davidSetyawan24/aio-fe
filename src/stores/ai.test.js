@@ -212,6 +212,30 @@ describe('ai store: daftar, ingatan, pemakaian', () => {
     expect(store.usage.kursIdr).toBe(18260)
   })
 
+  it('gagal muat / hapus: nggak ada penolakan nyasar, state lama tetep', async () => {
+    api.get.mockResolvedValueOnce({ items: [{ id: 1 }] })
+    await store.loadConvs()
+    api.get.mockRejectedValue(new ApiError('x', 500))
+    expect(await store.loadConvs()).toBeNull()
+    expect(await store.loadMemories()).toBeNull()
+    expect(await store.loadUsage()).toBeNull()
+    expect(store.convs).toEqual([{ id: 1 }])
+    api.del.mockRejectedValue(new ApiError('Server error', 500))
+    expect(await store.removeConv(1)).toBe(false)
+    expect(store.convs).toEqual([{ id: 1 }])
+    store.memories = [{ id: 5 }]
+    expect(await store.removeMemory(5)).toBe(false)
+    expect(store.memories).toEqual([{ id: 5 }])
+    expect(toast).toHaveBeenCalledTimes(2)
+  })
+
+  it('addMemory 422: pesan masuk memoryError, nggak di-toast', async () => {
+    api.post.mockRejectedValue(new ApiError('Catatannya kosong.', 422))
+    expect(await store.addMemory('')).toBeNull()
+    expect(store.memoryError).toBe('Catatannya kosong.')
+    expect(toast).not.toHaveBeenCalled()
+  })
+
   it('setAutoEval balik ke nilai lama + toast kalau gagal', async () => {
     api.put.mockRejectedValue(new ApiError('Server error', 500))
     await store.setAutoEval(true)
