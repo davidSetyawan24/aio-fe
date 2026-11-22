@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content :fullscreen="true" :scroll-y="false">
       <div class="aipage">
-        <AiChat ref="chat" :context="context" :session-id="sessionId" :conv-id="convId" @close="back" />
+        <AiChat ref="chat" :context="context" :session-id="sessionId" :conv-id="convId" :back-from="backFrom" @close="back" />
       </div>
     </ion-content>
   </ion-page>
@@ -23,6 +23,7 @@ const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number
 const context = computed(() => (route.path.includes('/badan/') ? 'badan' : 'gym'))
 const sessionId = num(route.query.sesi)
 const convId = num(route.query.obrolan)
+const backFrom = route.query.dari === 'riwayat' ? 'riwayat' : ''
 
 const back = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate(`/tabs/menu/${context.value}`, 'back', 'replace'))
 

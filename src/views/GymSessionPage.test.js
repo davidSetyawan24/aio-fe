@@ -162,7 +162,7 @@ describe('GymSessionPage (PC)', () => {
   it('Bahas di chat: HP pindah ke halaman chat sesi ini', async () => {
     const w = await mountPage({ cached: true })
     w.findComponent(GymReport).vm.$emit('talk')
-    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/tanya?sesi=20')
+    expect(ionRouter.push).toHaveBeenLastCalledWith('/tabs/menu/gym/tanya?sesi=20&dari=riwayat')
   })
 
   it('Bahas di chat: layar sedang (768–1099) buka panel chat', async () => {

@@ -9,8 +9,8 @@ vi.mock('@ionic/vue', async (importOriginal) => ({ ...(await importOriginal()), 
 
 const mounted = []
 let api
-async function mountPage(url) {
-  api = { get: vi.fn(async () => ({ id: 3, context: 'gym', kind: 'chat', messages: [], quote: null })), post: vi.fn(async () => ({ id: 3, context: url.includes('/badan/') ? 'badan' : 'gym', kind: 'chat', messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
+async function mountPage(url, kind = 'chat') {
+  api = { get: vi.fn(async () => ({ id: 3, context: 'gym', kind: 'chat', messages: [], quote: null })), post: vi.fn(async () => ({ id: 3, context: url.includes('/badan/') ? 'badan' : 'gym', kind, messages: [], quote: null })), put: vi.fn(), patch: vi.fn(), del: vi.fn() }
   setAiApi(api)
   setAiToast(vi.fn())
   const pinia = createPinia()
@@ -45,6 +45,11 @@ describe('AiChatPage (HP)', () => {
   it('?sesi=<id>: obrolan evaluasi sesi itu', async () => {
     await mountPage('/tabs/menu/gym/tanya?sesi=12')
     expect(api.post).toHaveBeenCalledWith('/ai/conversations', { context: 'gym', sessionId: 12 })
+  })
+
+  it('?sesi=<id>&dari=riwayat: tombol balik "Riwayat"', async () => {
+    const w = await mountPage('/tabs/menu/gym/tanya?sesi=12&dari=riwayat', 'eval')
+    expect(w.find('[data-test="back"]').text()).toBe('Riwayat')
   })
 
   it('?obrolan=<id>: buka obrolan dari riwayat', async () => {

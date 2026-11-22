@@ -11,7 +11,7 @@
           <template v-else-if="session">{{ PROGRAM_EMOJI[session.program] }} {{ PROGRAM_LABEL[session.program] }}.</template>
           <span v-if="session">{{ dateLine }}</span>
         </h1>
-        <GymSessionView :id="id" :editing="editing" @edit="ionRouter.push(`${RIWAYAT}/${id}/ubah`)" @stop-edit="stopEdit" @deleted="ionRouter.navigate(RIWAYAT, 'back', 'replace')" @talk="talk('gym', id)" />
+        <GymSessionView :id="id" :editing="editing" @edit="ionRouter.push(`${RIWAYAT}/${id}/ubah`)" @stop-edit="stopEdit" @deleted="ionRouter.navigate(RIWAYAT, 'back', 'replace')" @talk="talk('gym', id, 'riwayat')" />
       </div>
       <AiChatPanel v-if="!wide && aiWide" v-bind="aiPanel" @close="closeAi" />
     </ion-content>
