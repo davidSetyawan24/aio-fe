@@ -29,7 +29,18 @@ async function mountChat({ props = {}, opened = conv() } = {}) {
   await flushPromises()
   return w
 }
-afterEach(() => mounted.splice(0).forEach((w) => w.unmount()))
+const realMatchMedia = window.matchMedia
+function stubMedia({ coarse, width }) {
+  window.matchMedia = (query) => {
+    const max = /max-width:\s*(\d+)px/.exec(query)
+    const matches = query.includes('pointer: coarse') ? coarse : max ? width <= Number(max[1]) : false
+    return { matches, addEventListener: () => {}, removeEventListener: () => {} }
+  }
+}
+afterEach(() => {
+  mounted.splice(0).forEach((w) => w.unmount())
+  window.matchMedia = realMatchMedia
+})
 
 describe('AiChat', () => {
   it('obrolan baru Gym: header, kosong + 3 contoh pertanyaan, tap = kirim', async () => {
@@ -118,6 +129,30 @@ describe('AiChat', () => {
     await flushPromises()
     expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' })
     expect(input.element.value).toBe('')
+  })
+
+  it('HP (sentuh + <768px): Enter cuma baris baru, nggak kirim', async () => {
+    stubMedia({ coarse: true, width: 390 })
+    const w = await mountChat()
+    const input = w.find('[data-test="input"]')
+    await input.setValue('satu')
+    const ev = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true })
+    input.element.dispatchEvent(ev)
+    await flushPromises()
+    expect(ev.defaultPrevented).toBe(false)
+    expect(api.post).toHaveBeenCalledTimes(1)
+  })
+
+  it('iPad (sentuh tapi >=768px): Enter kirim, Shift+Enter baris baru', async () => {
+    stubMedia({ coarse: true, width: 820 })
+    const w = await mountChat()
+    const input = w.find('[data-test="input"]')
+    await input.setValue('satu')
+    await input.trigger('keydown', { key: 'Enter', shiftKey: true })
+    expect(api.post).toHaveBeenCalledTimes(1)
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(api.post).toHaveBeenLastCalledWith('/ai/conversations/7/messages', { text: 'satu' })
   })
 
   it('jawaban punya ingatan: chip lime "Gue catet" di atas jawaban, Batal → hapus & chip ilang', async () => {

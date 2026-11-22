@@ -92,7 +92,10 @@ const props = defineProps({
 defineEmits(['close'])
 
 const ai = useAiStore()
+// Enter = baris baru cuma di HP (layar sempit + sentuh); iPad & laptop: Enter kirim.
 const coarse = useMedia('(pointer: coarse)')
+const narrow = useMedia('(max-width: 767px)')
+const phone = computed(() => coarse.value && narrow.value)
 const draft = ref('')
 const cv = ref('chat')
 const failedOpen = ref(false)
@@ -145,7 +148,7 @@ function resend(index) {
 }
 
 function onKey(e) {
-  if (e.key !== 'Enter' || e.shiftKey || e.isComposing || coarse.value) return
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing || phone.value) return
   e.preventDefault()
   send()
 }
