@@ -192,4 +192,37 @@ describe('AiEvalBox', () => {
     expect(w.find('[data-test="start"]').exists()).toBe(false)
     expect(w.find('[data-test="eval-box"]').classes()).not.toContain('dim')
   })
+
+  describe('balik ke app (visibilitychange)', () => {
+    const setVisible = (v) => Object.defineProperty(document, 'visibilityState', { value: v, configurable: true })
+    afterEach(() => setVisible('visible'))
+    const fire = async () => {
+      setVisible('visible')
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+    }
+
+    it('state none: cek ulang & nampilin evaluasi yang baru kebikin (jalan)', async () => {
+      const w = await mountBox()
+      expect(w.find('[data-test="start"]').exists()).toBe(true)
+      api.get.mockImplementation(async (url) => (url === '/ai/settings' ? { autoEval: true, enabled: true } : ev({ status: 'jalan' })))
+      await fire()
+      expect(w.find('[data-test="running"]').exists()).toBe(true)
+    })
+
+    it('state done: nggak cek ulang', async () => {
+      await mountBox({ evaluation: ev({ status: 'jadi', content }) })
+      const calls = api.get.mock.calls.length
+      await fire()
+      expect(api.get.mock.calls.length).toBe(calls)
+    })
+
+    it('udah dibuang (unmount): nggak ngapa-ngapain', async () => {
+      const w = await mountBox()
+      const calls = api.get.mock.calls.length
+      w.unmount()
+      await fire()
+      expect(api.get.mock.calls.length).toBe(calls)
+    })
+  })
 })

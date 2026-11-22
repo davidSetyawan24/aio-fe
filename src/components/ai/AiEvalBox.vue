@@ -121,7 +121,16 @@ async function run() {
 // Nyalain saklar CUMA nyimpen pengaturan; evaluasi sesi ini nggak ikut jalan.
 const toggle = () => ai.setAutoEval(!auto.value)
 
+// Balik ke app: evaluasi otomatis mungkin baru kebikin / selesai waktu app ditinggal → cek lagi selama masih "belum ada" / "lagi jalan".
+async function onVisible() {
+  if (disposed || document.visibilityState !== 'visible' || !enabled.value) return
+  if (state.value !== 'none' && state.value !== 'running') return
+  await ai.loadEval(props.sessionId)
+  if (!disposed && evaluation.value?.status === 'jalan') startPoll()
+}
+
 onMounted(async () => {
+  document.addEventListener('visibilitychange', onVisible)
   await Promise.all([ai.loadSettings(), ai.loadEval(props.sessionId)])
   if (evaluation.value?.status === 'jalan') startPoll()
 })
@@ -132,6 +141,7 @@ watch(() => props.sessionId, async () => {
 })
 onBeforeUnmount(() => {
   disposed = true
+  document.removeEventListener('visibilitychange', onVisible)
   stopPoll()
 })
 </script>
