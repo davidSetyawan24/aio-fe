@@ -121,4 +121,17 @@ describe('AiHistory', () => {
     expect(w.emitted('open')).toBeUndefined()
     expect(w.find('[data-test="row"]').attributes('style') ?? '').not.toContain('-84')
   })
+
+  it('sentuhan dibatalin (touchcancel): baris balik ke posisi awal, nggak nyangkut setengah kebuka', async () => {
+    const w = await mountIt([item(1)])
+    const wrap = w.find('[data-test="row-wrap"]')
+    const touch = (x, y = 0) => ({ touches: [{ clientX: x, clientY: y }] })
+    await wrap.trigger('touchstart', touch(200))
+    await wrap.trigger('touchmove', touch(150))
+    expect(w.find('[data-test="row"]').attributes('style')).toContain('translateX(-50px)')
+    await wrap.trigger('touchcancel')
+    const style = w.find('[data-test="row"]').attributes('style') ?? ''
+    expect(style).not.toContain('translateX')
+    expect(style).not.toContain('transition: none')
+  })
 })

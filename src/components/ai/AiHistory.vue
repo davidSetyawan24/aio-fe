@@ -9,7 +9,7 @@
     <template v-for="g in groups" :key="g.label">
       <div class="label"><span>{{ g.label }}</span></div>
       <div class="shell"><div class="core">
-        <div v-for="c in g.items" :key="c.id" class="swipe" data-test="row-wrap" @touchstart.passive="onStart($event, c.id)" @touchmove.passive="onMove($event, c.id)" @touchend="onEnd(c.id)">
+        <div v-for="c in g.items" :key="c.id" class="swipe" data-test="row-wrap" @touchstart.passive="onStart($event, c.id)" @touchmove.passive="onMove($event, c.id)" @touchend="onEnd(c.id)" @touchcancel="onCancel(c.id)">
           <button type="button" class="crow" :style="shift(c.id)" data-test="row" @click="pick(c)">
             <span class="em">{{ iconOf(c) }}</span>
             <span class="grow"><b>{{ c.title || 'Obrolan baru' }}</b><small>{{ convSub(c) }}</small></span>
@@ -75,6 +75,14 @@ function onEnd(id) {
   if (moved) offsets.value = { ...offsets.value, [id]: (offsets.value[id] ?? 0) < -40 ? -OPEN : 0 }
 }
 
+// Sentuhan dibatalin sistem (mis. notif / gesture iOS): balik ke posisi sebelum digeser.
+function onCancel(id) {
+  if (!drag || drag.id !== id) return
+  const base = drag.base
+  drag = null
+  offsets.value = { ...offsets.value, [id]: base }
+}
+
 function pick(c) {
   if (offsets.value[c.id]) {
     offsets.value = { ...offsets.value, [c.id]: 0 }
@@ -109,7 +117,7 @@ async function confirmDelete(c) {
 .cview { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 14px 24px; }
 .cview .label { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); margin: 24px 6px 10px; }
 .newbtn { width: 100%; margin-top: 12px; height: 50px; border: 0; border-radius: 99px; background: var(--ink); color: var(--on-ink); font: 800 15px var(--ion-font-family); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.swipe { position: relative; overflow: hidden; }
+.swipe { position: relative; overflow: hidden; touch-action: pan-y; }
 .swipe + .swipe { box-shadow: inset 0 1px 0 var(--hair); }
 .crow { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 10px 12px; border: 0; background: var(--card); color: var(--text); text-align: left; cursor: pointer; font: inherit; transition: transform .25s var(--spring); }
 .em { width: 38px; height: 38px; border-radius: 13px; background: var(--soft); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
