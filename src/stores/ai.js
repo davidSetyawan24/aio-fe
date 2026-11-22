@@ -42,6 +42,7 @@ function stopWatch() {
 export const useAiStore = defineStore('ai', {
   state: () => ({
     settings: { autoEval: false, enabled: false },
+    settingsLoaded: false,
     evals: {},
     convs: [],
     current: null,
@@ -52,6 +53,7 @@ export const useAiStore = defineStore('ai', {
     async loadSettings() {
       try {
         this.settings = await aiApi.get('/ai/settings')
+        this.settingsLoaded = true
       } catch {
         // pengaturan gagal dimuat: pakai yang lama
       }

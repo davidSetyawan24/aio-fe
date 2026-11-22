@@ -1,5 +1,5 @@
 <template>
-  <div class="shell ev" :class="{ dim: !enabled }" data-test="eval-box">
+  <div class="shell ev" :class="{ dim: loaded && !enabled }" data-test="eval-box">
     <div class="evcore">
       <div class="evhead">
         <span class="bot">🤖</span>
@@ -9,7 +9,11 @@
         </span>
       </div>
 
-      <template v-if="!enabled">
+      <template v-if="!loaded">
+        <p class="note" data-test="loading">&nbsp;</p>
+      </template>
+
+      <template v-else-if="!enabled">
         <p class="note" data-test="disabled">AI belum disetel.</p>
       </template>
 
@@ -80,12 +84,14 @@ defineEmits(['talk'])
 const ai = useAiStore()
 const evaluation = computed(() => ai.evals[props.sessionId] ?? null)
 const state = computed(() => evalState(evaluation.value))
+const loaded = computed(() => ai.settingsLoaded)
 const enabled = computed(() => ai.settings.enabled)
 const auto = computed(() => ai.settings.autoEval)
 const label = computed(() => PROGRAM_LABEL[evaluation.value?.program ?? props.program] ?? '')
 const pad = (n) => String(n).padStart(2, '0')
 
 const subtitle = computed(() => {
+  if (!loaded.value) return ''
   if (!enabled.value) return 'Belum aktif'
   if (state.value === 'none') return 'Sesi ini belum dievaluasi'
   if (state.value === 'running') return 'Lagi dikerjain di belakang'
@@ -102,7 +108,9 @@ const chargeText = computed(() => {
 })
 
 let stopPoll = () => {}
+let disposed = false
 function startPoll() {
+  if (disposed) return
   stopPoll()
   stopPoll = ai.pollEval(props.sessionId)
 }
@@ -122,7 +130,10 @@ watch(() => props.sessionId, async () => {
   await ai.loadEval(props.sessionId)
   if (evaluation.value?.status === 'jalan') startPoll()
 })
-onBeforeUnmount(() => stopPoll())
+onBeforeUnmount(() => {
+  disposed = true
+  stopPoll()
+})
 </script>
 
 <style scoped>

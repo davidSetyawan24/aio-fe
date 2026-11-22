@@ -138,14 +138,58 @@ describe('AiEvalBox', () => {
     expect(w.find('[data-test="auto-switch"]').exists()).toBe(false)
   })
 
-  it('berhenti polling pas dicopot', async () => {
-    vi.useFakeTimers()
-    const w = await mountBox({ evaluation: ev({ status: 'jalan' }) })
-    w.unmount()
-    mounted.pop()
-    api.get.mockClear()
-    await vi.advanceTimersByTimeAsync(20000)
-    expect(api.get).not.toHaveBeenCalled()
-    vi.useRealTimers()
+  describe('polling', () => {
+    afterEach(() => vi.useRealTimers())
+    const visible = () => vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+
+    it('berhenti polling pas dicopot', async () => {
+      vi.useFakeTimers()
+      visible()
+      const w = await mountBox({ evaluation: ev({ status: 'jalan' }) })
+      api.get.mockClear()
+      await vi.advanceTimersByTimeAsync(5000)
+      expect(api.get).toHaveBeenCalled()
+      w.unmount()
+      mounted.pop()
+      api.get.mockClear()
+      await vi.advanceTimersByTimeAsync(20000)
+      expect(api.get).not.toHaveBeenCalled()
+    })
+
+    it('dicopot pas muat belum kelar: nggak mulai polling', async () => {
+      vi.useFakeTimers()
+      visible()
+      let release
+      const gate = new Promise((r) => { release = r })
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      api = {
+        get: vi.fn(async (url) => { await gate; return url === '/ai/settings' ? { autoEval: false, enabled: true } : ev({ status: 'jalan' }) }),
+        put: vi.fn(), post: vi.fn(), del: vi.fn(), patch: vi.fn(),
+      }
+      setAiApi(api)
+      setAiToast(vi.fn())
+      const w = mount(AiEvalBox, { props: { sessionId: 5, program: 'push', mode: 'summary' }, global: { plugins: [pinia] } })
+      w.unmount()
+      release()
+      await vi.advanceTimersByTimeAsync(0)
+      api.get.mockClear()
+      await vi.advanceTimersByTimeAsync(20000)
+      expect(api.get).not.toHaveBeenCalled()
+    })
+  })
+
+  it('setelan belum kebaca: nggak nongol "AI belum disetel."', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    api = { get: vi.fn(() => new Promise(() => {})), put: vi.fn(), post: vi.fn(), del: vi.fn(), patch: vi.fn() }
+    setAiApi(api)
+    setAiToast(vi.fn())
+    const w = mount(AiEvalBox, { props: { sessionId: 5, program: 'push', mode: 'summary' }, global: { plugins: [pinia] } })
+    mounted.push(w)
+    await flushPromises()
+    expect(w.text()).not.toContain('AI belum disetel.')
+    expect(w.find('[data-test="start"]').exists()).toBe(false)
+    expect(w.find('[data-test="eval-box"]').classes()).not.toContain('dim')
   })
 })
