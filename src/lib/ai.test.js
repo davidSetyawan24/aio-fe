@@ -47,12 +47,14 @@ describe('convTime / convSub / chip', () => {
   })
   it('convSub', () => {
     expect(convSub({ kind: 'chat', messages: 3 })).toBe('3 pesan')
-    expect(convSub({ kind: 'eval', title: 'Evaluasi Push · 23 Nov', messages: 0 })).toBe('nempel ke sesi Push')
+    expect(convSub({ kind: 'eval', program: 'push', on: '2026-11-23', messages: 0 })).toBe('nempel ke sesi Push')
+    expect(convSub({ kind: 'eval', program: null, on: null, messages: 0 })).toBe('nempel ke sesi')
   })
   it('chipFor', () => {
     expect(chipFor({ context: 'gym', kind: 'chat' })).toBe('🏋️ Gym')
     expect(chipFor({ context: 'badan', kind: 'chat' })).toBe('⚖️ Badan')
-    expect(chipFor({ context: 'gym', kind: 'eval', sessionId: 4, title: 'Evaluasi Push · 23 Nov' })).toBe('🏋️ Gym · Push 23 Nov')
+    expect(chipFor({ context: 'gym', kind: 'eval', sessionId: 4, program: 'push', on: '2026-11-23' })).toBe('🏋️ Gym · Push 23 Nov')
+    expect(chipFor({ context: 'gym', kind: 'eval', sessionId: null, program: null, on: null })).toBe('🏋️ Gym')
   })
   it('konstanta persis mockup', () => {
     expect(CTX_CHIP).toEqual({ gym: '🏋️ Gym', badan: '⚖️ Badan' })

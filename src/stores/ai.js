@@ -22,7 +22,7 @@ export function setAiToast(fn) {
 }
 
 const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false
-const listOf = (res) => (Array.isArray(res) ? res : (res?.items ?? []))
+const listOf = (res) => res?.items ?? []
 const messageOf = (e, fallback) => (e instanceof ApiError && e.message ? e.message : fallback)
 /** Request putus di tengah jalan (bukan jawaban error dari server): jawabannya mungkin tetep jadi di BE. */
 const dropped = (e) => !(e instanceof ApiError) || e.status === 0 || e.status === 502 || e.status === 504

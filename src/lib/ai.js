@@ -1,5 +1,6 @@
 // Bantuan tampilan Evaluasi AI + Chat AI. Teks persis mockup `ai-chat.html`.
 import { BULAN, BLN, HR, addDays, weekdayOf } from './agenda.js'
+import { PROGRAM_LABEL } from './gym.js'
 import { wibNow } from './home.js'
 import { rp } from './wallet.js'
 
@@ -39,13 +40,13 @@ export const SUGG = {
   badan: ['Kenapa berat gue nggak turun-turun?', 'Target protein gue udah pas belum?', 'Tidur gue ngaruh nggak ke progres?'],
 }
 
-const EVAL_PREFIX = /^Evaluasi\s+/
+const programLabel = (program) => PROGRAM_LABEL[program] ?? program
 
-/** Chip konteks di header chat. Obrolan evaluasi: `🏋️ Gym · Push 23 Nov` (dari judul "Evaluasi Push · 23 Nov"). */
+/** Chip konteks di header chat. Obrolan evaluasi: `🏋️ Gym · Push 23 Nov` (dari `program` + `on`). */
 export function chipFor(conv) {
-  if (conv?.kind === 'eval' || (conv?.sessionId != null && conv?.title?.startsWith('Evaluasi '))) {
-    const rest = String(conv.title ?? '').replace(EVAL_PREFIX, '').replace(' · ', ' ')
-    return rest ? `🏋️ Gym · ${rest}` : CTX_CHIP.gym
+  if (conv?.kind === 'eval' && conv.program) {
+    const when = conv.on ? ` ${Number(conv.on.slice(8))} ${BLN[Number(conv.on.slice(5, 7)) - 1]}` : ''
+    return `🏋️ Gym · ${programLabel(conv.program)}${when}`
   }
   return CTX_CHIP[conv?.context] ?? CTX_CHIP.gym
 }
@@ -86,10 +87,7 @@ export function convTime(iso, now = new Date()) {
 
 /** Baris kecil di bawah judul obrolan. */
 export function convSub(item) {
-  if (item.kind === 'eval') {
-    const program = /^Evaluasi\s+(\S+)/.exec(item.title ?? '')?.[1]
-    return program ? `nempel ke sesi ${program}` : 'nempel ke sesi'
-  }
+  if (item.kind === 'eval') return item.program ? `nempel ke sesi ${programLabel(item.program)}` : 'nempel ke sesi'
   return `${item.messages} pesan`
 }
 
