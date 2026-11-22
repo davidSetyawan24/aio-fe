@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true" :scroll-y="false">
+    <ion-content :fullscreen="true" :scroll-y="false" class="aic-content">
       <div class="aipage">
         <AiChat ref="chat" :context="context" :session-id="sessionId" :conv-id="convId" :back-from="backFrom" @close="back" />
       </div>
@@ -32,5 +32,6 @@ onIonViewDidEnter(() => chat.value?.focus())
 </script>
 
 <style scoped>
+.aic-content::part(scroll) { padding-bottom: 0; }
 .aipage { height: 100%; display: flex; flex-direction: column; }
 </style>
