@@ -4,19 +4,19 @@
     <div class="shell rise" style="--i: 5">
       <div class="core u-chart">
         <div class="cap" data-test="daily-cap">
-          <span v-if="picked">{{ dayCaption(picked) }}</span>
+          <span v-if="hover">{{ dayCaption(hover) }}</span>
           <span v-else>rata-rata <b>{{ rp(avgPerDay) }}</b> / hari</span>
           <span v-if="hasJatah" class="hint">garis = jatah hari itu</span>
         </div>
         <div class="bars" @mouseleave="hover = null">
           <button
-            v-for="d in daily" :key="d.date" type="button" class="col" :class="{ over: d.over, today: isToday(d), future: d.future, on: picked?.date === d.date }"
-            :aria-label="dayCaption(d)" data-test="bar" @click="tap(d)" @mouseenter="hoverable && (hover = d)">
+            v-for="d in daily" :key="d.date" type="button" class="col" :class="{ over: d.over, today: isToday(d), future: d.future, on: d.date === selected }"
+            :disabled="d.future" :aria-label="dayCaption(d)" data-test="bar" @click="emit('pick', d.date)" @mouseenter="hoverable && (hover = d)">
             <i :style="{ height: d.future ? '3px' : `${(d.total / max) * 100}%` }" />
             <span v-if="d.jatah !== null && !d.future" class="jl" :style="{ bottom: `${(d.jatah / max) * 100}%` }" />
           </button>
         </div>
-        <div class="days"><span v-for="(d, i) in daily" :key="d.date">{{ showDay(i) ? i + 1 : '' }}</span></div>
+        <div class="days"><span v-for="(d, i) in daily" :key="d.date" :class="{ on: i === selIdx }">{{ showDay(i) ? i + 1 : '' }}</span></div>
       </div>
     </div>
   </div>
@@ -34,14 +34,13 @@ const props = defineProps({
   today: { type: String, required: true },
   isCurrent: { type: Boolean, default: false },
   month: { type: String, required: true },
+  selected: { type: String, required: true },
 })
+const emit = defineEmits(['pick'])
 const hoverable = useMedia('(hover: hover)')
-const tapped = ref(null)
 const hover = ref(null)
-const picked = computed(() => hover.value ?? tapped.value)
-// Ganti bulan → keterangan batang direset (dimuat ulang abis centang nggak ngaruh).
+// Ganti bulan → keterangan hover direset.
 watch(() => props.month, () => {
-  tapped.value = null
   hover.value = null
 })
 
@@ -49,8 +48,9 @@ const max = computed(() => Math.max(1, ...props.daily.map((d) => Math.max(d.tota
 const hasJatah = computed(() => props.daily.some((d) => d.jatah !== null))
 const overCount = computed(() => props.daily.filter((d) => d.over).length)
 const isToday = (d) => props.isCurrent && d.date === props.today
-const tap = (d) => (tapped.value = tapped.value?.date === d.date ? null : d)
-const showDay = (i) => [0, 6, 13, 20, 27].includes(i) || i === props.daily.length - 1
+const selIdx = computed(() => props.daily.findIndex((d) => d.date === props.selected))
+// Angka tanggal kepilih selalu tampil; angka patokan disembunyiin kalau mepet sama yang kepilih.
+const showDay = (i) => i === selIdx.value || ([0, 6, 13, 20, 27].includes(i) || i === props.daily.length - 1) && (selIdx.value < 0 || Math.abs(i - selIdx.value) > 2)
 </script>
 
 <style scoped>
@@ -65,10 +65,12 @@ const showDay = (i) => [0, 6, 13, 20, 27].includes(i) || i === props.daily.lengt
 .col i { width: 100%; max-width: 22px; border-radius: 6px 6px 3px 3px; background: var(--ink); opacity: .85; min-height: 3px; transition: height .5s var(--spring); }
 .col.over i { background: var(--red); opacity: 1; }
 .col.today i { background: var(--lime); opacity: 1; }
+.col:disabled { cursor: default; }
 .col.future i { background: var(--soft); opacity: 1; }
-.col.on i { opacity: 1; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--muted); }
+.col.on i { opacity: 1; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--text); }
 .jl { position: absolute; left: 50%; transform: translateX(-50%); width: calc(100% + 2px); max-width: 26px; height: 2px; border-radius: 2px; background: var(--muted); opacity: .75; pointer-events: none; }
 .days { display: flex; gap: 3px; margin-top: 6px; }
+.days span.on { color: var(--text); font-weight: 800; }
 .days span { flex: 1; min-width: 0; display: flex; justify-content: center; white-space: nowrap; font-size: 9.5px; color: var(--muted); font-weight: 700; }
 @media (min-width: 1100px) { .bars { height: 190px; } }
 </style>

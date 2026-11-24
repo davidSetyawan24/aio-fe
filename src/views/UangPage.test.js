@@ -247,7 +247,7 @@ describe('UangPage', () => {
     expect(text(w, 'over-count')).toBe('1 hari kelewat jatah')
     expect(text(w, 'daily-cap')).toContain('rata-rata Rp73.700 / hari')
     await bars[8].trigger('click')
-    expect(text(w, 'daily-cap')).toContain('9 Nov · Rp160.000 · jatah Rp72.000')
+    expect(text(w, 'daily-cap')).toContain('rata-rata Rp73.700 / hari')
   })
 
   it('kartu kecil: Bayar Rutin & Split bill ke menunya', async () => {
