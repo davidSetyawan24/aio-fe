@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import { setExpensesApi } from '@/stores/expenses.js'
 import { setOverviewApi } from '@/stores/overview.js'
 import UangPage from './UangPage.vue'
 
@@ -56,7 +57,16 @@ const okt = (over = {}) => ({
   ...over,
 })
 
+const exp = (id, spentOn, amount, note) => ({
+  id, spentOn, amount, note,
+  category: { id: 1, name: 'Makan', emoji: '🍜', tint: '#FFE9D6', archived: false },
+  source: { id: 1, name: 'Cash', kind: 'cash', bank: null, archived: false },
+})
+const expNov = () => [exp(11, '2026-11-15', 12_000, 'Sarapan'), exp(12, '2026-11-15', 6_100, 'Kopi'), exp(13, '2026-11-09', 160_000, 'Servis')]
+const expOkt = () => [exp(21, '2026-10-31', 65_000, 'Makan malem')]
+
 let api
+let expApi
 const mounted = []
 afterEach(() => {
   mounted.splice(0).forEach((w) => w.unmount())
@@ -67,7 +77,7 @@ beforeEach(() => {
   toastCreate.mockReset().mockResolvedValue({ present: vi.fn() })
 })
 
-async function mountPage({ current = nov(), past = okt(), wide = false } = {}) {
+async function mountPage({ current = nov(), past = okt(), wide = false, expGet } = {}) {
   if (wide) window.matchMedia = vi.fn((q) => ({ matches: q.includes('min-width'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
   api = {
     // Tiap jawaban objek baru (kayak server beneran).
@@ -75,7 +85,9 @@ async function mountPage({ current = nov(), past = okt(), wide = false } = {}) {
     put: vi.fn(async () => ({})),
     del: vi.fn(async () => null),
   }
+  expApi = { get: vi.fn(expGet ?? (async (url) => ({ expenses: url.includes('month=2026-10') ? expOkt() : expNov() }))) }
   setOverviewApi(api)
+  setExpensesApi(expApi)
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/tabs/uang', component: UangPage }] })
@@ -321,5 +333,82 @@ describe('UangPage', () => {
     enter.fn()
     await flushPromises()
     expect(api.get).toHaveBeenLastCalledWith('/overview?month=2026-10')
+  })
+
+  describe('rincian per hari', () => {
+    it('rincian hari ini kebuka duluan', async () => {
+      const w = await mountPage()
+      expect(text(w, 'day-head')).toContain('Hari ini · Minggu, 15 Nov')
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(2)
+    })
+
+    it('tap batang → rincian ganti; tap lagi → balik hari ini', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="bar"]')[8].trigger('click')
+      expect(text(w, 'day-head')).toContain('Senin, 9 Nov')
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+      await w.findAll('[data-test="bar"]')[8].trigger('click')
+      expect(text(w, 'day-head')).toContain('Hari ini')
+    })
+
+    it('bulan lalu → tanggal terakhir', async () => {
+      const w = await mountPage()
+      await w.find('[data-test="prev"]').trigger('click')
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Sabtu, 31 Okt')
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+    })
+
+    it('muat catatan gagal → bagian lain tetep, Coba lagi muat ulang', async () => {
+      let first = true
+      const w = await mountPage({
+        expGet: async () => {
+          if (first) {
+            first = false
+            throw new Error('putus')
+          }
+          return { expenses: expNov() }
+        },
+      })
+      expect(w.find('[data-test="day-error"]').exists()).toBe(true)
+      expect(w.find('[data-test="daily-cap"]').exists()).toBe(true)
+      expect(w.find('[data-test="hero"]').exists()).toBe(true)
+      await w.find('[data-test="day-retry"]').trigger('click')
+      await flushPromises()
+      expect(w.find('[data-test="day-error"]').exists()).toBe(false)
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(2)
+    })
+
+    it('ganti bulan cepet: catatan bulan lama nggak nongol', async () => {
+      let release
+      const held = new Promise((r) => (release = r))
+      const w = await mountPage({
+        expGet: async (url) => {
+          if (url.includes('month=2026-11')) await held
+          return { expenses: url.includes('month=2026-10') ? expOkt() : expNov() }
+        },
+      })
+      await w.find('[data-test="prev"]').trigger('click')
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Sabtu, 31 Okt')
+      release()
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Sabtu, 31 Okt')
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+    })
+
+    it('tap baris di HP → layar ubah dari Uang', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      expect(ionRouter.push).toHaveBeenCalledWith('/tabs/menu/duit/11?dari=uang')
+    })
+
+    it('balik ke tab → hari kepilih tetep', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="bar"]')[8].trigger('click')
+      enter.fn()
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Senin, 9 Nov')
+    })
   })
 })

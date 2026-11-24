@@ -72,6 +72,14 @@ describe('ExpenseFormPage', () => {
     expect(document.activeElement).not.toBe(w.find('[data-test="amount"]').element)
   })
 
+  it('opened from Uang → back button says Uang; otherwise Duit', async () => {
+    let w = await mountPage('/tabs/menu/duit/7?dari=uang')
+    expect(w.find('button.back').text()).toBe('Uang')
+    w.unmount()
+    w = await mountPage('/tabs/menu/duit/7')
+    expect(w.find('button.back').text()).toBe('Duit')
+  })
+
   it('goes back after deleting the expense it shows', async () => {
     const w = await mountPage('/tabs/menu/duit/7')
     await w.find('[data-test="delete"]').trigger('click')

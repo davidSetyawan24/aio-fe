@@ -22,7 +22,10 @@
           <section class="a-hero"><UangHero :data="data" /></section>
           <section v-if="data.isCurrent" class="a-todo"><UangAttention :items="data.attention" :days-left="data.todayBudget?.daysLeft ?? daysLeft" /></section>
           <section class="a-cat"><UangCategories :categories="data.categories" :total="data.total" :month="data.month" /></section>
-          <section class="a-chart"><UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" :month="data.month" :selected="defaultDay(data)" /></section>
+          <section class="a-chart">
+            <UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" :month="data.month" :selected="shownDay" @pick="pick" />
+            <UangDayDetail v-if="dayRow" :row="dayRow" :is-today="shownDay === data.today" :items="dayItems" :state="dayState" @open="openExpense" @retry="loadDay" />
+          </section>
           <section class="a-tiles">
             <div class="u-label rise" style="--i: 6">Lainnya</div>
             <div class="u-tiles rise" style="--i: 6">
@@ -69,17 +72,20 @@ import PageHeader from '@/components/PageHeader.vue'
 import UangAttention from '@/components/UangAttention.vue'
 import UangCategories from '@/components/UangCategories.vue'
 import UangDaily from '@/components/UangDaily.vue'
+import UangDayDetail from '@/components/UangDayDetail.vue'
 import UangHero from '@/components/UangHero.vue'
 import { addMonth, monthLabel } from '@/lib/bayarRutin.js'
 import { monthName } from '@/lib/duit.js'
 import { useMedia } from '@/lib/media.js'
-import { defaultDay } from '@/lib/overview.js'
+import { dayExpenses, defaultDay } from '@/lib/overview.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { rp, rpShort } from '@/lib/wallet.js'
+import { useExpensesStore } from '@/stores/expenses.js'
 import { useOverviewStore } from '@/stores/overview.js'
 
 const ionRouter = useIonRouter()
 const store = useOverviewStore()
+const expenses = useExpensesStore()
 const wide = useMedia('(min-width: 1100px)')
 const error = ref('')
 
@@ -89,17 +95,47 @@ const atFirst = computed(() => !data.value || data.value.month <= data.value.fir
 const atLast = computed(() => !data.value || data.value.isCurrent)
 const daysLeft = computed(() => data.value?.daily.filter((d) => d.date >= data.value.today).length ?? 0)
 
+// Rincian per hari: null = hari bawaan (hari ini / tanggal terakhir bulan lalu).
+const picked = ref(null)
+const dayState = ref('loading')
+const shownDay = computed(() => picked.value ?? defaultDay(data.value))
+const dayRow = computed(() => data.value?.daily.find((d) => d.date === shownDay.value) ?? null)
+const dayItems = computed(() => dayExpenses(expenses.months[data.value?.month], shownDay.value))
+const pick = (date) => (picked.value = date === shownDay.value ? null : date)
+
+// Catatan sebulan dimuat di belakang layar; gagal cuma ngeset state rincian, bagian lain tetep.
+async function loadDay() {
+  const month = data.value?.month
+  if (!month) return
+  dayState.value = 'loading'
+  try {
+    await expenses.loadMonth(month)
+    if (data.value?.month === month) dayState.value = 'ok'
+  } catch {
+    // Jawaban bulan lama yang telat nggak boleh ngerusak state bulan baru.
+    if (data.value?.month === month) dayState.value = 'error'
+  }
+}
+
+function openExpense(e) {
+  if (wide.value) return // PC: panel kanan (Task 5b)
+  ionRouter.push(`/tabs/menu/duit/${e.id}?dari=uang`)
+}
+
 async function load(month) {
   try {
     await store.load(month)
     error.value = ''
   } catch (err) {
     error.value = apiErrorMessage(err)
+    return
   }
+  loadDay()
 }
 // Balik ke tab (mis. abis Catat) → muat ulang bulan yang dipilih; "bulan ini" tetep ikut tanggal server.
 onIonViewWillEnter(() => load(store.wanted ?? undefined))
 function shift(n) {
+  picked.value = null
   const target = addMonth(data.value.month, n)
   load(target === data.value.today.slice(0, 7) ? undefined : target)
 }
