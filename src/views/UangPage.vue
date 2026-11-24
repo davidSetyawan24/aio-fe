@@ -64,7 +64,7 @@
         :open="panelOpen"
         :expense="panelExpense"
         :form-key="panelKey"
-        @close="panelOpen = false"
+        @close="categoryPanelOpen || (panelOpen = false)"
         @saved="onPanelDone"
         @deleted="onPanelDone"
         @new-category="openCategoryPanel"
@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
 import CategoryPanel from '@/components/CategoryPanel.vue'
@@ -115,9 +115,14 @@ const daysLeft = computed(() => data.value?.daily.filter((d) => d.date >= data.v
 const picked = ref(null)
 const dayState = ref('loading')
 let dayRequest = 0
-const shownDay = computed(() => picked.value ?? defaultDay(data.value))
+// Hari kepilih cuma dipakai kalau masih ada di bulan yang tampil & bukan masa depan (mis. bulan ganti lewat tengah malam).
+const shownDay = computed(() => {
+  if (!data.value) return null
+  const row = picked.value && data.value?.daily.find((d) => d.date === picked.value)
+  return row && !row.future ? picked.value : defaultDay(data.value)
+})
 const dayRow = computed(() => data.value?.daily.find((d) => d.date === shownDay.value) ?? null)
-const dayItems = computed(() => dayExpenses(expenses.months[data.value?.month], shownDay.value))
+const dayItems = computed(() => (data.value ? dayExpenses(expenses.months[data.value.month], shownDay.value) : []))
 const pick = (date) => (picked.value = date === shownDay.value ? null : date)
 
 // Catatan sebulan dimuat di belakang layar; gagal cuma ngeset state rincian, bagian lain tetep.
@@ -142,6 +147,13 @@ const panelExpense = ref(null)
 const panelKey = ref(0)
 const categoryPanelOpen = ref(false)
 const categoryPanelKey = ref(0)
+// Layar nyempit → panel dicopot; jangan nyisa "kebuka" biar nggak nongol sendiri pas lebar lagi.
+watch(wide, (w) => {
+  if (!w) {
+    panelOpen.value = false
+    categoryPanelOpen.value = false
+  }
+})
 
 function openExpense(e) {
   if (wide.value) {

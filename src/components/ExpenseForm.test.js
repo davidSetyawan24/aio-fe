@@ -128,6 +128,15 @@ describe('ExpenseForm — catat', () => {
     expect(w.vm.busy).toBeNull()
   })
 
+  it('exposes sheetOpen + closeSheet so the panel can close the source sheet on Esc', async () => {
+    const w = await mountForm()
+    expect(w.vm.sheetOpen).toBe(false)
+    await w.find('[data-test="more-src"]').trigger('click')
+    expect(w.vm.sheetOpen).toBe(true)
+    w.vm.closeSheet()
+    expect(w.vm.sheetOpen).toBe(false)
+  })
+
   it('fills the note and its category from a suggestion', async () => {
     const w = await mountForm()
     await typeNote(w, 'kop')

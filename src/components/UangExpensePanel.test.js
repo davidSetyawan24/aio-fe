@@ -4,13 +4,15 @@ import UangExpensePanel from './UangExpensePanel.vue'
 
 const picked = vi.fn()
 const busy = ref(null)
+const sheetOpen = ref(false)
+const closeSheet = vi.fn()
 // Form aslinya berat (store + api) — di sini cukup kembarannya: expose busy + pickJustCreated, emit saved/deleted.
 const FormStub = defineComponent({
   name: 'ExpenseForm',
   props: ['expense', 'eyebrow', 'newCategoryInline'],
   emits: ['saved', 'deleted', 'new-category'],
   setup(_, { expose }) {
-    expose({ busy, pickJustCreated: picked })
+    expose({ busy, pickJustCreated: picked, sheetOpen, closeSheet })
     return () => h('div', { 'data-test': 'form' })
   },
 })
@@ -24,7 +26,7 @@ const mountPanel = (props = {}) =>
 const esc = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 
 describe('UangExpensePanel', () => {
-  beforeEach(() => { busy.value = null; picked.mockClear() })
+  beforeEach(() => { busy.value = null; sheetOpen.value = false; closeSheet.mockClear(); picked.mockClear() })
 
   it('shows the note as title with "Ubah catatan", and the form', () => {
     const w = mountPanel()
@@ -46,6 +48,15 @@ describe('UangExpensePanel', () => {
     await w.find('[data-test="panel-close"]').trigger('click')
     esc()
     expect(w.emitted('close')).toHaveLength(2)
+    w.unmount()
+  })
+
+  it('Esc pas sheet "Bayar pakai apa?" kebuka → nutup sheet aja, panel tetep', () => {
+    const w = mountPanel()
+    sheetOpen.value = true
+    esc()
+    expect(closeSheet).toHaveBeenCalledTimes(1)
+    expect(w.emitted('close')).toBeUndefined()
     w.unmount()
   })
 

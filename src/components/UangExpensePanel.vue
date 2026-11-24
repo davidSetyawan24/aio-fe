@@ -48,6 +48,11 @@ function requestClose() {
 const onKey = (e) => {
   if (e.key !== 'Escape' || !props.open) return
   if (document.querySelector('ion-action-sheet, ion-alert')) return
+  // Sheet "Bayar pakai apa?" kebuka → Esc cuma nutup sheet-nya, panel tetep.
+  if (form.value?.sheetOpen) {
+    form.value.closeSheet()
+    return
+  }
   requestClose()
 }
 document.addEventListener('keydown', onKey)

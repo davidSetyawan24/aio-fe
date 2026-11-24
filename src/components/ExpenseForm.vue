@@ -404,7 +404,9 @@ onMounted(() => {
 })
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
 
-defineExpose({ pickJustCreated, focusAmount, reset, load, busy })
+// Sheet "Bayar pakai apa?" diekspos biar panel PC bisa nutupnya duluan pas Esc.
+const closeSheet = () => (sheetOpen.value = false)
+defineExpose({ pickJustCreated, focusAmount, reset, load, busy, sheetOpen, closeSheet })
 </script>
 
 <style scoped>

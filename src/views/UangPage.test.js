@@ -510,6 +510,45 @@ describe('UangPage', () => {
       expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Kategori dibikin' }))
     })
 
+    it('PC: Esc pas panel kategori kebuka di atas panel catatan → panel catatan tetep', async () => {
+      const w = await mountPage({ wide: true })
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      w.findComponent({ name: 'UangExpensePanel' }).vm.$emit('new-category')
+      await flushPromises()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+    })
+
+    it('hari kepilih bulan lama + masuk lagi ke bulan baru → balik ke hari bawaan', async () => {
+      const w = await mountPage()
+      await w.findAll('[data-test="bar"]')[8].trigger('click')
+      expect(text(w, 'day-head')).toContain('Senin, 9 Nov')
+      api.get.mockImplementation(async () => nov({
+        month: '2026-12', today: '2026-12-01', prevMonth: '2026-11',
+        daily: Array.from({ length: 31 }, (_, i) => {
+          const date = `2026-12-${String(i + 1).padStart(2, '0')}`
+          return i === 0 ? day(date, 10_000, 70_000) : { date, total: 0, jatah: null, over: false, future: true }
+        }),
+      }))
+      enter.fn()
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Hari ini · Selasa, 1 Des')
+    })
+
+    it('PC: layar nyempit lalu lebar lagi → panel nggak kebuka sendiri', async () => {
+      const listeners = []
+      window.matchMedia = vi.fn((q) => ({ matches: true, addEventListener: (_, fn) => listeners.push(fn), removeEventListener: vi.fn(), media: q }))
+      const w = await mountPage()
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      listeners.forEach((fn) => fn({ matches: false }))
+      await flushPromises()
+      listeners.forEach((fn) => fn({ matches: true }))
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+    })
+
     it('HP: panel nggak dirender', async () => {
       const w = await mountPage()
       expect(w.find('[data-test="panel"]').exists()).toBe(false)
