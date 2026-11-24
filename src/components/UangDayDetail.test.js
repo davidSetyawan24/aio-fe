@@ -51,4 +51,28 @@ describe('UangDayDetail', () => {
     await w.get('[data-test="day-retry"]').trigger('click')
     expect(w.emitted('retry')).toBeTruthy()
   })
+
+  it('muat + items kosong → kotak kosong tanpa teks', () => {
+    const w = mk({ state: 'loading', items: [] })
+    expect(w.find('[data-test="day-empty"]').exists()).toBe(false)
+    expect(w.find('[data-test="day-error"]').exists()).toBe(false)
+    expect(w.find('[data-test="day-expense"]').exists()).toBe(false)
+    expect(w.get('.core').text()).toBe('')
+  })
+
+  it('muat ulang + items ada → baris tetep tampil', () => {
+    const w = mk({ state: 'loading' })
+    expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+  })
+
+  it('catatan terisi dipakai jadi judul baris', () => {
+    const w = mk({ items: [{ ...exp, note: 'Kopi susu' }] })
+    expect(w.get('.title').text()).toBe('Kopi susu')
+  })
+
+  it('baris jatah hari ini → sisa, kelas good', () => {
+    const n = mk().get('[data-test="day-note"]')
+    expect(n.text()).toBe('jatah Rp71.500 · sisa Rp53.400')
+    expect(n.get('span').classes()).toContain('good')
+  })
 })

@@ -1,4 +1,5 @@
 <template>
+  <!-- key = tanggal: ganti hari, animasi swap main lagi -->
   <div :key="row.date" class="swap">
     <div class="dhead" data-test="day-head">
       <span class="k"><template v-if="isToday"><b>Hari ini</b> · {{ longDay(row.date) }}</template><template v-else>{{ dayTitle(row.date, false) }}</template></span>
@@ -50,6 +51,8 @@ const note = computed(() => jatahNote(props.row, props.isToday))
 </script>
 
 <style scoped>
+/* .core global padding 18px; di sini kotak rincian pakai 4px 6px kayak mockup (specificity scoped lebih tinggi) */
+.core.list { padding: 4px 6px; }
 .dhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 18px 8px 10px; }
 .dhead .k { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); }
 .dhead .k b { color: var(--text); }
