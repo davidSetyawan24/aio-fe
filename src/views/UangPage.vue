@@ -57,6 +57,20 @@
         </div>
       </div>
 
+      <!-- PC: ubah catatan dari rincian → panel geser. Panel kategori dipasang SETELAHNYA biar numpuk di atas. -->
+      <UangExpensePanel
+        v-if="wide"
+        ref="expensePanel"
+        :open="panelOpen"
+        :expense="panelExpense"
+        :form-key="panelKey"
+        @close="panelOpen = false"
+        @saved="onPanelDone"
+        @deleted="onPanelDone"
+        @new-category="openCategoryPanel"
+      />
+      <CategoryPanel v-if="wide" :open="categoryPanelOpen" :form-key="categoryPanelKey" for-catat @close="categoryPanelOpen = false" @done="onCategoryDone" />
+
       <button v-if="!wide" slot="fixed" class="u-fab" data-test="fab" @click="catat">
         Catat <span class="ic"><PhPlus :size="19" weight="bold" /></span>
       </button>
@@ -66,13 +80,15 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { IonContent, IonPage, onIonViewWillEnter, useIonRouter } from '@ionic/vue'
+import { IonContent, IonPage, onIonViewWillEnter, toastController, useIonRouter } from '@ionic/vue'
 import { PhCaretLeft, PhCaretRight, PhPlus } from '@phosphor-icons/vue'
+import CategoryPanel from '@/components/CategoryPanel.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import UangAttention from '@/components/UangAttention.vue'
 import UangCategories from '@/components/UangCategories.vue'
 import UangDaily from '@/components/UangDaily.vue'
 import UangDayDetail from '@/components/UangDayDetail.vue'
+import UangExpensePanel from '@/components/UangExpensePanel.vue'
 import UangHero from '@/components/UangHero.vue'
 import { addMonth, monthLabel } from '@/lib/bayarRutin.js'
 import { monthName } from '@/lib/duit.js'
@@ -98,6 +114,7 @@ const daysLeft = computed(() => data.value?.daily.filter((d) => d.date >= data.v
 // Rincian per hari: null = hari bawaan (hari ini / tanggal terakhir bulan lalu).
 const picked = ref(null)
 const dayState = ref('loading')
+let dayRequest = 0
 const shownDay = computed(() => picked.value ?? defaultDay(data.value))
 const dayRow = computed(() => data.value?.daily.find((d) => d.date === shownDay.value) ?? null)
 const dayItems = computed(() => dayExpenses(expenses.months[data.value?.month], shownDay.value))
@@ -107,19 +124,48 @@ const pick = (date) => (picked.value = date === shownDay.value ? null : date)
 async function loadDay() {
   const month = data.value?.month
   if (!month) return
+  const mine = ++dayRequest
   dayState.value = 'loading'
   try {
     await expenses.loadMonth(month)
-    if (data.value?.month === month) dayState.value = 'ok'
+    if (mine === dayRequest && data.value?.month === month) dayState.value = 'ok'
   } catch {
-    // Jawaban bulan lama yang telat nggak boleh ngerusak state bulan baru.
-    if (data.value?.month === month) dayState.value = 'error'
+    // Jawaban lama yang telat (bulan lain / permintaan lebih baru) nggak boleh ngerusak state sekarang.
+    if (mine === dayRequest && data.value?.month === month) dayState.value = 'error'
   }
 }
 
+// PC: ubah catatan lewat panel kanan; HP: layar ubah.
+const expensePanel = ref(null)
+const panelOpen = ref(false)
+const panelExpense = ref(null)
+const panelKey = ref(0)
+const categoryPanelOpen = ref(false)
+const categoryPanelKey = ref(0)
+
 function openExpense(e) {
-  if (wide.value) return // PC: panel kanan (Task 5b)
+  if (wide.value) {
+    panelExpense.value = e
+    panelKey.value += 1
+    panelOpen.value = true
+    return
+  }
   ionRouter.push(`/tabs/menu/duit/${e.id}?dari=uang`)
+}
+
+// Abis simpen / hapus: tutup panel (emit-nya udah ditangani), rangkuman dimuat ulang; daftar catatan udah dimuat ulang store-nya.
+function onPanelDone() {
+  panelOpen.value = false
+  store.refresh()
+}
+function openCategoryPanel() {
+  categoryPanelKey.value += 1
+  categoryPanelOpen.value = true
+}
+async function onCategoryDone(message) {
+  categoryPanelOpen.value = false
+  await expensePanel.value?.pickJustCreated()
+  await (await toastController.create({ message, duration: 2500, position: 'top', cssClass: 'aio-toast' })).present()
 }
 
 async function load(month) {

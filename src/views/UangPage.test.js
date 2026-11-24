@@ -17,6 +17,25 @@ vi.mock('@ionic/vue', async (importOriginal) => ({
   },
   toastController: { create: toastCreate },
 }))
+// Form & panel kategori aslinya berat (store + api) — di sini cukup kembarannya.
+const formSpy = vi.hoisted(() => ({ pick: vi.fn() }))
+vi.mock('@/components/ExpenseForm.vue', () => ({
+  default: {
+    props: ['expense', 'eyebrow', 'newCategoryInline'],
+    emits: ['saved', 'deleted', 'new-category'],
+    setup(_, { expose }) {
+      expose({ busy: false, pickJustCreated: formSpy.pick })
+      return () => null
+    },
+  },
+}))
+vi.mock('@/components/CategoryPanel.vue', () => ({
+  default: {
+    props: ['open', 'formKey', 'forCatat'],
+    emits: ['close', 'done'],
+    template: '<div class="cat-panel-stub" :class="{ show: open }" />',
+  },
+}))
 vi.mock('@/components/NotifBell.vue', () => ({ default: { template: '<span class="bell-stub" />' } }))
 
 const day = (date, total, jatah, extra = {}) => ({ date, total, jatah, over: jatah !== null && total > jatah, future: false, ...extra })
@@ -395,6 +414,106 @@ describe('UangPage', () => {
       await flushPromises()
       expect(text(w, 'day-head')).toContain('Sabtu, 31 Okt')
       expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+    })
+
+    it('muat catatan: jawaban telat bulan lama nggak ngubah rincian bulan baru', async () => {
+      let relNov
+      let relOkt
+      const heldNov = new Promise((r) => (relNov = r))
+      const heldOkt = new Promise((r) => (relOkt = r))
+      const w = await mountPage({
+        expGet: async (url) => {
+          if (url.includes('month=2026-10')) await heldOkt
+          else await heldNov
+          return { expenses: url.includes('month=2026-10') ? expOkt() : expNov() }
+        },
+      })
+      await w.find('[data-test="prev"]').trigger('click')
+      await flushPromises()
+      relNov() // jawaban November (telat) duluan
+      await flushPromises()
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(0)
+      expect(w.find('[data-test="day-empty"]').exists()).toBe(false)
+      expect(w.find('[data-test="day-error"]').exists()).toBe(false)
+      relOkt()
+      await flushPromises()
+      expect(text(w, 'day-head')).toContain('Sabtu, 31 Okt')
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(1)
+      expect(text(w, 'day-expense')).toContain('Makan malem')
+    })
+
+    it('muat catatan: jawaban gagal yang telat nggak ngubah state baru yang sukses jadi error', async () => {
+      let failFirst
+      let calls = 0
+      const w = await mountPage({
+        expGet: async () => {
+          calls += 1
+          if (calls === 1) return { expenses: expNov() } // mount
+          if (calls === 2) await new Promise((_, rej) => (failFirst = rej)) // Coba lagi pertama: ditahan lalu gagal
+          return { expenses: expNov() }
+        },
+      })
+      // loadDay kedua (lewat balik ke tab) ditahan, lalu yang ketiga sukses duluan
+      enter.fn()
+      await flushPromises()
+      enter.fn()
+      await flushPromises()
+      failFirst(new Error('putus'))
+      await flushPromises()
+      expect(w.find('[data-test="day-error"]').exists()).toBe(false)
+      expect(w.findAll('[data-test="day-expense"]')).toHaveLength(2)
+    })
+
+    it('PC: tap baris → panel, bukan pindah halaman', async () => {
+      const w = await mountPage({ wide: true })
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      expect(ionRouter.push).not.toHaveBeenCalled()
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      expect(w.find('.panel-h1').text()).toContain('Sarapan')
+    })
+
+    it('PC: abis simpen panel nutup + Uang muat ulang, hari tetep', async () => {
+      const w = await mountPage({ wide: true })
+      await w.findAll('[data-test="bar"]')[8].trigger('click')
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      const before = api.get.mock.calls.length
+      w.findComponent({ name: 'UangExpensePanel' }).vm.$emit('saved', exp(13, '2026-11-09', 1, 'x'), false)
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+      expect(api.get.mock.calls.length).toBeGreaterThan(before)
+      expect(text(w, 'day-head')).toContain('Senin, 9 Nov')
+    })
+
+    it('PC: abis hapus panel nutup + Uang muat ulang', async () => {
+      const w = await mountPage({ wide: true })
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      const before = api.get.mock.calls.length
+      w.findComponent({ name: 'UangExpensePanel' }).vm.$emit('deleted')
+      await flushPromises()
+      expect(w.find('[data-test="panel"]').classes()).not.toContain('show')
+      expect(api.get.mock.calls.length).toBeGreaterThan(before)
+    })
+
+    it('PC: + Baru kategori → panel kategori; selesai → nutup, kepilih, toast', async () => {
+      const w = await mountPage({ wide: true })
+      await w.findAll('[data-test="day-expense"]')[0].trigger('click')
+      const panel = w.findComponent({ name: 'UangExpensePanel' })
+      panel.vm.$emit('new-category')
+      await flushPromises()
+      const cat = w.find('.cat-panel-stub')
+      expect(cat.classes()).toContain('show')
+      expect(w.find('[data-test="panel"]').classes()).toContain('show')
+      w.findComponent('.cat-panel-stub').vm.$emit('done', 'Kategori dibikin')
+      await flushPromises()
+      expect(w.find('.cat-panel-stub').classes()).not.toContain('show')
+      expect(formSpy.pick).toHaveBeenCalled()
+      expect(toastCreate).toHaveBeenCalledWith(expect.objectContaining({ message: 'Kategori dibikin' }))
+    })
+
+    it('HP: panel nggak dirender', async () => {
+      const w = await mountPage()
+      expect(w.find('[data-test="panel"]').exists()).toBe(false)
+      expect(w.find('.cat-panel-stub').exists()).toBe(false)
     })
 
     it('tap baris di HP → layar ubah dari Uang', async () => {
