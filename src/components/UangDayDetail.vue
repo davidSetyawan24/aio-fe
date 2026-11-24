@@ -1,6 +1,6 @@
 <template>
-  <!-- key = tanggal: ganti hari, animasi swap main lagi -->
   <div :key="row.date" class="swap">
+    <!-- key = tanggal: ganti hari, animasi swap main lagi -->
     <div class="dhead" data-test="day-head">
       <span class="k"><template v-if="isToday"><b>Hari ini</b> · {{ longDay(row.date) }}</template><template v-else>{{ dayTitle(row.date, false) }}</template></span>
       <span class="tot" data-test="day-total">{{ rp(row.total) }}</span>
