@@ -241,6 +241,8 @@ describe('UangPage', () => {
     expect(bars).toHaveLength(30)
     expect(bars[8].classes()).toContain('over')
     expect(bars[14].classes()).toContain('today')
+    expect(bars[14].classes()).toContain('on')
+    expect(bars[8].classes()).not.toContain('on')
     expect(bars[20].classes()).toContain('future')
     expect(bars[0].find('.jl').exists()).toBe(true)
     expect(bars[20].find('.jl').exists()).toBe(false)

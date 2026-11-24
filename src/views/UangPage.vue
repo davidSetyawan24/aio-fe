@@ -21,8 +21,8 @@
         <div v-if="data" class="u-grid" :class="{ past: !data.isCurrent }">
           <section class="a-hero"><UangHero :data="data" /></section>
           <section v-if="data.isCurrent" class="a-todo"><UangAttention :items="data.attention" :days-left="data.todayBudget?.daysLeft ?? daysLeft" /></section>
-          <section class="a-cat"><UangCategories :categories="data.categories" :total="data.total" :month="data.month" :selected="defaultDay(data)" /></section>
-          <section class="a-chart"><UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" :month="data.month" /></section>
+          <section class="a-cat"><UangCategories :categories="data.categories" :total="data.total" :month="data.month" /></section>
+          <section class="a-chart"><UangDaily :daily="data.daily" :avg-per-day="data.avgPerDay" :today="data.today" :is-current="data.isCurrent" :month="data.month" :selected="defaultDay(data)" /></section>
           <section class="a-tiles">
             <div class="u-label rise" style="--i: 6">Lainnya</div>
             <div class="u-tiles rise" style="--i: 6">
@@ -69,11 +69,11 @@ import PageHeader from '@/components/PageHeader.vue'
 import UangAttention from '@/components/UangAttention.vue'
 import UangCategories from '@/components/UangCategories.vue'
 import UangDaily from '@/components/UangDaily.vue'
-import { defaultDay } from '@/lib/overview.js'
 import UangHero from '@/components/UangHero.vue'
 import { addMonth, monthLabel } from '@/lib/bayarRutin.js'
 import { monthName } from '@/lib/duit.js'
 import { useMedia } from '@/lib/media.js'
+import { defaultDay } from '@/lib/overview.js'
 import { apiErrorMessage } from '@/lib/passwordChange.js'
 import { rp, rpShort } from '@/lib/wallet.js'
 import { useOverviewStore } from '@/stores/overview.js'
