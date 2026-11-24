@@ -1,4 +1,4 @@
-import { attentionKey, attentionText, changeLabel, dayCaption, pct } from './overview.js'
+import { attentionKey, attentionText, changeLabel, dayCaption, dayExpenses, dayTitle, defaultDay, jatahNote, pct } from './overview.js'
 
 const bill = { kind: 'bill', billId: 2, period: '2026-11', name: 'Cicilan motor', emoji: '🛵', tint: '#DCEBFF', amount: 1_250_000, dueOn: '2026-11-12', status: 'late', lateDays: 3, daysLeft: 0 }
 const card = { kind: 'card', sourceId: 10, name: 'CC BCA', bank: 'BCA', dueOn: '2026-11-17', daysLeft: 2, lateDays: 0 }
@@ -61,5 +61,34 @@ describe('dayCaption', () => {
   it('tanggal · keluar · jatah', () => {
     expect(dayCaption({ date: '2026-11-12', total: 160_000, jatah: 72_000 })).toBe('12 Nov · Rp160.000 · jatah Rp72.000')
     expect(dayCaption({ date: '2026-11-03', total: 0, jatah: null })).toBe('3 Nov · Rp0')
+  })
+})
+
+describe('rincian per hari', () => {
+  const nowData = { isCurrent: true, today: '2026-11-24', daily: [{ date: '2026-11-01' }, { date: '2026-11-30' }] }
+  it('defaultDay: bulan ini → hari ini, bulan lalu → tanggal terakhir', () => {
+    expect(defaultDay(nowData)).toBe('2026-11-24')
+    expect(defaultDay({ ...nowData, isCurrent: false, daily: [{ date: '2026-10-01' }, { date: '2026-10-31' }] })).toBe('2026-10-31')
+  })
+  it('dayTitle', () => {
+    expect(dayTitle('2026-11-24', true)).toBe('Hari ini · Selasa, 24 Nov')
+    expect(dayTitle('2026-11-09', false)).toBe('Senin, 9 Nov')
+  })
+  it('jatahNote: hari ini sisa / kelewat', () => {
+    expect(jatahNote({ total: 18_100, jatah: 71_500 }, true)).toEqual({ jatah: 71_500, label: 'sisa Rp53.400', tone: 'good' })
+    expect(jatahNote({ total: 80_000, jatah: 71_500 }, true)).toEqual({ jatah: 71_500, label: 'kelewat Rp8.500', tone: 'bad' })
+  })
+  it('jatahNote: hari lewat hemat / kelewat / pas', () => {
+    expect(jatahNote({ total: 60_000, jatah: 75_000 }, false)).toEqual({ jatah: 75_000, label: 'hemat Rp15.000', tone: 'good' })
+    expect(jatahNote({ total: 160_000, jatah: 72_000 }, false)).toEqual({ jatah: 72_000, label: 'kelewat Rp88.000', tone: 'bad' })
+    expect(jatahNote({ total: 72_000, jatah: 72_000 }, false)).toEqual({ jatah: 72_000, label: 'pas jatah', tone: '' })
+  })
+  it('jatahNote: tanpa budget → null', () => {
+    expect(jatahNote({ total: 10_000, jatah: null }, false)).toBeNull()
+  })
+  it('dayExpenses: filter tanggal, urutan tetep, null aman', () => {
+    const list = [{ id: 3, spentOn: '2026-11-09' }, { id: 2, spentOn: '2026-11-08' }, { id: 1, spentOn: '2026-11-09' }]
+    expect(dayExpenses(list, '2026-11-09').map((e) => e.id)).toEqual([3, 1])
+    expect(dayExpenses(undefined, '2026-11-09')).toEqual([])
   })
 })
