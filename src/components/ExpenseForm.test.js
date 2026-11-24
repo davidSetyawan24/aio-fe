@@ -123,6 +123,11 @@ describe('ExpenseForm — catat', () => {
     expect(w.find('[data-test="today-hint"]').text()).toBe('hari ini udah keluar Rp68.000')
   })
 
+  it('exposes busy (null when idle) so a parent panel can refuse to close', async () => {
+    const w = await mountForm()
+    expect(w.vm.busy).toBeNull()
+  })
+
   it('fills the note and its category from a suggestion', async () => {
     const w = await mountForm()
     await typeNote(w, 'kop')

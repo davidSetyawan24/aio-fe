@@ -404,7 +404,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
 
-defineExpose({ pickJustCreated, focusAmount, reset, load })
+defineExpose({ pickJustCreated, focusAmount, reset, load, busy })
 </script>
 
 <style scoped>
